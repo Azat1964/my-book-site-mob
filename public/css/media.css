@@ -1,0 +1,361 @@
+
+@media only screen and (min-width: 992px) {
+  .row {
+    top: 24vh;
+    left: 28vw; /* Центрировать по горизонтали */
+  }
+
+  .wrapper{
+    top: 4vh;
+    left: 54vw;
+  }
+
+ .book-inner {
+   width: 75%;
+   aspect-ratio: 156.5625 / 208.4375; /* Соотношение сторон: ширины к высоте*/
+  }
+
+  .front_face {
+    background-image: url('../img/fugu-oblog225.jpg');
+  }
+
+
+  .mt-3 {
+    margin-left: -100px; /* Расстояние справа от первого элемента */
+  }
+
+  .mt-5 {
+    margin-left: -100px; /* Расстояние справа от первого элемента */
+  }
+
+  .home_item_side {
+    margin-top: 30%;
+    width: 70%;
+  }
+
+  .custom-height {
+    height: 50%;
+  }
+
+  .owl-slide-text {
+    top: 4vh;
+    left: -12vw;
+  }
+
+  .owl-dots {
+    /*position: absolute; /* Зафиксировать позицию */
+    top: 62vh; /* Позиция относительно низа элемента */
+    margin-left: 76vw;
+    transform: translateY(0); /* Предотвращаем смещение вниз */
+  }
+
+  /*.container {
+    top: 1vh;
+  }*/
+
+  .row_down {
+    /*text-align: center;*/
+    justify-content: center;
+  }
+}
+
+/*планшетов в альбомной ориентации или малых ноутбуков.*/
+@media only screen and (min-width: 768px) and (max-width: 991px) {
+  .row {
+    top: 18vh;
+    left: 45vw;
+  }
+
+  .wrapper {
+    top: -10vh;
+    left: 35vw;
+  }
+
+  .wrapper h3 {
+    font-size: 36px;
+    margin-top: 0%;     /* Вертикальное выравнивание по центру */
+  }
+
+  .book-inner {
+    width: 65%;
+    aspect-ratio: 123.43 / 180.641; /* Соотношение сторон: ширины к высоте*/
+    margin-left: 100%;
+    /*top: 1vh;*/
+  }
+
+  .front_face {
+    background-image: url('../img/fugu-oblog225.jpg');
+  }
+
+  .col-md-6 {
+    -ms-flex: 0 0 30%;
+    flex: 0 0 30%;
+    max-width: 30%;
+  }
+
+  .mt-3 {
+    left: 16vw; /* Расстояние справа от первого элемента */
+  }
+
+  .mt-5 {
+    margin-left: -9,3vw; /* Расстояние справа от первого элемента */
+  }
+
+  .home_item_side {
+    width: 50%;
+    margin-top: 20%;
+    /*margin-left: 30%;*/
+  }
+
+  .custom-img {
+    height: 30%;
+  }
+
+  .owl-slide-text {
+    top: 6vh;
+    left: 16vw;
+    width: 50vw;
+  }
+
+  .owl-carousel .owl-nav {
+    left: 90vw;
+    top: 42vh;
+  }
+
+  .owl-carousel .owl-nav button.owl-next, .owl-carousel .owl-nav button.owl-prev {
+    margin-top: -20vh;
+  }
+
+  .owl-carousel .owl-nav button.owl-prev {
+    margin-left: -80vw;
+  }
+
+ .owl-carousel .owl-nav button.owl-next {
+    margin-left: 80vw;
+  }
+
+}
+/* CSS для планшетов и смартфонов с большими экранами - портретная ориентация*/
+@media only screen and (min-width: 576px) and (max-width: 767.98px) {
+  .row {
+    /*flex-direction: column;
+    gap: 20px; /* Вертикальное расстояние между контейнерами */
+    top: 32vh;
+    left: 75vw; /* Центрировать по горизонтали */
+  }
+
+  .book-inner {
+    width: 38%;
+    aspect-ratio: 123.43 / 180.641; /* Соотношение сторон: ширины к высоте*/
+    z-index: 2;
+  }
+
+  .front_face {
+    background-image: url('../img/fugu-oblog225.jpg');
+  }
+
+  .mt-3, .mt-5 {
+    top: -60vh;
+    left: 19vw;
+    z-index: 1;
+  }
+
+  .mt-5 {
+    left: -12vw;
+    z-index: 0;
+  }
+
+  .owl-carousel .owl-item img {
+    width: 20vw;
+    height: auto;
+  }
+
+  .home_item_side {
+    width: 20vw;
+  }
+
+  .owl-slide-text {
+    top: 9vh;
+    left: -12vw;
+    z-index: 10;
+  }
+
+  .owl-dots {
+    top: 62vh; /* Позиция относительно низа элемента */
+    margin-left: 76vw;
+    transform: translateY(0); /* Предотвращаем смещение вниз */
+  }
+
+  .owl-carousel .owl-nav {
+    left: 90vw;
+    top: 50vh;
+  }
+
+  .owl-carousel .owl-nav button.owl-next, .owl-carousel .owl-nav button.owl-prev {
+    margin-top: -20vh;
+  }
+
+  .owl-carousel .owl-nav button.owl-prev {
+    margin-left: -80vw;
+  }
+
+ .owl-carousel .owl-nav button.owl-next {
+    margin-left: 80vw;
+  }
+
+}
+
+/* CSS для планшетов и смартфонов с большими экранами - портретная ориентация*/
+@media only screen and (min-width: 425px) and (max-width: 575.99px) {
+
+  .owl-carousel .owl-slide {
+    height: 120vh;
+  }
+
+  .row {
+    width:70%;
+    flex-direction: column;
+    gap: 20px; /* Вертикальное расстояние между контейнерами */
+    top: 18vw;
+    left: 55vw;
+  }
+
+  .wrapper {
+    margin-top: -5vh;
+    left: -2vw;
+  }
+
+  .wrapper h3 {
+    font-size: 32px;
+    margin-top: 0%;     /* Вертикальное выравнивание по центру */
+  }
+
+  .book-inner {
+    width: 70%;
+    aspect-ratio: 351.8 / 435.84; /* Соотношение сторон: ширины к высоте*/
+    margin-left: 12vw;
+    z-index: 2;
+  }
+
+  .front_face {
+    background-image: url('../img/fugu-oblog225.jpg');
+  }
+
+  .owl-slide-text {
+    width: 70vw;
+    top: 2vh;
+    left: -5vw;
+    z-index: 10;
+    text-align: center;
+  }
+
+  .btn {
+    font-size: 1.8rem;
+    margin-left: -8vw;
+  }
+
+  .mt-3, .mt-5 {
+    top: 4vh;
+    left: 9vw;
+    z-index: 1;
+  }
+
+  .home_item_side {
+    width: 20vw;
+    margin-left: 7vw;
+  }
+
+  .owl-carousel .owl-nav {
+    left: 90vw;
+    top: 50vh;
+  }
+
+  .owl-carousel .owl-nav button.owl-next, .owl-carousel .owl-nav button.owl-prev {
+    margin-top: -20vh;
+  }
+
+  .owl-carousel .owl-nav button.owl-prev {
+    margin-left: -80vw;
+  }
+
+ .owl-carousel .owl-nav button.owl-next {
+    margin-left: 80vw;
+  }
+}
+
+@media only screen and (max-width: 425.99px) {
+  .owl-carousel .owl-slide {
+    height: 86vh;
+  }
+
+  .row {
+    width:70%;
+    flex-direction: column;
+    gap: 20px; /* Вертикальное расстояние между контейнерами */
+    top: 18vw;
+    left: 55vw;
+  }
+
+  .wrapper {
+    margin-top: -5vh;
+    left: -14vw;
+  }
+
+  .wrapper h3 {
+    font-size: 28px;
+    margin-top: 0%;     /* Вертикальное выравнивание по центру */
+  }
+
+  .book-inner {
+    width: 70%;
+    aspect-ratio: 351.8 / 435.84; /* Соотношение сторон: ширины к высоте*/
+    margin-left: 9vw;
+    z-index: 2;
+  }
+
+  .front_face {
+    background-image: url('../img/fugu-oblog225.jpg');
+  }
+
+  .owl-slide-text {
+    width: 70vw;
+    top: 2vh;
+    left: -5vw;
+    z-index: 10;
+    text-align: center;
+  }
+
+  .btn {
+    font-size: 1.8rem;
+    margin-left: -8vw;
+  }
+
+  .mt-3, .mt-5 {
+    top: 4vh;
+    left: 9vw;
+    z-index: 1;
+  }
+
+  .home_item_side {
+    width: 20vw;
+    margin-left: 7vw;
+  }
+
+  .owl-carousel .owl-nav {
+    left: 90vw;
+    top: 50vh;
+  }
+
+  .owl-carousel .owl-nav button.owl-next, .owl-carousel .owl-nav button.owl-prev {
+    margin-top: -20vh;
+  }
+
+  .owl-carousel .owl-nav button.owl-prev {
+    margin-left: -80vw;
+  }
+
+ .owl-carousel .owl-nav button.owl-next {
+    margin-left: 80vw;
+  }
+
+}

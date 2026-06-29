@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Админка — управление книгами</title>
+  <link rel="stylesheet" href="./css/admin.css">
+</head>
+<body>
+
+  <a href="./index.html" style="position:fixed;top:14px;left:16px;z-index:1000;background:rgba(0,0,0,0.3);color:#cfc7d6;padding:7px 14px;border-radius:6px;text-decoration:none;font-size:13px;">← Главная</a>
+
+  <!-- Экран ввода пароля админа -->
+  <div id="login-screen" class="admin-screen">
+    <div class="admin-box">
+      <h1>Панель администратора</h1>
+      <input type="password" id="admin-token-input" placeholder="Введите токен администратора">
+      <button id="login-btn">Войти</button>
+      <p id="login-error" class="error-text"></p>
+    </div>
+  </div>
+
+  <!-- Основная панель (показывается после ввода верного токена) -->
+  <div id="admin-panel" class="admin-screen" style="display:none">
+    <div class="admin-box wide">
+      <h1>Управление книгами</h1>
+
+      <!-- Добавление новой книги -->
+      <section>
+        <h2>Добавить / отредактировать книгу</h2>
+        <form id="book-form">
+          <div style="display:flex; gap:10px;">
+            <input type="text" id="book-slug" placeholder="slug (например: temny-voskhod)" required style="flex:1;">
+            <button type="button" id="book-load-btn" style="flex:0 0 auto; width:auto; background:transparent; border:1px solid #c9a227; color:#c9a227;">Загрузить для редактирования</button>
+          </div>
+          <p id="book-load-msg" class="status-text"></p>
+          <input type="text" id="book-title" placeholder="Название" required>
+          <input type="text" id="book-author" placeholder="Автор" required>
+          <textarea id="book-description" placeholder="Аннотация"></textarea>
+          <input type="text" id="book-genre" placeholder="Жанр">
+          <input type="text" id="book-cover" placeholder="Путь к обложке (/img/covers/...)">
+          <select id="book-status">
+            <option value="ongoing">В процессе</option>
+            <option value="finished">Завершена</option>
+          </select>
+          <input type="number" id="book-free-limit" placeholder="Бесплатных глав (пусто = вся книга бесплатно, 0 = только по регистрации)" min="0">
+          <button type="submit">Сохранить книгу</button>
+        </form>
+        <p id="book-status-msg" class="status-text"></p>
+      </section>
+
+      <hr>
+
+      <!-- Массовая загрузка книги целиком из .docx -->
+      <section>
+        <h2>Загрузить книгу целиком (.docx)</h2>
+        <form id="import-form">
+          <select id="import-book-slug" required>
+            <option value="">— выберите книгу —</option>
+          </select>
+          <input type="file" id="import-book-file" accept=".docx" required>
+          <select id="import-mode">
+            <option value="toc">По списку заголовков (надёжнее) — нужен файл содержания</option>
+            <option value="auto">Автоматическое распознавание ("Глава 1", "Глава первая" и т.п.)</option>
+          </select>
+          <div id="import-toc-row">
+            <input type="file" id="import-toc-file" accept=".txt">
+            <p class="status-text">Файл содержания: список заголовков глав по одному на строку, точно как в тексте романа.</p>
+          </div>
+          <div style="display:flex; gap:10px;">
+            <button type="button" id="import-preview-btn" style="flex:1; width:auto; background:transparent; border:1px solid #c9a227; color:#c9a227;">Проверить разбивку</button>
+            <button type="submit" style="flex:1; width:auto;">Загрузить и разбить на главы</button>
+          </div>
+        </form>
+        <p id="import-status-msg" class="status-text"></p>
+        <div id="import-result"></div>
+      </section>
+
+      <hr>
+
+      <!-- Добавление/обновление главы -->
+      <section>
+        <h2>Добавить / обновить главу</h2>
+        <form id="chapter-form">
+          <select id="chapter-book-slug" required>
+            <option value="">— выберите книгу —</option>
+          </select>
+          <input type="number" id="chapter-number" placeholder="Номер главы" min="1" required>
+          <div style="display:flex; gap:10px;">
+            <button type="button" id="chapter-load-btn" style="flex:1; width:auto; background:transparent; border:1px solid #c9a227; color:#c9a227;">Загрузить главу для редактирования</button>
+            <button type="button" id="ai-suggest-post-btn" style="flex:1; width:auto; background:transparent; border:1px solid #c9a227; color:#c9a227;">🤖 Подобрать пост для Telegram</button>
+          </div>
+          <p id="ai-suggest-post-msg" class="status-text"></p>
+          <p id="chapter-load-msg" class="status-text"></p>
+          <input type="text" id="chapter-title" placeholder="Заголовок главы (необязательно)">
+          <textarea id="chapter-epigraph" placeholder="Эпиграф главы (необязательно) — показывается на титульной странице главы" rows="3"></textarea>
+          <input type="text" id="chapter-illustration" placeholder="Путь к рисунку (необязательно, например: /img/covers/glava1.png) — заменит рыбку на титульной странице главы">
+          <p style="font-size:12px; color:#8a7a64; margin:-6px 0 8px;">
+            Чтобы вставить картинку прямо внутрь текста главы — поставьте отдельной строкой
+            маркер <code>[img:/img/covers/имя-файла.jpg]</code> в нужном месте. Текст обтечёт
+            картинку, а все страницы после неё пересчитаются автоматически. Рекомендуемый
+            размер исходного файла — примерно 600–800px по широкой стороне, в webp/jpg,
+            до ~150 КБ (картинка показывается на странице уменьшенной, бóльшее разрешение
+            только зря увеличивает вес страницы).
+          </p>
+          <textarea id="chapter-content" placeholder="Текст главы...&#10;&#10;Можно вставить иллюстрацию отдельной строкой:&#10;[img:/img/covers/Tyumny_voshod/example.webp]" rows="14" required></textarea>
+          <button type="submit">Опубликовать главу</button>
+        </form>
+        <p id="chapter-status-msg" class="status-text"></p>
+      </section>
+
+      <!-- Публикация в Telegram-канал -->
+      <section>
+        <h2>Опубликовать пост в Telegram</h2>
+        <p style="font-size:12px; color:#8a7a64; margin:-6px 0 8px;">
+          Публикует сразу в канал (бот должен быть добавлен туда админом). Поддерживается базовая
+          HTML-разметка в тексте: <code>&lt;b&gt;жирный&lt;/b&gt;</code>, <code>&lt;i&gt;курсив&lt;/i&gt;</code>.
+          Кнопка-ссылка под постом — необязательно.
+        </p>
+        <form id="telegram-form">
+          <textarea id="tg-text" placeholder="Текст поста..." rows="6" required></textarea>
+          <input type="text" id="tg-image" placeholder="Ссылка на картинку (необязательно, должна быть доступна из интернета, не localhost)">
+          <input type="text" id="tg-button-text" placeholder="Текст кнопки (необязательно, например: Читать главу)">
+          <input type="text" id="tg-button-url" placeholder="Ссылка кнопки (необязательно, например: https://ваш-домен/contents.html?book=temny-voskhod)">
+          <button type="submit">Опубликовать в Telegram</button>
+        </form>
+        <p id="telegram-status-msg" class="status-text"></p>
+      </section>
+    </div>
+  </div>
+
+  <script src="./js/admin.js"></script>
+</body>
+</html>

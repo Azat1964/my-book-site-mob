@@ -1,0 +1,103 @@
+#book {
+    display: flex; /* Включаем flexbox */
+    justify-content: space-between; /* Равномерное распределение пространства между элементами */
+    padding: 50px;
+    height: 100vh; /* Высота контейнера равна высоте окна просмотра */
+}
+.left-container {
+    display: flex;
+    flex-direction: column;
+    width: 50%;
+    height: 100%;
+    overflow: hidden;
+    position: relative;
+    justify-content: center; /* Центрируем по вертикали */
+    align-items: center; /* Центрируем по горизонтали */
+    border: 1px solid #8b7a69;
+}
+.text-container {
+    display: flex;
+    flex-direction: column;
+    justify-content: center; /* Центрируем текст по вертикали */
+    align-items: center; /* Центрируем текст по горизонтали */
+    height: 50%; /* Текстовый контейнер занимает 50% высоты левого контейнера */
+    box-sizing: border-box; /* Учитываем padding и border в общей высоте */
+    position: absolute; /* Позволяет текстовому контейнеру находиться вверху */
+    top: 0;
+    left: 0;
+    right: 0;
+    margin-top: 12%
+}
+.base{
+  margin-top: -25%;
+  margin-left: 20%; /* Смещение вправо на 20% */
+  width: 80%; /* Устанавливаем ширину, чтобы текст был выровнен правильно */
+}
+.base p{
+  font-size: .75em;
+  text-align: justify;
+  color: #9e8271;
+}
+
+.title {
+    font-size: 2em;
+    color: #d1b394;
+    text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.7), -1px -1px 3px rgba(255, 255, 255, 0.3);
+    text-align: center; /* Центрируем текст */
+    margin: 0; /* Убираем отступы */
+}
+.author {
+    font-size: 1em;
+    color: #d1b394;
+    text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.6), -1px -1px 2px rgba(255, 255, 255, 0.2);
+    text-align: center; /* Центрируем текст */
+    margin-top: 10px; /* Добавляем отступ сверху */
+}
+.svg-container {
+    width: 100%;
+    height: 30vh; /* ВСЕГДА 30% высоты экрана — пересчитывается браузером само при изменении размера окна */
+    display: flex;
+    justify-content: center; /* Центрируем по горизонтали */
+    align-items: center; /* Центрируем по вертикали */
+    margin-top: 55%;
+}
+.svg-container img {
+    max-width: 100%; /* Изображение не должно превышать ширину контейнера */
+    height: 100%; /* Высота строго равна высоте контейнера (20vh) */
+    max-height: 100%;
+    width: auto;
+    object-fit: contain; /* Сохраняет пропорции изображения и масштабирует его */
+}
+  .content, .content p {
+    font-size: 95%;
+    margin: 0 0 10px 0; /* Добавляем небольшой отступ между абзацами */
+    text-align: justify;  /* Выравнивание текста по краям */
+    overflow: hidden;
+    text-align: justify;
+    white-space: pre-line;
+    padding: 5px;
+  }
+
+  /* Иллюстрация внутри текста главы — обтекание текстом (float), "оптимальный
+     размер" — не на всю колонку (текст вокруг неё должен оставаться удобным
+     для чтения), но и не миниатюра. 42% ширины колонки с потолком в 220px —
+     ровно тот масштаб, при котором рядом помещается 2-3 слова в строке текста. */
+  .content img.chapter-illustration {
+    float: right;
+    width: 42%;
+    max-width: 220px;
+    height: auto;
+    margin: 2px 0 12px 16px;
+    border-radius: 6px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.35);
+  }
+
+  @media (max-height: 676px) {
+    .base p {
+      margin-top: 100px; /* Фиксированный отступ */
+    }
+
+    .svg-container {
+      margin-top: 100px;
+    }
+  }

@@ -1,0 +1,45 @@
+/* Скрытое меню */
+.dropdown-menu {
+    display: none; /* Изначально скрыто */
+    position: absolute;
+    top: 50px; /* Расположение под иконкой */
+    left: 10px;
+    width: 200px;
+    background-color: #fff;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    border-radius: 5px;
+    z-index: 1000;
+}
+
+/* Стиль для списка */
+.dropdown-menu ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+/* Стиль для элементов меню */
+.dropdown-menu ul li {
+    padding: 10px 20px;
+    border-bottom: 1px solid #eaeaea;
+}
+
+.dropdown-menu ul li:last-child {
+    border-bottom: none; /* Убрать нижнюю границу для последнего элемента */
+}
+
+/* Стиль для ссылок */
+.dropdown-menu ul li a {
+    text-decoration: none;
+    color: #333;
+    display: block;
+}
+
+.dropdown-menu ul li a:hover {
+    background-color: #f5f5f5;
+}
+
+/* Стиль для активного меню */
+.dropdown-menu.active {
+    display: block; /* Показывать меню при активации */
+}
