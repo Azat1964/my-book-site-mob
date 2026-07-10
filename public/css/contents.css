@@ -1,0 +1,217 @@
+* { box-sizing: border-box; }
+
+html, body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: 'Gabriela', Georgia, serif;
+  color: #2b1d0f;
+  min-height: 100vh;
+  /* Тот же тёплый "пергаментный" градиент, что использует страница чтения (.side) */
+  background-image:
+    linear-gradient(
+      180deg,
+      hsla(30, 40%, 78%, 1),
+      hsla(30, 35%, 68%, 1)
+    );
+  background-attachment: fixed;
+}
+
+#app {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 56px 28px 90px;
+}
+
+#loading, #error {
+  color: #6b4f33;
+  text-align: center;
+  margin-top: 80px;
+  font-size: 17px;
+}
+
+.book-header {
+  border-bottom: 2px solid hsla(30, 30%, 35%, 0.45);
+  padding-bottom: 22px;
+  margin-bottom: 30px;
+}
+
+.book-title {
+  color: #5c3a1e;
+  text-shadow: 1px 1px 3px rgba(255, 255, 255, 0.35), -1px -1px 2px rgba(0, 0, 0, 0.15);
+  font-size: 34px;
+  margin: 0 0 8px;
+}
+
+.book-author {
+  color: #6b4f33;
+  font-size: 17px;
+  margin: 0;
+  font-style: italic;
+}
+
+.chapter-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.auth-bar {
+  position: fixed;
+  top: 14px;
+  right: 18px;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: 'Gabriela', Georgia, serif;
+  font-size: 13px;
+}
+
+.home-link {
+  position: fixed;
+  top: 14px;
+  left: 18px;
+  z-index: 1000;
+  font-family: 'Gabriela', Georgia, serif;
+  font-size: 13px;
+  color: #6b4f33;
+  text-decoration: none;
+  background: rgba(139,90,43,0.12);
+  border: 1px solid #8b5a2b;
+  padding: 7px 14px;
+  border-radius: 6px;
+}
+.home-link:hover {
+  background: rgba(139,90,43,0.2);
+}
+
+.auth-status {
+  color: #6b4f33;
+}
+
+/* "Войти" — главное действие здесь, поэтому делаем заметной сплошной кнопкой,
+   а не блёклым контуром: чем заметнее, тем быстрее читатель войдёт и увидит
+   вкладку закладки. */
+.login-btn {
+  background: #8b5a2b;
+  color: #fff8ec;
+  border: none;
+  padding: 9px 18px;
+  border-radius: 6px;
+  text-decoration: none;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: bold;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+  transition: background 0.15s, transform 0.15s;
+}
+
+.login-btn:hover {
+  background: #a06a35;
+  transform: translateY(-1px);
+}
+
+/* "Выйти" — второстепенное действие, приглушённый контур */
+.logout-btn {
+  background: rgba(139, 90, 43, 0.12);
+  color: #6b4f33;
+  border: 1px solid #8b5a2b;
+  padding: 7px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 13px;
+}
+
+.logout-btn:hover {
+  background: rgba(139, 90, 43, 0.2);
+}
+
+@media (max-width: 600px) {
+  .auth-bar {
+    top: 10px;
+    right: 10px;
+  }
+  .home-link {
+    top: 10px;
+    left: 10px;
+    padding: 6px 11px;
+  }
+  .login-btn {
+    padding: 8px 14px;
+    font-size: 13px;
+  }
+}
+
+.bookmark-tab {
+  position: fixed;
+  top: 68px;
+  right: 18px;
+  z-index: 100;
+  background: #8b5a2b;
+  color: #fff8ec;
+  text-decoration: none;
+  padding: 10px 16px;
+  border-radius: 999px;
+  font-size: 14px;
+  white-space: nowrap;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.25);
+  transition: background 0.15s, transform 0.15s;
+}
+
+.bookmark-tab:hover {
+  background: #a06a35;
+  transform: translateY(-1px);
+}
+
+@media (max-width: 600px) {
+  .bookmark-tab {
+    position: static;
+    display: block;
+    text-align: center;
+    margin-bottom: 22px;
+    border-radius: 8px;
+  }
+}
+
+.chapter-item {
+  border-bottom: 1px solid hsla(30, 30%, 30%, 0.25);
+}
+
+.chapter-link {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 16px;
+  padding: 15px 6px;
+  color: #2b1d0f;
+  text-decoration: none;
+  font-size: 18px;
+  transition: color 0.15s, padding-left 0.15s;
+}
+
+.chapter-link:hover {
+  color: #8b3a1e;
+  padding-left: 12px;
+}
+
+.chapter-num {
+  color: #8b5a2b;
+  flex-shrink: 0;
+  font-size: 14px;
+  min-width: 70px;
+  font-style: italic;
+}
+
+.chapter-title {
+  flex: 1;
+}
+
+.empty-msg {
+  color: #6b4f33;
+  text-align: center;
+  margin-top: 40px;
+}

@@ -1,0 +1,260 @@
+.header {
+    display: block;
+    position: fixed; /* Sticks the header to the top */
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 1000; /* Ensures the header is above other elements */
+    background: transparent; /* Fully transparent background */
+    padding: 20px 0;
+    transition: all 400ms ease;/*background 0.3s ease; /* Adds transition for smooth background changes */
+    -webkit-transition: all 400ms ease;
+    -moz-transition: all 400ms ease;
+    -ms-transition: all 400ms ease;
+    -o-transition: all 400ms ease;
+    transition: all 400ms ease;
+/*
+    -webkit-transition: all 400ms ease;
+    -moz-transition: all 400ms ease;
+    -ms-transition: all 400ms ease;
+    -o-transition: all 400ms ease;
+    transition: all 400ms ease;
+    */
+}
+
+.header.scrolled {
+    background: rgba(0, 0, 0, 0.2); /* Slightly darkens background when scrolled */
+}
+
+.header_overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: transparent; /* Keep the overlay transparent */
+    z-index: -1;
+}
+
+.header_content {
+	width: 100%;
+	height: 19px;
+	padding-left: 20px;
+	padding-right: 42px;
+}
+
+
+.logo {
+    font-size: 24px;
+    font-weight: bold;
+    color: white;
+}
+
+.logo a > div > div:last-child {
+    padding-left: 15px;
+    font-size: 24px;
+    font-weight: 700;
+    /*color: #4a4a4a;*/
+}
+
+.main_nav {
+    margin-left: 111px;
+}
+@media only screen and (max-width: 1245.01px) {
+  .main_nav {
+      display: none;
+  }
+}
+
+@media only screen and (max-width: 1440px) {
+  .main_nav {
+      margin-left: 70px;
+  }
+}
+
+@media only screen and (max-width: 1600px) {
+  .main_nav {
+      margin-left: 70px;
+  }
+}
+
+@media only screen and (max-width: 1780px) {
+  .main_nav {
+      margin-left: 10px;
+  }
+}
+
+.main_nav ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+}
+
+
+
+.main_nav ul li {
+    margin-left: 30px;
+}
+
+.main_nav ul li a {
+    text-decoration: none;
+    color: white;
+    font-size: 16px;
+    font-weight: 500;
+}
+
+.header_search {
+    margin-right: 65px;
+}
+
+.header_search input {
+    background: rgba(255, 255, 255, 0.8);
+    border: none;
+    padding: 5px 10px;
+    border-radius: 20px;
+}
+@media only screen and (max-width: 1440px) {
+    .header_search {
+        margin-right: 39px;
+    }
+}
+@media only screen and (max-width: 1600px) {
+    .header_search {
+        margin-right: 47px;
+    }
+}
+.header_search_button {
+    position: absolute;
+    top: 50%;
+    -webkit-transform: translateY(-50%);
+    -moz-transform: translateY(-50%);
+    -ms-transform: translateY(-50%);
+    -o-transform: translateY(-50%);
+    transform: translateY(-50%);
+    right: 0;
+    width: 44px;
+    height: 39px;
+    border: none;
+    outline: none;
+    background: transparent;
+    cursor: pointer;
+}
+
+.hamburger {
+    display: none; /* Hidden for larger screens, visible for mobile */
+    margin-left: 25px;
+    cursor: pointer;
+    margin-top: 4px;
+}
+
+.user {
+    margin-right: 28px;
+}
+
+.header_phone {
+    display: flex;
+    align-items: center;
+    color: white;
+    font-size: 16px;
+}
+
+.header_phone > div:first-child > div {
+    width: 36px;
+    height: 36px;
+}
+
+@media only screen and (max-width: 1440px) {
+    .header_phone > div:first-child > div {
+        width: 24px;
+        height: 24px;
+    }
+}
+.header_phone > div:last-child {
+    font-size: 18px;
+    font-weight: 700;
+    color: #007BFF;
+    padding-left: 26px;
+}
+
+@media only screen and (max-width: 1440px) {
+    .header_phone > div:last-child {
+        font-size: 16px;
+    }
+}
+
+/*.header_phone img {
+    margin-right: 10px;
+}*/
+
+
+
+/*.hamburger {
+    display: block; /* Show the hamburger menu icon */
+    /*color: white;
+    font-size: 24px;
+    cursor: pointer;
+}*/
+
+.hamburger {
+    display: none;
+    margin-left: 25px;
+    cursor: pointer;
+    margin-top: 4px;
+
+}
+
+.hamburger i {
+    font-size: 24px;
+    color: white;
+}
+
+@media only screen and (max-width: 1245px) {
+    .hamburger {
+        display: block;
+    }
+}
+
+@media only screen and (max-width: 991px) {
+    .header_content {
+        padding-right: 25px;
+    }
+}
+
+div {
+	display: block;
+	position: relative;
+	-webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    box-sizing: border-box;
+}
+
+.user a > div > div {
+    position: absolute;
+    top: -12px;
+    right: -4px;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: #2fce98;
+    text-align: center;
+    line-height: 24px;
+    color: #FFFFFF;
+    font-size: 14px;
+    font-weight: 700;
+}
+
+@media only screen and (max-width: 1440px) {
+    .user a > div > div {
+        width: 18px;
+        height: 18px;
+        font-size: 11px;
+        line-height: 18px;
+    }
+}
+@media only screen and (max-width: 1440px) {
+    .user a > div {
+        width: 26px;
+        height: 26px;
+    }
+}

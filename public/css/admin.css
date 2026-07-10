@@ -1,0 +1,161 @@
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: #1a1a24;
+  color: #e8e8ec;
+}
+
+.admin-screen {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.admin-box {
+  background: #24242f;
+  border-radius: 12px;
+  padding: 32px;
+  width: 100%;
+  max-width: 380px;
+}
+
+.admin-box.wide {
+  max-width: 640px;
+}
+
+.admin-box h1 {
+  margin: 0 0 20px;
+  font-size: 22px;
+  color: #c9a227;
+}
+
+.admin-box h2 {
+  font-size: 16px;
+  color: #c9a227;
+  margin: 0 0 12px;
+}
+
+input, textarea, select, button {
+  width: 100%;
+  padding: 10px 12px;
+  margin-bottom: 10px;
+  border-radius: 6px;
+  border: 1px solid #3a3a48;
+  background: #1a1a24;
+  color: #e8e8ec;
+  font-size: 14px;
+  font-family: inherit;
+}
+
+textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+button {
+  background: #c9a227;
+  color: #1a1a24;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+button:hover {
+  opacity: 0.85;
+}
+
+hr {
+  border: none;
+  border-top: 1px solid #3a3a48;
+  margin: 28px 0;
+}
+
+.error-text {
+  color: #e05d5d;
+  font-size: 13px;
+  min-height: 18px;
+  margin: 0;
+}
+
+.status-text {
+  font-size: 13px;
+  min-height: 18px;
+  margin: 4px 0 0;
+}
+
+.status-text.ok { color: #6fcf6f; }
+.status-text.err { color: #e05d5d; }
+
+.preview-list {
+  list-style: none;
+  padding: 0;
+  margin: 10px 0 0;
+  max-height: 320px;
+  overflow-y: auto;
+  border: 1px solid #3a3a48;
+  border-radius: 6px;
+}
+.preview-list li {
+  padding: 8px 12px;
+  border-bottom: 1px solid #2c2c38;
+  font-size: 13px;
+}
+.preview-list li:last-child { border-bottom: none; }
+.preview-list .ch-num { color: #c9a227; font-weight: 600; margin-right: 6px; }
+.preview-list .ch-len { color: #888; font-size: 11px; margin-left: 6px; }
+.preview-list .ch-snippet { color: #aaa; display: block; margin-top: 2px; }
+
+/* ===== Аналитика ===== */
+.stat-card {
+  background: #1f1b29;
+  border-radius: 10px;
+  padding: 16px 14px;
+  text-align: center;
+}
+.stat-value {
+  font-size: 28px;
+  font-weight: bold;
+  color: #c9a227;
+  margin-bottom: 4px;
+}
+.stat-label {
+  font-size: 12px;
+  color: #9a8fae;
+}
+.chart-box {
+  background: #1f1b29;
+  border-radius: 10px;
+  padding: 16px;
+}
+.chart-title {
+  font-size: 13px;
+  color: #9a8fae;
+  margin-bottom: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Таблица топ-глав */
+.analytics-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.analytics-table th {
+  text-align: left;
+  padding: 8px 10px;
+  color: #9a8fae;
+  border-bottom: 1px solid #2c2c38;
+}
+.analytics-table td {
+  padding: 8px 10px;
+  color: #e8e0f0;
+  border-bottom: 1px solid #2c2c38;
+}
+.analytics-table tr:last-child td { border-bottom: none; }
+.analytics-table tr:hover td { background: rgba(255,255,255,0.03); }

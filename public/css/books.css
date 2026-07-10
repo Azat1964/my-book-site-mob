@@ -1,0 +1,139 @@
+.row {
+  display: flex;
+  position: absolute;
+  text-align: center;
+  transform: translateX(-50%); /* Корректировка центрирования */
+  z-index: 10; /* Чтобы блок был над другим содержимым */
+  width: 100%;
+  max-width: 100%;
+  justify-content: space-between; /* Равномерное распределение элементов */
+  padding: 10px; /* Дополнительное пространство внутри */
+}
+
+.wrapper{
+  text-align: center;
+  width: 360px;
+  background: transparent;
+  z-index: 10;
+  position: absolute;
+}
+
+.wrapper h3 {
+    margin: 20px auto 0;
+    padding: 0 5%;
+    opacity: 0.9;
+    color: #a1105b;
+    font-size: 48px;
+    text-shadow: 2px 4px 6px rgba(0, 0, 0, 0.3); /* Добавляем мягкую тень */
+    margin-top: -30%;     /* Вертикальное выравнивание по центру */
+}
+
+.book_image img {
+  max-width: 100%;
+  height: 100%;
+  z-index: 100;
+  box-shadow: 1px -1px #3e3e3e, 2px -2px #fffae5, 3px -3px #d1ccb8, 4px -4px #fffae5, 5px -5px #d1ccb8, 6px -6px #fffae5, 7px -7px #d1ccb8, 8px -8px #3e3e3e;
+}
+
+.container{
+  top: 18%; /* Расположить блок в самом верху */
+}
+
+.justify-content-center{
+  position: relative;
+  z-index: 1;
+}
+
+.book-inner {
+  position: relative;
+  display: flex;
+  align-items: center;    /* Центрирование элементов по горизонтали */
+  background-image: url('../img/water225x260.png');
+  background-size: cover;
+  background-position: center;
+  box-shadow: 0px 0px 15px 7px rgba(0,0,0,0.75);
+  cursor: pointer;
+  transition: transform 1s ease;
+  will-change: transform;
+  transform-style: preserve-3d;
+  border-radius: 3px;
+}
+
+.book-inner:hover {
+  transform: rotateY(180deg) scale(1.1);
+  transition: transform 1s ease;
+  transform-origin: top;/* Смещаем точку трансформации влево за пределы элемента */
+  z-index: 100;
+}
+
+.book-inner::before {
+  display: block; /* Обязательно для ограничения ширины */
+  width: 20%; /* Настройте ширину в зависимости от нужного размера */
+  position: absolute;
+  top: 50%; /* Центровка по вертикали */
+  left: 50%; /* Центровка по горизонтали */
+  transform: translate(-50%, -50%); /* Центровка относительно самого себя */
+  margin-bottom: 10px;
+}
+
+.book-inner::before {/* text*/
+  text-align: left;
+  font-size: 10px;
+  font-weight: bold;
+  color: white;
+  width: 150px; /* Задаем ширину текста */
+  z-index: 10; /* Текст будет выше фона */
+  opacity: 0; /* По умолчанию текст невидим */
+  transition: opacity 1s ease, transform 1s ease;
+}
+
+.book-inner:hover::before {
+  opacity: 1; /* При наведении текст становится видимым */
+  transform: translate(-50%, -50%) scaleX(-1); /* Отражение по вертикали */
+}
+
+.front_face {
+  position: absolute; /* Абсолютное позиционирование для растяжения по родителю */
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-size: cover;
+  background-position: center;
+  box-shadow: 1px -1px #3e3e3e, 2px -2px #fffae5, 3px -3px #d1ccb8, 4px -4px #fffae5, 5px -5px #d1ccb8, 6px -6px #fffae5, 7px -7px #d1ccb8, 8px -8px #3e3e3e;
+  backface-visibility: hidden;
+  transform-origin: center;
+  transform: translateZ(11px);
+}
+
+.side {/* боковая часть книжки*/
+  transform-origin: center;
+  position: absolute;
+  left: -11px;
+  width: 22px;
+  height: 100%;
+  transform: rotateY(-90deg);
+  background-color: white;
+  background-position: center;
+  background-size: cover;
+}
+
+.home_item_side {
+  height: auto;
+  box-shadow: 0px 0px 15px 7px rgba(0,0,0,0.75);
+}
+
+.home_item_side a > img {
+  box-shadow: 1px -1px #3e3e3e, 2px -2px #fffae5, 3px -3px #d1ccb8, 4px -4px #fffae5, 5px -5px #d1ccb8, 6px -6px #fffae5, 7px -7px #d1ccb8, 8px -8px #3e3e3e;
+}
+
+.custom-img {/* не работает*/
+  width: 120%; /* или любое нужное значение */
+  height: auto;
+}
+
+.owl-slide-text {
+  position: relative; /* Если нужно, чтобы z-index работал */
+  z-index: 1; /* Убедитесь, что он меньше, чем 1000 */
+  width: 40vw;
+}

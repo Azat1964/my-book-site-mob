@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Аналитика — Отец Тук</title>
+  <link rel="stylesheet" href="./css/admin.css">
+  <style>
+    .back-link {
+      display: inline-block;
+      margin-bottom: 20px;
+      color: #c9a227;
+      text-decoration: none;
+      font-size: 14px;
+    }
+    .back-link:hover { text-decoration: underline; }
+    #analytics-wrap { display: none; }
+  </style>
+</head>
+<body>
+
+  <!-- Экран ввода токена (если не авторизован) -->
+  <div id="analytics-login" class="admin-screen" style="display:flex;">
+    <div class="admin-box">
+      <h1>Аналитика</h1>
+      <input type="password" id="analytics-token-input" placeholder="Введите токен администратора">
+      <button id="analytics-login-btn">Войти</button>
+      <p id="analytics-login-error" class="status-text err" style="display:none;"></p>
+    </div>
+  </div>
+
+  <!-- Основной контент -->
+  <div id="analytics-wrap" class="admin-container">
+    <div class="admin-panel-inner">
+
+      <a href="./admin.html" class="back-link">← Вернуться в админку</a>
+
+      <h1 style="margin-bottom:20px;">Аналитика</h1>
+
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px;">
+        <select id="analytics-days" style="width:auto;">
+          <option value="7">7 дней</option>
+          <option value="30" selected>30 дней</option>
+          <option value="90">90 дней</option>
+        </select>
+        <button id="analytics-refresh-btn">Обновить</button>
+      </div>
+
+      <!-- Карточки-сводка -->
+      <div id="analytics-summary" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;margin-bottom:24px;">
+        <div class="stat-card"><div class="stat-value" id="stat-views">—</div><div class="stat-label">Просмотров глав</div></div>
+        <div class="stat-card"><div class="stat-value" id="stat-users">—</div><div class="stat-label">Читателей зарег.</div></div>
+        <div class="stat-card"><div class="stat-value" id="stat-tg">—</div><div class="stat-label">Переходов из Telegram</div></div>
+        <div class="stat-card"><div class="stat-value" id="stat-bookmarks">—</div><div class="stat-label">Сохранено закладок</div></div>
+      </div>
+
+      <!-- Графики -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px;">
+        <div class="chart-box">
+          <p class="chart-title">Просмотры по дням</p>
+          <canvas id="chartViewsByDay"></canvas>
+        </div>
+        <div class="chart-box">
+          <p class="chart-title">Регистрации по дням</p>
+          <canvas id="chartRegistrations"></canvas>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px;">
+        <div class="chart-box">
+          <p class="chart-title">Популярность книг</p>
+          <canvas id="chartTopBooks"></canvas>
+        </div>
+        <div class="chart-box">
+          <p class="chart-title">Устройства читателей</p>
+          <canvas id="chartDevices"></canvas>
+        </div>
+      </div>
+
+      <!-- Топ глав — таблица -->
+      <div class="chart-box" style="margin-bottom:18px;">
+        <p class="chart-title">Топ глав по просмотрам</p>
+        <div id="tableTopChapters" style="overflow-x:auto;"></div>
+      </div>
+
+      <!-- До какой главы дочитывают -->
+      <div class="chart-box">
+        <p class="chart-title">Где читатели остановились (последняя закладка)</p>
+        <canvas id="chartDropoff"></canvas>
+      </div>
+
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script>
+    let ADMIN_TOKEN = sessionStorage.getItem('adminToken') || '';
+
+    const loginScreen = document.getElementById('analytics-login');
+    const analyticsWrap = document.getElementById('analytics-wrap');
+    const tokenInput = document.getElementById('analytics-token-input');
+    const loginBtn = document.getElementById('analytics-login-btn');
+    const loginError = document.getElementById('analytics-login-error');
+
+    function showAnalytics() {
+      loginScreen.style.display = 'none';
+      analyticsWrap.style.display = 'block';
+      loadAnalytics();
+    }
+
+    if (ADMIN_TOKEN) {
+      // Проверяем токен перед показом
+      fetch('/api/admin/analytics/summary', {
+        headers: { 'x-admin-token': ADMIN_TOKEN }
+      }).then(r => {
+        if (r.ok) showAnalytics();
+        else { ADMIN_TOKEN = ''; sessionStorage.removeItem('adminToken'); }
+      }).catch(() => {});
+    }
+
+    loginBtn.addEventListener('click', async () => {
+      const value = tokenInput.value.trim();
+      if (!value) return;
+
+      // Проверяем токен через любой защищённый роут
+      const r = await fetch('/api/admin/analytics/summary', {
+        headers: { 'x-admin-token': value }
+      });
+      if (r.ok) {
+        ADMIN_TOKEN = value;
+        sessionStorage.setItem('adminToken', value);
+        showAnalytics();
+      } else {
+        loginError.textContent = 'Неверный токен';
+        loginError.style.display = 'block';
+      }
+    });
+
+    tokenInput.addEventListener('keydown', e => { if (e.key === 'Enter') loginBtn.click(); });
+
+    // =====================================================================
+    // АНАЛИТИКА
+    // =====================================================================
+    const analyticsHeaders = () => ({ 'x-admin-token': ADMIN_TOKEN });
+    let chartInstances = {};
+
+    function destroyChart(id) {
+      if (chartInstances[id]) { chartInstances[id].destroy(); delete chartInstances[id]; }
+    }
+
+    function makeChart(id, config) {
+      destroyChart(id);
+      const ctx = document.getElementById(id)?.getContext('2d');
+      if (!ctx) return;
+      chartInstances[id] = new Chart(ctx, config);
+    }
+
+    const CHART_COLORS = {
+      primary: 'rgba(201,162,39,0.85)',
+      primaryBorder: '#c9a227',
+      secondary: 'rgba(217,118,58,0.85)',
+      secondaryBorder: '#d9763a',
+      unique: 'rgba(100,180,220,0.7)',
+      text: '#e8e0f0',
+      grid: 'rgba(255,255,255,0.08)',
+    };
+
+    const CHART_DEFAULTS = {
+      responsive: true,
+      plugins: { legend: { labels: { color: CHART_COLORS.text } } },
+      scales: {
+        x: { ticks: { color: CHART_COLORS.text }, grid: { color: CHART_COLORS.grid } },
+        y: { ticks: { color: CHART_COLORS.text }, grid: { color: CHART_COLORS.grid }, beginAtZero: true },
+      },
+    };
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      const div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    }
+
+    async function loadAnalytics() {
+      const days = document.getElementById('analytics-days').value;
+      const headers = analyticsHeaders();
+
+      try {
+        const summary = await fetch('/api/admin/analytics/summary', { headers }).then(r => r.json());
+        document.getElementById('stat-views').textContent = summary.totalViews?.toLocaleString() ?? '—';
+        document.getElementById('stat-users').textContent = summary.totalUsers?.toLocaleString() ?? '—';
+        document.getElementById('stat-tg').textContent = summary.telegramClicks?.toLocaleString() ?? '—';
+        document.getElementById('stat-bookmarks').textContent = summary.totalBookmarks?.toLocaleString() ?? '—';
+      } catch (e) { console.error('summary', e); }
+
+      try {
+        const viewsData = await fetch(`/api/admin/analytics/views-by-day?days=${days}`, { headers }).then(r => r.json());
+        makeChart('chartViewsByDay', {
+          type: 'line',
+          data: {
+            labels: viewsData.map(r => r.day?.slice(5)),
+            datasets: [
+              { label: 'Просмотры', data: viewsData.map(r => r.views), borderColor: CHART_COLORS.primaryBorder, backgroundColor: 'rgba(201,162,39,0.15)', tension: 0.35, fill: true },
+              { label: 'Уникальные', data: viewsData.map(r => r.unique_readers), borderColor: CHART_COLORS.unique, backgroundColor: 'rgba(100,180,220,0.1)', tension: 0.35, fill: true },
+            ],
+          },
+          options: { ...CHART_DEFAULTS },
+        });
+      } catch (e) { console.error('views', e); }
+
+      try {
+        const regData = await fetch(`/api/admin/analytics/registrations?days=${days}`, { headers }).then(r => r.json());
+        makeChart('chartRegistrations', {
+          type: 'bar',
+          data: {
+            labels: regData.map(r => r.day?.slice(5)),
+            datasets: [{ label: 'Регистрации', data: regData.map(r => r.registrations), backgroundColor: CHART_COLORS.secondary, borderColor: CHART_COLORS.secondaryBorder, borderWidth: 1 }],
+          },
+          options: { ...CHART_DEFAULTS },
+        });
+      } catch (e) { console.error('reg', e); }
+
+      try {
+        const booksData = await fetch('/api/admin/analytics/top-books', { headers }).then(r => r.json());
+        makeChart('chartTopBooks', {
+          type: 'bar',
+          data: {
+            labels: booksData.map(r => r.title),
+            datasets: [
+              { label: 'Просмотры', data: booksData.map(r => r.views), backgroundColor: CHART_COLORS.primary },
+              { label: 'Уникальные', data: booksData.map(r => r.unique_readers), backgroundColor: CHART_COLORS.unique },
+            ],
+          },
+          options: { ...CHART_DEFAULTS, indexAxis: 'y' },
+        });
+      } catch (e) { console.error('books', e); }
+
+      try {
+        const devData = await fetch('/api/admin/analytics/devices', { headers }).then(r => r.json());
+        const DEV_LABELS = { mobile: '📱 Мобильные', desktop: '🖥 Десктоп', tablet: '📋 Планшет' };
+        makeChart('chartDevices', {
+          type: 'doughnut',
+          data: {
+            labels: devData.map(r => DEV_LABELS[r.device_type] || r.device_type),
+            datasets: [{ data: devData.map(r => r.views), backgroundColor: ['#c9a227', '#d9763a', '#4da8cc'] }],
+          },
+          options: { responsive: true, plugins: { legend: { labels: { color: CHART_COLORS.text } } } },
+        });
+      } catch (e) { console.error('devices', e); }
+
+      try {
+        const chapData = await fetch('/api/admin/analytics/top-chapters', { headers }).then(r => r.json());
+        const tableEl = document.getElementById('tableTopChapters');
+        if (!chapData.length) {
+          tableEl.innerHTML = '<p style="color:#9a8fae;font-size:13px;">Данных пока нет</p>';
+        } else {
+          tableEl.innerHTML = `<table class="analytics-table">
+            <thead><tr><th>Книга</th><th>Гл.</th><th>Название</th><th>Просмотры</th><th>Уникальные</th></tr></thead>
+            <tbody>${chapData.map(r => `<tr>
+              <td>${escapeHtml(r.book)}</td>
+              <td>${r.chapter_number}</td>
+              <td>${escapeHtml(r.chapter || '—')}</td>
+              <td>${r.views}</td>
+              <td>${r.unique_readers}</td>
+            </tr>`).join('')}</tbody>
+          </table>`;
+        }
+      } catch (e) { console.error('chapters', e); }
+
+      try {
+        const dropData = await fetch('/api/admin/analytics/dropoff', { headers }).then(r => r.json());
+        const grouped = {};
+        dropData.forEach(r => {
+          if (!grouped[r.book]) grouped[r.book] = { chapters: [], readers: [] };
+          grouped[r.book].chapters.push(`Гл.${r.chapter_number}`);
+          grouped[r.book].readers.push(parseInt(r.readers_stopped_here));
+        });
+        const books = Object.keys(grouped);
+        if (books.length) {
+          const palette = ['#c9a227', '#d9763a', '#4da8cc', '#a270cc'];
+          makeChart('chartDropoff', {
+            type: 'bar',
+            data: {
+              labels: grouped[books[0]].chapters,
+              datasets: books.map((book, i) => ({
+                label: book,
+                data: grouped[book].readers,
+                backgroundColor: palette[i % palette.length],
+              })),
+            },
+            options: { ...CHART_DEFAULTS },
+          });
+        }
+      } catch (e) { console.error('dropoff', e); }
+    }
+
+    document.getElementById('analytics-refresh-btn')?.addEventListener('click', loadAnalytics);
+    document.getElementById('analytics-days')?.addEventListener('change', loadAnalytics);
+  </script>
+</body>
+</html>

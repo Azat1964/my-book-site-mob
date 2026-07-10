@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="en" >
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1">
+      <title>Book Fish No Sound 09sep</title>
+      <script>
+        // Узкий экран — у нас для него отдельная страница (book_mob.html)
+        // с однострочным чтением и свайпом, а не разворотом на две страницы.
+        if (window.innerWidth <= 768) {
+          window.location.replace('./book_mob.html' + window.location.search);
+        }
+        // При изменении размера окна — переключаем версию если пересекли порог 768px
+        window.addEventListener('resize', (function() {
+          let wasMobile = window.innerWidth <= 768;
+          return function() {
+            const isMobile = window.innerWidth <= 768;
+            if (isMobile && !wasMobile) {
+              // Окно сузили — уходим на мобильную версию
+              window.location.replace('./book_mob.html' + window.location.search);
+            }
+            wasMobile = isMobile;
+          };
+        })());
+      </script>
+      <link href='https://fonts.googleapis.com/css?family=Gabriela' rel='stylesheet' type='text/css'>
+      <link rel="stylesheet" href="./css/fish_no_sound_style.css">
+      <link rel="stylesheet" href="./css/fish_no_sound.css">
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/prefixfree/1.0.7/prefixfree.min.js"></script>
+      <style>
+        /* Use -webkit- only if supporting: Chrome < 54, iOS < 9.3, Android < 4.4.4 */
+        .shadow {
+          -webkit-filter: drop-shadow(6px 10px 8px rgba(0, 0, 0, 0.55)) drop-shadow(1px 2px 2px rgba(0, 0, 0, 0.35));
+          filter: drop-shadow(6px 10px 8px rgba(0, 0, 0, 0.55)) drop-shadow(1px 2px 2px rgba(0, 0, 0, 0.35));
+          /* Два слоя тени: дальняя мягкая (эффект "парения" над страницей) + ближняя резкая (контактная тень) */
+        }
+
+        /* Мягкий неблокирующий баннер с предложением зарегистрироваться —
+           появляется только когда читатель долистал до конца главы и не залогинен.
+           Не перекрывает текст, легко закрывается, не мешает чтению. */
+        #registerPrompt {
+          position: fixed;
+          left: 50%;
+          bottom: 18px;
+          transform: translate(-50%, 120%);
+          z-index: 998;
+          display: flex;
+          align-items: center;
+          gap: 14px;
+          max-width: 92vw;
+          padding: 12px 16px;
+          background: rgba(20, 14, 8, 0.92);
+          border: 1px solid rgba(201, 162, 39, 0.4);
+          border-radius: 10px;
+          box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+          font-family: 'Gabriela', Georgia, serif;
+          font-size: 14px;
+          color: #e8cfa0;
+          transition: transform 0.35s ease;
+          pointer-events: none;
+        }
+        #registerPrompt.show {
+          transform: translate(-50%, 0);
+          pointer-events: auto;
+        }
+        #registerPrompt span.msg {
+          white-space: normal;
+        }
+        #registerPrompt a.register-link {
+          flex-shrink: 0;
+          background: rgba(201, 162, 39, 0.18);
+          color: #f0dca0;
+          border: 1px solid #c9a227;
+          padding: 7px 14px;
+          border-radius: 6px;
+          text-decoration: none;
+          font-size: 13px;
+          white-space: nowrap;
+        }
+        #registerPrompt a.register-link:hover {
+          background: rgba(201, 162, 39, 0.32);
+        }
+        #registerPrompt button.dismiss-btn {
+          flex-shrink: 0;
+          background: none;
+          border: none;
+          color: #a3937a;
+          font-size: 18px;
+          line-height: 1;
+          cursor: pointer;
+          padding: 0 2px;
+        }
+        #registerPrompt button.dismiss-btn:hover {
+          color: #e8cfa0;
+        }
+        @media (max-width: 600px) {
+          #registerPrompt {
+            flex-wrap: wrap;
+            font-size: 13px;
+          }
+        }
+
+        /* Жёсткая стена регистрации — показывается ВМЕСТО текста главы,
+           если глава за пределами бесплатного лимита и читатель не залогинен.
+           В отличие от #registerPrompt (мягкий баннер), эта — единственный
+           способ продолжить чтение дальше. */
+        #chapterRegisterWall {
+          display: none;
+          position: fixed;
+          inset: 0;
+          z-index: 997;
+          align-items: center;
+          justify-content: center;
+          padding: 24px;
+          background: rgba(14, 10, 6, 0.94);
+          font-family: 'Gabriela', Georgia, serif;
+          text-align: center;
+        }
+        #chapterRegisterWall.show {
+          display: flex;
+        }
+        #chapterRegisterWall .wall-inner {
+          max-width: 420px;
+        }
+        #chapterRegisterWall .wall-icon {
+          font-size: 32px;
+          margin-bottom: 14px;
+        }
+        #chapterRegisterWall h3 {
+          color: #e8cfa0;
+          font-size: 20px;
+          margin: 0 0 10px;
+          font-weight: normal;
+        }
+        #chapterRegisterWall p {
+          color: #cfc7d6;
+          font-size: 14px;
+          line-height: 1.5;
+          margin: 0 0 22px;
+        }
+        #chapterRegisterWall a.register-link-main {
+          display: inline-block;
+          background: rgba(201, 162, 39, 0.22);
+          color: #f0dca0;
+          border: 1px solid #c9a227;
+          padding: 11px 26px;
+          border-radius: 8px;
+          text-decoration: none;
+          font-size: 15px;
+        }
+        #chapterRegisterWall a.register-link-main:hover {
+          background: rgba(201, 162, 39, 0.36);
+        }
+        #chapterRegisterWall .wall-back {
+          display: block;
+          margin-top: 16px;
+          color: #8a8094;
+          font-size: 13px;
+          text-decoration: none;
+        }
+        #chapterRegisterWall .wall-back:hover {
+          color: #cfc7d6;
+        }
+      </style>
+    </head>
+    <body>
+    <!-- partial:index.partial.html -->
+    <div style="position:fixed;top:14px;left:16px;z-index:1000;display:flex;gap:8px;">
+      <a id="homeLink" href="./index.html" style="background:rgba(20,14,8,0.55);color:#d1b394;padding:8px 14px;border-radius:6px;text-decoration:none;font-family:'Gabriela', Georgia, serif;font-size:13px;">На главную</a>
+      <a id="contentsLink" href="#" style="background:rgba(20,14,8,0.55);color:#d1b394;padding:8px 14px;border-radius:6px;text-decoration:none;font-family:'Gabriela', Georgia, serif;font-size:13px;">← Содержание</a>
+    </div>
+
+    <div id="authBar" style="position:fixed;top:14px;right:16px;z-index:1000;display:flex;align-items:center;gap:10px;font-family:'Gabriela', Georgia, serif;font-size:13px;">
+      <span id="bookmarkStatus" style="color:#d1b394;"></span>
+      <button id="bookmarkBtn" style="display:none;background:rgba(20,14,8,0.55);color:#e8cfa0;border:1px solid #c9a227;padding:8px 14px;border-radius:6px;cursor:pointer;font-family:inherit;font-size:13px;">🔖 Сохранить закладку</button>
+      <a id="loginLink" href="#" style="display:none;background:rgba(20,14,8,0.55);color:#d1b394;padding:8px 14px;border-radius:6px;text-decoration:none;">Войти</a>
+    </div>
+
+    <div id="chapterHeader" style="position:fixed;top:0;left:0;right:0;z-index:999;display:flex;align-items:center;justify-content:center;gap:28px;padding:16px 20px 14px;font-family:'Gabriela', Georgia, serif;pointer-events:none;">
+      <a id="prevChapterLink" href="#" style="display:none;pointer-events:auto;color:#d1b394;text-decoration:none;font-size:15px;white-space:nowrap;text-shadow:0 1px 3px rgba(0,0,0,0.6);">← предыдущая</a>
+      <span id="chapterTitleHeader" style="color:#e8cfa0;font-size:19px;letter-spacing:0.4px;text-shadow:0 1px 4px rgba(0,0,0,0.65);white-space:nowrap;"></span>
+      <a id="nextChapterLink" href="#" style="display:none;pointer-events:auto;color:#d1b394;text-decoration:none;font-size:15px;white-space:nowrap;text-shadow:0 1px 3px rgba(0,0,0,0.6);">следующая →</a>
+    </div>
+
+    <!-- Мягкий промпт регистрации — появляется только в конце главы, не блокирует чтение -->
+    <div id="registerPrompt">
+      <span class="msg">Дальше — по регистрации. Зарегистрируйтесь — 10 секунд</span>
+      <a id="registerPromptLink" class="register-link" href="#">Зарегистрироваться</a>
+      <button id="registerPromptDismiss" class="dismiss-btn" aria-label="Закрыть">✕</button>
+    </div>
+
+    <!-- Жёсткая стена регистрации — для глав за пределами бесплатного лимита -->
+    <div id="chapterRegisterWall">
+      <div class="wall-inner">
+        <div class="wall-icon">🔒</div>
+        <h3>Дальше — по регистрации</h3>
+        <p id="chapterRegisterWallText">Первая глава бесплатна для всех. Чтобы читать дальше, зарегистрируйтесь — это займёт 10 секунд.</p>
+        <a id="chapterRegisterWallLink" class="register-link-main" href="#">Зарегистрироваться</a>
+        <a id="chapterRegisterWallBack" class="wall-back" href="#">← Вернуться к содержанию</a>
+      </div>
+    </div>
+
+
+      <script>
+        // Палитра из 9 оттенков, подобранных под фон книги (старая бумага, тёмное дерево,
+        // разноцветный градиент вокруг). Для каждого элемента — случайный цвет из палитры.
+        const TEXT_COLOR_PALETTE = [
+          // Тёплые золотисто-бежевые
+          '#d1b394', // тёплый тан
+          '#c9a227', // античное золото
+          '#e8cfa0', // светлое шампань-золото
+          '#b8860b', // тёмный золотарник
+          '#d9a566', // янтарно-медный
+          '#cdb699', // мягкий бежевый шампань
+          // Красные
+          '#d97a6c', // тёплая терракота
+          '#c0556b', // приглушённый винно-розовый
+          '#e8a39a', // мягкий лососёво-розовый
+        ];
+
+        function pickRandomColor() {
+          return TEXT_COLOR_PALETTE[Math.floor(Math.random() * TEXT_COLOR_PALETTE.length)];
+        }
+      </script>
+    <script>
+      // Заголовок главы + ссылка на содержание + навигация "предыдущая/следующая" между главами.
+      // Переход по стрелкам делается БЕЗ полной перезагрузки страницы (через history.pushState
+      // и повторный вызов loadAndRenderChapter из fish_no_sound.js) — заметно быстрее,
+      // так как не нужно заново скачивать и парсить HTML/CSS/шрифты.
+      (async function () {
+        const slug = new URLSearchParams(window.location.search).get('book');
+
+        const contentsLink = document.getElementById('contentsLink');
+        contentsLink.href = slug ? `./contents.html?book=${slug}` : './index.html';
+
+        if (!slug) return; // старый режим через localStorage — без заголовка и навигации
+
+        let chapters = [];
+        let bookCoverImage = null;
+        let freeChaptersLimit = null; // null = вся книга бесплатна, число = сколько глав бесплатно
+
+        try {
+          const res = await fetch(`/api/books/${slug}`);
+          if (!res.ok) return;
+          const book = await res.json();
+
+          // Название книги и автор на титульной странице слева — каждому свой случайный цвет
+          const bookTitleEl = document.getElementById('bookTitle');
+          const bookAuthorEl = document.getElementById('bookAuthor');
+          bookTitleEl.textContent = book.title;
+          bookTitleEl.style.color = pickRandomColor();
+          bookAuthorEl.textContent = book.author;
+          bookAuthorEl.style.color = pickRandomColor();
+          if (book.cover_image) {
+            bookCoverImage = book.cover_image;
+            document.getElementById('bookCoverImg').src = book.cover_image;
+          }
+
+          freeChaptersLimit = (book.free_chapters_limit === null || book.free_chapters_limit === undefined)
+            ? null
+            : parseInt(book.free_chapters_limit, 10);
+
+          chapters = (book.chapters || []).slice().sort((a, b) => a.chapter_number - b.chapter_number);
+        } catch (err) {
+          console.error('Не удалось загрузить данные книги:', err);
+          return;
+        }
+
+        // ---- Вход / закладка ----
+        const bookmarkBtn = document.getElementById('bookmarkBtn');
+        const loginLink = document.getElementById('loginLink');
+        const bookmarkStatus = document.getElementById('bookmarkStatus');
+
+        let isLoggedIn = false;
+        try {
+          const meRes = await fetch('/api/me');
+          const me = await meRes.json();
+          isLoggedIn = me.loggedIn;
+        } catch (err) {
+          console.error('Не удалось проверить вход:', err);
+        }
+
+        if (isLoggedIn) {
+          bookmarkBtn.style.display = 'inline-block';
+        } else {
+          loginLink.style.display = 'inline-block';
+          loginLink.href = `./registration.html?next=${encodeURIComponent(window.location.pathname + window.location.search)}`;
+        }
+
+        bookmarkBtn.addEventListener('click', async () => {
+          const currentNum = parseInt(currentChapterNum, 10);
+          const spreadInfo = (typeof window.getCurrentSpreadInfo === 'function')
+            ? window.getCurrentSpreadInfo()
+            : { startWord: 0 };
+
+          bookmarkStatus.textContent = 'Сохраняю…';
+          try {
+            const res = await fetch('/api/bookmark', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                bookSlug: slug,
+                chapterNumber: currentNum,
+                wordOffset: spreadInfo.startWord,
+              }),
+            });
+            const data = await res.json();
+            if (res.ok) {
+              bookmarkStatus.textContent = '✓ Закладка сохранена';
+              setTimeout(() => { bookmarkStatus.textContent = ''; }, 2500);
+            } else {
+              bookmarkStatus.textContent = data.message || 'Ошибка';
+            }
+          } catch (err) {
+            bookmarkStatus.textContent = 'Ошибка сети';
+          }
+        });
+
+        // Склонение слова "глава" под число (1 глава, 2 главы, 5 глав...)
+        function ruChapterWord(n) {
+          const abs = Math.abs(n) % 100;
+          const last = abs % 10;
+          if (abs > 10 && abs < 20) return 'глав';
+          if (last > 1 && last < 5) return 'главы';
+          if (last === 1) return 'глава';
+          return 'глав';
+        }
+
+        // ---- Мягкий промпт регистрации в конце последней бесплатной главы ----
+        // Не блокирует чтение, появляется один раз на главу (если ещё не закрывали
+        // насовсем), исчезает при переходе на другую главу. Показывается ТОЛЬКО
+        // если у книги вообще есть лимит и читатель сейчас именно на последней
+        // бесплатной главе (для книг без лимита баннер не нужен вообще).
+        const registerPrompt = document.getElementById('registerPrompt');
+        const registerPromptMsg = registerPrompt.querySelector('.msg');
+        const registerPromptLink = document.getElementById('registerPromptLink');
+        const registerPromptDismiss = document.getElementById('registerPromptDismiss');
+        const DISMISS_KEY = 'registerPromptDismissed';
+        let softPromptShownForChapter = false;
+
+        function hideRegisterPrompt() {
+          registerPrompt.classList.remove('show');
+        }
+
+        if (!isLoggedIn && freeChaptersLimit !== null) {
+          registerPromptLink.href =
+            `./registration.html?next=${encodeURIComponent(window.location.pathname + window.location.search)}`;
+
+          registerPromptDismiss.addEventListener('click', () => {
+            hideRegisterPrompt();
+            try { localStorage.setItem(DISMISS_KEY, '1'); } catch (err) { /* приватный режим — не страшно */ }
+          });
+
+          document.addEventListener('currentSpreadChanged', (e) => {
+            if (isLoggedIn) return;
+            if (softPromptShownForChapter) return;
+            // Баннер имеет смысл только на самой последней бесплатной главе —
+            // на остальных бесплатных главах рано, а дальше уже сработает стена.
+            if (parseInt(currentChapterNum, 10) !== freeChaptersLimit) return;
+            try {
+              if (localStorage.getItem(DISMISS_KEY) === '1') return;
+            } catch (err) { /* приватный режим — просто показываем как обычно */ }
+
+            const totalPages = document.querySelectorAll('#outputContainer .page').length;
+            const pageIndex = e.detail ? e.detail.pageIndex : 0;
+            if (totalPages > 0 && pageIndex >= totalPages) {
+              softPromptShownForChapter = true;
+              const nextNum = freeChaptersLimit + 1;
+              registerPromptMsg.textContent =
+                `Дальше — глава ${nextNum} и следующие только по регистрации. Зарегистрируйтесь — 10 секунд`;
+              registerPrompt.classList.add('show');
+            }
+          });
+        }
+
+        // ---- Жёсткая стена регистрации — для глав за бесплатным лимитом ----
+        // Вызывается из fish_no_sound.js (window.showChapterRegisterWall), когда
+        // сервер вернул 403 на запрос текста главы. Лимит передаётся из самого
+        // ответа сервера (freeLimit), а freeChaptersLimit (из /api/books/:slug)
+        // используется как запасной вариант, если по какой-то причине он не пришёл.
+        const chapterRegisterWall = document.getElementById('chapterRegisterWall');
+        const chapterRegisterWallText = document.getElementById('chapterRegisterWallText');
+        const chapterRegisterWallLink = document.getElementById('chapterRegisterWallLink');
+        const chapterRegisterWallBack = document.getElementById('chapterRegisterWallBack');
+
+        chapterRegisterWallBack.href = `./contents.html?book=${slug}`;
+
+        window.showChapterRegisterWall = function (chapterNum, freeLimitFromServer) {
+          hideRegisterPrompt(); // мягкий баннер больше не нужен, если уже стена
+
+          const limit = (typeof freeLimitFromServer === 'number') ? freeLimitFromServer : freeChaptersLimit;
+
+          let limitText;
+          if (limit === 0) {
+            limitText = 'Эта книга целиком доступна только зарегистрированным читателям';
+          } else if (typeof limit === 'number') {
+            limitText = `Перв${limit === 1 ? 'ая' : 'ые'} ${limit} ${ruChapterWord(limit)} был${limit === 1 ? 'а' : 'и'} бесплатн${limit === 1 ? 'ой' : 'ыми'}`;
+          } else {
+            limitText = 'Часть книги была бесплатной';
+          }
+
+          chapterRegisterWallText.textContent =
+            `Глава ${chapterNum} доступна только зарегистрированным читателям. ${limitText} — чтобы читать дальше, зарегистрируйтесь (10 секунд).`;
+          chapterRegisterWallLink.href =
+            `./registration.html?next=${encodeURIComponent(`./book.html?book=${slug}&chapter=${chapterNum}`)}`;
+          chapterRegisterWall.classList.add('show');
+        };
+
+        function hideChapterRegisterWall() {
+          chapterRegisterWall.classList.remove('show');
+        }
+
+        function renderHeaderForChapter(chapterNum) {
+          const idx = chapters.findIndex(c => c.chapter_number === chapterNum);
+          if (idx === -1) return;
+
+          const current = chapters[idx];
+          const chapterTitleEl = document.getElementById('chapterTitleHeader');
+          chapterTitleEl.textContent =
+            `Глава ${current.chapter_number}${current.title ? '. ' + current.title : ''}`;
+          chapterTitleEl.style.color = pickRandomColor();
+
+          // Эпиграф главы — показываем только если он задан в admin.html для этой главы
+          const epigraphContainer = document.getElementById('epigraphContainer');
+          const epigraphText = document.getElementById('chapterEpigraph');
+          if (current.epigraph && current.epigraph.trim()) {
+            epigraphText.innerHTML = current.epigraph.trim().replace(/\n/g, '<br>');
+            epigraphText.style.color = pickRandomColor();
+            epigraphContainer.style.display = '';
+          } else {
+            epigraphContainer.style.display = 'none';
+          }
+
+          // Рисунок главы — если задан в admin.html, заменяет обложку книги/рыбку по умолчанию
+          const coverImg = document.getElementById('bookCoverImg');
+          if (current.illustration && current.illustration.trim()) {
+            coverImg.src = current.illustration.trim();
+          } else if (bookCoverImage) {
+            coverImg.src = bookCoverImage;
+          } else {
+            coverImg.src = './img/fugu1.svg';
+          }
+
+          // Размер картинки — для главы 12 уменьшаем до 15vh, для остальных возвращаем стандартные 30vh
+          const svgContainer = document.querySelector('.svg-container');
+          if (svgContainer) {
+            svgContainer.style.height = (current.chapter_number === 12 || current.chapter_number === 13) ? '25vh' : '';
+          }
+
+          const prevLink = document.getElementById('prevChapterLink');
+          const nextLink = document.getElementById('nextChapterLink');
+
+          if (idx > 0) {
+            prevLink.dataset.chapter = chapters[idx - 1].chapter_number;
+            prevLink.style.display = 'inline';
+          } else {
+            prevLink.style.display = 'none';
+          }
+
+          if (idx < chapters.length - 1) {
+            nextLink.dataset.chapter = chapters[idx + 1].chapter_number;
+            nextLink.style.display = 'inline';
+          } else {
+            nextLink.style.display = 'none';
+          }
+
+          // Предзагрузка соседних глав в фоне — пока человек читает текущую,
+          // текст и картинка следующей/предыдущей главы уже тихо загружаются и
+          // кэшируются в браузере. К моменту клика всё уже готово — переход
+          // ощущается мгновенным.
+          [chapters[idx - 1], chapters[idx + 1]].forEach(neighbor => {
+            if (!neighbor) return;
+
+            // Текст главы — через тот же кэш, что использует fish_no_sound.js
+            if (typeof fetchChapterContent === 'function') {
+              fetchChapterContent(slug, neighbor.chapter_number).catch(() => {});
+            }
+
+            // Картинка главы (или общая обложка книги, или рыбка по умолчанию)
+            const imgPath = (neighbor.illustration && neighbor.illustration.trim())
+              ? neighbor.illustration.trim()
+              : (bookCoverImage || './img/fugu1.svg');
+            new Image().src = imgPath;
+          });
+        }
+
+        // Переход на другую главу без перезагрузки страницы
+        function goToChapter(chapterNum) {
+          currentChapterNum = String(chapterNum); // переменная объявлена в fish_no_sound.js
+          softPromptShownForChapter = false;
+          hideRegisterPrompt();
+          hideChapterRegisterWall();
+          history.pushState({}, '', `./book.html?book=${slug}&chapter=${chapterNum}`);
+          loadAndRenderChapter().then(() => renderHeaderForChapter(chapterNum)); // функция из fish_no_sound.js
+        }
+
+        // Делегирование кликов по стрелкам "предыдущая"/"следующая"
+        document.getElementById('chapterHeader').addEventListener('click', (e) => {
+          const link = e.target.closest('a[data-chapter]');
+          if (!link) return;
+          e.preventDefault();
+          goToChapter(parseInt(link.dataset.chapter, 10));
+        });
+
+        // Поддержка кнопки "Назад" в браузере (раз мы используем pushState)
+        window.addEventListener('popstate', () => {
+          const num = parseInt(new URLSearchParams(window.location.search).get('chapter'), 10);
+          if (!num) return;
+          currentChapterNum = String(num);
+          softPromptShownForChapter = false;
+          hideRegisterPrompt();
+          hideChapterRegisterWall();
+          loadAndRenderChapter().then(() => renderHeaderForChapter(num));
+        });
+
+        const initialChapterNum = parseInt(new URLSearchParams(window.location.search).get('chapter'), 10);
+        if (initialChapterNum) {
+          renderHeaderForChapter(initialChapterNum);
+        }
+      })();
+    </script>
+      <div class='book' id="outputContainer">
+        <div class="left-container">
+            <div class="text-container base" id="epigraphContainer" style="display:none">
+                <p class="title" id="chapterEpigraph"></p>
+            </div>
+            <div class="text-container">
+                <p class="title" id="bookTitle">Загрузка...</p>
+                <p class="author" id="bookAuthor"></p>
+            </div>
+            <div class="svg-container">
+                <img src="./img/fugu1.svg" class="shadow" alt="Обложка книги" id="bookCoverImg">
+            </div>
+        </div>
+      </div><!--end book-->
+      <script src="./js/fish_no_sound.js"></script>
+      <script src='./js/jquery-2.1.3.min.js'></script>
+      <script src="./js/fish_no_sound_script.js"></script>
+    </body>
+  </html>

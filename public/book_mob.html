@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Чтение — мобильная версия</title>
+<link href='https://fonts.googleapis.com/css?family=Gabriela' rel='stylesheet' type='text/css'>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; overflow: hidden; }
+
+  body {
+    background:
+      radial-gradient(hsla(199,40%,90%,.7), hsla(0,0%,100%,0)) no-repeat,
+      linear-gradient(60deg, purple, dodgerblue, violet);
+    font-family: 'Gabriela', Georgia, serif;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ===== Верхняя панель: содержание / глава / вход ===== */
+  #topBar {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 12px 14px;
+    background: rgba(20,14,8,0.55);
+    backdrop-filter: blur(6px);
+    z-index: 10;
+  }
+  #topBar a, #topBar button {
+    font-family: inherit;
+    font-size: 13px;
+    color: #e8cfa0;
+    text-decoration: none;
+    background: rgba(201,162,39,0.18);
+    border: 1px solid #c9a227;
+    border-radius: 6px;
+    padding: 6px 10px;
+    white-space: nowrap;
+  }
+  #chapterNav {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+    flex: 1;
+    justify-content: center;
+  }
+  #chapterNav .arrow {
+    flex: 0 0 auto;
+    padding: 6px 9px;
+  }
+  #chapterNav .arrow[disabled] {
+    opacity: 0.3;
+    pointer-events: none;
+  }
+  #chapterTitleHeader {
+    color: #f0dca0;
+    font-size: 14px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    text-align: center;
+  }
+  #authArea {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 0 0 auto;
+  }
+  #authStatus {
+    font-size: 11px;
+    color: #cfc7d6;
+    display: none;
+    white-space: nowrap;
+  }
+
+  /* ===== Сама страница ===== */
+  #pageWrap {
+    flex: 1 1 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    padding: 10px 14px 0;
+    min-height: 0;
+  }
+  #pageBox {
+    width: 100%;
+    height: 100%;
+    max-width: 560px;
+    background: hsl(30,40%,70%);
+    border-radius: 8px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+    padding: 6% 7%;
+    overflow: hidden;
+    display: flex;
+    align-items: flex-start;
+  }
+  #pageContent {
+    width: 100%;
+  }
+  #pageContent p {
+    margin: 0 0 0.7em 0;
+    text-indent: 1.4em;
+    font-size: 16px;
+    line-height: 1.55;
+    text-align: justify;
+    color: #2b1d0f;
+  }
+  #pageContent p:last-child {
+    margin-bottom: 0;
+  }
+  #pageContent .epigraph {
+    font-style: italic;
+    font-size: 14px;
+    color: #5a4632;
+    margin-bottom: 14px;
+    text-indent: 0;
+  }
+  /* Иллюстрация внутри текста главы — "оптимальный размер" означает:
+     не на весь экран (текст вокруг неё всё равно должен читаться удобно),
+     но и не миниатюра — 38% ширины страницы с потолком в 200px netto смотрится
+     сомасштабно тексту на любом размере телефона. Текст обтекает её сбоку
+     (float), как иллюстрация в книге, а не разрывает страницу пополам. */
+  #pageContent img.chapter-illustration {
+    float: right;
+    width: 38%;
+    max-width: 190px;
+    height: auto;
+    margin: 2px 0 10px 14px;
+    border-radius: 6px;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.35);
+  }
+  /* Если иллюстрация — последнее, что есть на странице (после неё больше
+     нет текста для обтекания), контейнер обязан "видеть" её высоту целиком —
+     иначе scrollHeight в измерении подгонки может не учесть float. */
+  #pageContent::after {
+    content: "";
+    display: table;
+    clear: both;
+  }
+  #swipeHint {
+    position: absolute;
+    bottom: 8px;
+    left: 0;
+    right: 0;
+    text-align: center;
+    font-size: 11px;
+    color: rgba(43,29,15,0.4);
+    pointer-events: none;
+  }
+
+  /* ===== Нижняя панель: номер страницы + закладка ===== */
+  #bottomBar {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    padding: 10px 14px 16px;
+    z-index: 10;
+  }
+  #pageIndicator {
+    color: #f0e6d2;
+    font-size: 13px;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.6);
+    min-width: 70px;
+    text-align: center;
+  }
+  #bookmarkBtn {
+    font-family: inherit;
+    font-size: 13px;
+    color: #e8cfa0;
+    background: rgba(201,162,39,0.18);
+    border: 1px solid #c9a227;
+    border-radius: 20px;
+    padding: 8px 16px;
+    cursor: pointer;
+  }
+  #bookmarkBtn:active {
+    background: rgba(201,162,39,0.35);
+  }
+  #bookmarkToast {
+    position: fixed;
+    bottom: 70px;
+    left: 50%;
+    transform: translateX(-50%) translateY(10px);
+    background: rgba(20,14,8,0.92);
+    color: #f0dca0;
+    font-size: 13px;
+    padding: 9px 16px;
+    border-radius: 8px;
+    opacity: 0;
+    transition: opacity 0.25s, transform 0.25s;
+    pointer-events: none;
+    white-space: nowrap;
+    z-index: 50;
+  }
+  #bookmarkToast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  /* ===== Мягкий промпт регистрации (конец последней бесплатной главы) ===== */
+  #registerPrompt {
+    position: fixed;
+    left: 14px;
+    right: 14px;
+    bottom: -200px; /* надёжно за нижним краем экрана, независимо от своей высоты */
+    z-index: 60;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 14px;
+    background: rgba(20,14,8,0.94);
+    border: 1px solid rgba(201,162,39,0.4);
+    border-radius: 10px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+    font-size: 13px;
+    color: #e8cfa0;
+    transition: bottom 0.3s ease;
+  }
+  #registerPrompt.show { bottom: 70px; }
+  #registerPrompt a.register-link {
+    background: rgba(201,162,39,0.22);
+    color: #f0dca0;
+    border: 1px solid #c9a227;
+    padding: 7px 12px;
+    border-radius: 6px;
+    text-decoration: none;
+    font-size: 12px;
+    white-space: nowrap;
+  }
+  #registerPrompt button.dismiss-btn {
+    background: none;
+    border: none;
+    color: #a3937a;
+    font-size: 17px;
+    cursor: pointer;
+    margin-left: auto;
+  }
+
+  /* ===== Жёсткая стена регистрации ===== */
+  #chapterRegisterWall {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    background: rgba(14,10,6,0.94);
+    text-align: center;
+  }
+  #chapterRegisterWall.show { display: flex; }
+  #chapterRegisterWall .wall-inner { max-width: 360px; }
+  #chapterRegisterWall .wall-icon { font-size: 30px; margin-bottom: 12px; }
+  #chapterRegisterWall h3 { color: #e8cfa0; font-size: 19px; margin: 0 0 10px; font-weight: normal; }
+  #chapterRegisterWall p { color: #cfc7d6; font-size: 13px; line-height: 1.5; margin: 0 0 20px; }
+  #chapterRegisterWall a.register-link-main {
+    display: inline-block;
+    background: rgba(201,162,39,0.22);
+    color: #f0dca0;
+    border: 1px solid #c9a227;
+    padding: 10px 22px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-size: 14px;
+  }
+  #chapterRegisterWall .wall-back {
+    display: block;
+    margin-top: 14px;
+    color: #8a8094;
+    font-size: 12px;
+    text-decoration: none;
+  }
+
+  #loadingMsg {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #f0e6d2;
+    font-size: 14px;
+    z-index: 5;
+  }
+</style>
+</head>
+<body>
+
+  <div id="topBar">
+    <a id="homeLink" href="./index.html" aria-label="На главную" title="На главную">🏠</a>
+    <a id="contentsLink" href="#">← Содержание</a>
+    <div id="chapterNav">
+      <button class="arrow" id="prevChapterBtn" aria-label="Предыдущая глава">‹</button>
+      <span id="chapterTitleHeader">Загрузка…</span>
+      <button class="arrow" id="nextChapterBtn" aria-label="Следующая глава">›</button>
+    </div>
+    <div id="authArea">
+      <span id="authStatus"></span>
+      <button id="logoutBtn" style="display:none">Выйти</button>
+      <a id="loginLink" href="#" style="display:none">Войти</a>
+    </div>
+  </div>
+
+  <div id="pageWrap">
+    <div id="pageBox">
+      <div id="pageContent"></div>
+    </div>
+    <p id="loadingMsg">Загрузка…</p>
+  </div>
+
+  <div id="bottomBar">
+    <button id="bookmarkBtn">🔖 Закладка</button>
+    <span id="pageIndicator"></span>
+  </div>
+
+  <div id="bookmarkToast">Закладка сохранена</div>
+
+  <div id="registerPrompt">
+    <span class="msg">Дальше — по регистрации. Зарегистрируйтесь — 10 секунд</span>
+    <a id="registerPromptLink" class="register-link" href="#">Зарегистрироваться</a>
+    <button id="registerPromptDismiss" class="dismiss-btn" aria-label="Закрыть">✕</button>
+  </div>
+
+  <div id="chapterRegisterWall">
+    <div class="wall-inner">
+      <div class="wall-icon">🔒</div>
+      <h3>Дальше — по регистрации</h3>
+      <p id="chapterRegisterWallText"></p>
+      <a id="chapterRegisterWallLink" class="register-link-main" href="#">Зарегистрироваться</a>
+      <a id="chapterRegisterWallBack" class="wall-back" href="#">← Вернуться к содержанию</a>
+    </div>
+  </div>
+
+<script>
+(async function () {
+  // При расширении окна выше 768px — переходим на десктопную читалку,
+  // сохраняя те же параметры книги/главы/слова в URL.
+  window.addEventListener('resize', (function() {
+    let wasDesktop = window.innerWidth > 768;
+    return function() {
+      const isDesktop = window.innerWidth > 768;
+      if (isDesktop && !wasDesktop) {
+        window.location.replace('./book.html' + window.location.search);
+      }
+      wasDesktop = isDesktop;
+    };
+  })());
+
+  const params = new URLSearchParams(window.location.search);
+  const slug = params.get('book');
+  const initialChapterParam = params.get('chapter');
+  const initialWordParam = params.get('word');
+
+  if (!slug) {
+    document.getElementById('loadingMsg').textContent = 'Не указана книга.';
+    return;
+  }
+
+  // ---- DOM-ссылки ----
+  const contentsLink = document.getElementById('contentsLink');
+  const chapterTitleHeader = document.getElementById('chapterTitleHeader');
+  const prevChapterBtn = document.getElementById('prevChapterBtn');
+  const nextChapterBtn = document.getElementById('nextChapterBtn');
+  const pageBox = document.getElementById('pageBox');
+  const pageContent = document.getElementById('pageContent');
+  const loadingMsg = document.getElementById('loadingMsg');
+  const pageIndicator = document.getElementById('pageIndicator');
+  const bookmarkBtn = document.getElementById('bookmarkBtn');
+  const bookmarkToast = document.getElementById('bookmarkToast');
+  const authStatus = document.getElementById('authStatus');
+  const logoutBtn = document.getElementById('logoutBtn');
+  const loginLink = document.getElementById('loginLink');
+  const registerPrompt = document.getElementById('registerPrompt');
+  const registerPromptMsg = registerPrompt.querySelector('.msg');
+  const registerPromptLink = document.getElementById('registerPromptLink');
+  const registerPromptDismiss = document.getElementById('registerPromptDismiss');
+  const chapterRegisterWall = document.getElementById('chapterRegisterWall');
+  const chapterRegisterWallText = document.getElementById('chapterRegisterWallText');
+  const chapterRegisterWallLink = document.getElementById('chapterRegisterWallLink');
+  const chapterRegisterWallBack = document.getElementById('chapterRegisterWallBack');
+
+  contentsLink.href = `./contents.html?book=${slug}`;
+  chapterRegisterWallBack.href = `./contents.html?book=${slug}`;
+
+  // ---- Состояние ----
+  let chapters = [];          // список глав книги (номер, заголовок)
+  let freeChaptersLimit = null;
+  let isLoggedIn = false;
+  let currentChapterNum = null;
+  let currentChapterTitle = '';
+  let pages = [];              // [{ text, startWord }] для текущей главы
+  let currentPageIndex = 0;
+  let softPromptShownForChapter = false;
+  const DISMISS_KEY = 'registerPromptDismissedMob';
+
+  function ruChapterWord(n) {
+    const abs = Math.abs(n) % 100;
+    const last = abs % 10;
+    if (abs > 10 && abs < 20) return 'глав';
+    if (last > 1 && last < 5) return 'главы';
+    if (last === 1) return 'глава';
+    return 'глав';
+  }
+
+  // ---- Статус входа ----
+  async function loadAuthStatus() {
+    try {
+      const res = await fetch('/api/me');
+      const me = await res.json();
+      isLoggedIn = !!me.loggedIn;
+      if (isLoggedIn) {
+        authStatus.textContent = me.nickname;
+        authStatus.style.display = 'inline';
+        logoutBtn.style.display = 'inline-block';
+      } else {
+        loginLink.style.display = 'inline-block';
+      }
+    } catch (err) {
+      console.error('Не удалось проверить вход:', err);
+    }
+  }
+  logoutBtn.addEventListener('click', async () => {
+    try { await fetch('/api/logout', { method: 'POST' }); } catch (err) {}
+    window.location.reload();
+  });
+
+  // ---- Текст -> страницы (бинарный поиск по реальной высоте, как на десктопе) ----
+  // В отличие от первой версии, здесь текст не сливается в одну строку слов —
+  // абзацы (разделённые \n в исходном тексте главы) сохраняются как отдельные
+  // токены с привязкой "это слово — из какого абзаца", чтобы при сборке HTML
+  // каждый абзац стал настоящим <p> с отступом первой строки, а не одним
+  // сплошным потоком текста.
+  //
+  // Иллюстрации внутри текста главы — через маркер [img:путь_к_картинке],
+  // который автор ставит ОТДЕЛЬНОЙ СТРОКОЙ в нужном месте текста главы
+  // (между абзацами). Маркер становится отдельным токеном-картинкой —
+  // дальше при разбивке на страницы он встаёт в общий поток наравне со
+  // словами, а реальная высота, которую он занимает, измеряется напрямую
+  // через DOM (как и весь остальной текст) — поэтому все страницы ПОСЛЕ
+  // вставки автоматически пересчитываются с учётом места, которое забрала
+  // картинка, без какой-либо отдельной ручной логики сдвига.
+  const IMG_MARKER_RE = /^\[img:(.+?)\]$/;
+
+  function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  // Картинки нужно загрузить ДО начала разбивки на страницы — иначе в момент
+  // измерения высоты (scrollHeight) браузер может ещё не знать реальные
+  // размеры ещё не загруженной картинки, и расчёт страниц съедет, когда
+  // картинка действительно прогрузится чуть позже.
+  function preloadImages(srcList) {
+    return Promise.all(srcList.map(src => new Promise(resolve => {
+      const img = new Image();
+      img.onload = resolve;
+      img.onerror = resolve; // не блокируем разбивку, если картинка не нашлась
+      img.src = src;
+    })));
+  }
+
+  function tokenizeByParagraphs(rawText) {
+    const paragraphs = rawText.split('\n').map(p => p.trim()).filter(p => p.length > 0);
+    const tokens = [];
+    paragraphs.forEach((para, paraIndex) => {
+      const imgMatch = para.match(IMG_MARKER_RE);
+      if (imgMatch) {
+        tokens.push({ type: 'image', src: imgMatch[1].trim(), paraIndex });
+        return;
+      }
+      para.split(/\s+/).filter(w => w.length > 0).forEach(word => {
+        tokens.push({ type: 'word', word, paraIndex });
+      });
+    });
+    return tokens;
+  }
+
+  // Собирает токены (от startIdx до endIdx, не включая) в HTML из настоящих <p>,
+  // правильно начиная новый <p> на каждой границе абзаца. Токен-картинка
+  // вставляется как плывущий (float) элемент — текст после него обтекает
+  // картинку, как в журнальной вёрстке, а не разрывает страницу пополам.
+  function tokensToHtml(tokens, startIdx, endIdx, epigraphHtml) {
+    let html = epigraphHtml || '';
+    let currentPara = -1;
+    let buffer = [];
+
+    function flush() {
+      if (buffer.length) {
+        html += `<p>${buffer.join(' ')}</p>`;
+        buffer = [];
+      }
+    }
+
+    for (let i = startIdx; i < endIdx; i++) {
+      const t = tokens[i];
+      if (t.type === 'image') {
+        flush();
+        html += `<img class="chapter-illustration" src="${escapeHtml(t.src)}" alt="">`;
+        currentPara = -1; // следующий текст всё равно начнёт новый абзац
+        continue;
+      }
+      if (t.paraIndex !== currentPara) {
+        flush();
+        currentPara = t.paraIndex;
+      }
+      buffer.push(escapeHtml(t.word));
+    }
+    flush();
+    return html;
+  }
+
+  function fitsInBox(html) {
+    pageContent.innerHTML = html;
+    return pageContent.scrollHeight <= pageBox.clientHeight;
+  }
+
+  async function buildMobilePages(rawText, epigraph) {
+    const tokens = tokenizeByParagraphs(rawText);
+
+    const imageSrcs = tokens.filter(t => t.type === 'image').map(t => t.src);
+    if (imageSrcs.length) await preloadImages(imageSrcs);
+
+    const epigraphHtml = epigraph ? `<p class="epigraph">${escapeHtml(epigraph)}</p>` : '';
+    const result = [];
+    let startIdx = 0;
+    let firstPage = true;
+
+    if (tokens.length === 0) {
+      result.push({ text: epigraphHtml, startWord: 0 });
+      return result;
+    }
+
+    while (startIdx < tokens.length) {
+      const prefix = firstPage ? epigraphHtml : '';
+      let lo = startIdx + 1, hi = tokens.length, bestFit = startIdx + 1;
+
+      // Если даже одно слово не лезет (крайне маленький экран) — всё равно берём слово,
+      // чтобы не зависнуть в бесконечном цикле.
+      while (lo <= hi) {
+        const mid = Math.floor((lo + hi) / 2);
+        const candidateHtml = tokensToHtml(tokens, startIdx, mid, prefix);
+        if (fitsInBox(candidateHtml)) {
+          bestFit = mid;
+          lo = mid + 1;
+        } else {
+          hi = mid - 1;
+        }
+      }
+
+      result.push({
+        text: tokensToHtml(tokens, startIdx, bestFit, prefix),
+        startWord: startIdx,
+      });
+      startIdx = bestFit;
+      firstPage = false;
+    }
+
+    if (result.length === 0) {
+      result.push({ text: epigraphHtml, startWord: 0 });
+    }
+    return result;
+  }
+
+  function renderCurrentPage() {
+    const page = pages[currentPageIndex];
+    if (!page) return;
+    pageContent.innerHTML = page.text;
+    pageIndicator.textContent = `${currentPageIndex + 1} / ${pages.length}`;
+    history.replaceState({}, '', `./book_mob.html?book=${slug}&chapter=${currentChapterNum}&word=${page.startWord}`);
+    checkSoftPrompt();
+  }
+
+  function updateChapterNavButtons() {
+    const idx = chapters.findIndex(c => c.chapter_number === currentChapterNum);
+    prevChapterBtn.disabled = idx <= 0;
+    nextChapterBtn.disabled = idx === -1 || idx >= chapters.length - 1;
+  }
+
+  // ---- Загрузка главы ----
+  async function loadChapter(num, jumpToWord) {
+    loadingMsg.style.display = 'flex';
+    loadingMsg.textContent = 'Загрузка…';
+    hideChapterRegisterWall();
+    softPromptShownForChapter = false;
+    hideRegisterPrompt();
+
+    try {
+      const res = await fetch(`/api/books/${slug}/chapters/${num}`);
+      const data = await res.json();
+
+      if (res.status === 403) {
+        loadingMsg.style.display = 'none';
+        showChapterRegisterWall(num, data.freeChaptersLimit);
+        return;
+      }
+      if (!res.ok) {
+        loadingMsg.textContent = 'Глава не найдена.';
+        return;
+      }
+
+      currentChapterNum = num;
+      currentChapterTitle = data.title || `Глава ${num}`;
+      chapterTitleHeader.textContent = currentChapterTitle;
+      updateChapterNavButtons();
+
+      pages = await buildMobilePages(data.content || '', data.epigraph);
+
+      if (jumpToWord) {
+        let targetIdx = 0;
+        for (let i = 0; i < pages.length; i++) {
+          if (pages[i].startWord <= jumpToWord) targetIdx = i; else break;
+        }
+        currentPageIndex = targetIdx;
+      } else {
+        currentPageIndex = 0;
+      }
+
+      loadingMsg.style.display = 'none';
+      renderCurrentPage();
+    } catch (err) {
+      console.error(err);
+      loadingMsg.textContent = 'Ошибка загрузки главы.';
+    }
+  }
+
+  // ---- Жёсткая стена регистрации ----
+  window.showChapterRegisterWall = function (chapterNum, freeLimitFromServer) {
+    hideRegisterPrompt();
+    const limit = (typeof freeLimitFromServer === 'number') ? freeLimitFromServer : freeChaptersLimit;
+    let limitText;
+    if (limit === 0) {
+      limitText = 'Эта книга целиком доступна только зарегистрированным читателям';
+    } else if (typeof limit === 'number') {
+      limitText = `Перв${limit === 1 ? 'ая' : 'ые'} ${limit} ${ruChapterWord(limit)} был${limit === 1 ? 'а' : 'и'} бесплатн${limit === 1 ? 'ой' : 'ыми'}`;
+    } else {
+      limitText = 'Часть книги была бесплатной';
+    }
+    chapterRegisterWallText.textContent = `Глава ${chapterNum} доступна только зарегистрированным читателям. ${limitText} — чтобы читать дальше, зарегистрируйтесь (10 секунд).`;
+    chapterRegisterWallLink.href = `./registration.html?next=${encodeURIComponent(`./book_mob.html?book=${slug}&chapter=${chapterNum}`)}`;
+    chapterRegisterWall.classList.add('show');
+  };
+  function hideChapterRegisterWall() {
+    chapterRegisterWall.classList.remove('show');
+  }
+
+  // ---- Мягкий промпт ----
+  function hideRegisterPrompt() {
+    registerPrompt.classList.remove('show');
+  }
+  function checkSoftPrompt() {
+    if (isLoggedIn || freeChaptersLimit === null) return;
+    if (softPromptShownForChapter) return;
+    if (currentChapterNum !== freeChaptersLimit) return;
+    if (currentPageIndex !== pages.length - 1) return;
+    try { if (localStorage.getItem(DISMISS_KEY) === '1') return; } catch (err) {}
+
+    softPromptShownForChapter = true;
+    const nextNum = freeChaptersLimit + 1;
+    registerPromptMsg.textContent = `Дальше — глава ${nextNum} и следующие только по регистрации. Зарегистрируйтесь — 10 секунд`;
+    registerPromptLink.href = `./registration.html?next=${encodeURIComponent(window.location.pathname + window.location.search)}`;
+    registerPrompt.classList.add('show');
+  }
+  registerPromptDismiss.addEventListener('click', () => {
+    hideRegisterPrompt();
+    try { localStorage.setItem(DISMISS_KEY, '1'); } catch (err) {}
+  });
+
+  // ---- Навигация по страницам/главам ----
+  function goNext() {
+    if (currentPageIndex < pages.length - 1) {
+      currentPageIndex++;
+      renderCurrentPage();
+      return;
+    }
+    const idx = chapters.findIndex(c => c.chapter_number === currentChapterNum);
+    if (idx !== -1 && idx < chapters.length - 1) {
+      loadChapter(chapters[idx + 1].chapter_number);
+    }
+  }
+  function goPrev() {
+    if (currentPageIndex > 0) {
+      currentPageIndex--;
+      renderCurrentPage();
+      return;
+    }
+    const idx = chapters.findIndex(c => c.chapter_number === currentChapterNum);
+    if (idx > 0) {
+      loadPreviousChapterAtEnd(chapters[idx - 1].chapter_number);
+    }
+  }
+  async function loadPreviousChapterAtEnd(num) {
+    await loadChapter(num);
+    currentPageIndex = pages.length - 1;
+    renderCurrentPage();
+  }
+
+  prevChapterBtn.addEventListener('click', () => {
+    const idx = chapters.findIndex(c => c.chapter_number === currentChapterNum);
+    if (idx > 0) loadChapter(chapters[idx - 1].chapter_number);
+  });
+  nextChapterBtn.addEventListener('click', () => {
+    const idx = chapters.findIndex(c => c.chapter_number === currentChapterNum);
+    if (idx !== -1 && idx < chapters.length - 1) loadChapter(chapters[idx + 1].chapter_number);
+  });
+
+  // ---- Свайп пальцем: вверх — вперёд, вниз — назад ----
+  let touchStartY = null;
+  const SWIPE_THRESHOLD = 45;
+
+  document.getElementById('pageWrap').addEventListener('touchstart', (e) => {
+    touchStartY = e.touches[0].clientY;
+  }, { passive: true });
+
+  document.getElementById('pageWrap').addEventListener('touchend', (e) => {
+    if (touchStartY === null) return;
+    const deltaY = e.changedTouches[0].clientY - touchStartY;
+    touchStartY = null;
+    if (Math.abs(deltaY) < SWIPE_THRESHOLD) return;
+    if (deltaY < 0) {
+      goNext(); // свайп вверх
+    } else {
+      goPrev(); // свайп вниз
+    }
+  }, { passive: true });
+
+  // ---- Закладка ----
+  bookmarkBtn.addEventListener('click', async () => {
+    if (!isLoggedIn) {
+      window.location.href = `./registration.html?next=${encodeURIComponent(window.location.pathname + window.location.search)}`;
+      return;
+    }
+    const page = pages[currentPageIndex];
+    try {
+      const res = await fetch('/api/bookmark', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          bookSlug: slug,
+          chapterNumber: currentChapterNum,
+          wordOffset: page ? page.startWord : 0,
+        }),
+      });
+      if (res.ok) {
+        showBookmarkToast('Закладка сохранена');
+      } else {
+        showBookmarkToast('Не удалось сохранить');
+      }
+    } catch (err) {
+      showBookmarkToast('Ошибка сети');
+    }
+  });
+  function showBookmarkToast(text) {
+    bookmarkToast.textContent = text;
+    bookmarkToast.classList.add('show');
+    setTimeout(() => bookmarkToast.classList.remove('show'), 1800);
+  }
+
+  // ---- Старт ----
+  await loadAuthStatus();
+
+  try {
+    const res = await fetch(`/api/books/${slug}`);
+    if (!res.ok) {
+      loadingMsg.textContent = 'Книга не найдена.';
+      return;
+    }
+    const book = await res.json();
+    chapters = (book.chapters || []).slice().sort((a, b) => a.chapter_number - b.chapter_number);
+    freeChaptersLimit = (book.free_chapters_limit === null || book.free_chapters_limit === undefined)
+      ? null
+      : parseInt(book.free_chapters_limit, 10);
+
+    if (!chapters.length) {
+      loadingMsg.textContent = 'В этой книге пока нет глав.';
+      return;
+    }
+
+    const startChapter = initialChapterParam ? parseInt(initialChapterParam, 10) : chapters[0].chapter_number;
+    const startWord = initialWordParam ? parseInt(initialWordParam, 10) : null;
+    await loadChapter(startChapter, startWord);
+  } catch (err) {
+    console.error(err);
+    loadingMsg.textContent = 'Ошибка загрузки книги.';
+  }
+})();
+</script>
+
+</body>
+</html>

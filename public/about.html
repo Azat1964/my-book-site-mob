@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+  <meta name="description" content="Азат Туктаров об историях, персонажах и том, почему в хорошей книге нет случайных вещей.">
+  <meta property="og:title" content="Об авторе — Отец Тук">
+  <meta property="og:description" content="Азат Туктаров об историях, персонажах и том, почему в хорошей книге нет случайных вещей.">
+  <meta property="og:image" content="https://my-book-site-mob.onrender.com/img/og-cover.jpg">
+  <meta property="og:url" content="https://my-book-site-mob.onrender.com/about.html">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Отец Тук">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Об авторе — Отец Тук">
+  <meta name="twitter:description" content="Азат Туктаров об историях, персонажах и том, почему в хорошей книге нет случайных вещей.">
+  <meta name="twitter:image" content="https://my-book-site-mob.onrender.com/img/og-cover.jpg">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Об авторе — Отец Тук</title>
+<link href="https://fonts.googleapis.com/css2?family=Gabriela&family=Archivo+Black&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #14111a;
+    --card-bg: #fffdf8;
+    --ink: #1a1a24;
+    --gold: #c9a227;
+    --tan: #d1b394;
+    --amber: #d9763a;
+    --amber-deep: #8a4a1e;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background:
+      radial-gradient(circle at 10% 90%, rgba(217,118,58,0.10), transparent 45%),
+      radial-gradient(circle at 90% 95%, rgba(201,162,39,0.12), transparent 45%),
+      #faf0dc;
+    color: var(--ink);
+    font-family: 'Gabriela', Georgia, serif;
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+  .topnav {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 32px;
+    background: rgba(20, 17, 26, 0.92);
+    backdrop-filter: blur(8px);
+  }
+  .topnav .brand {
+    color: var(--tan);
+    font-size: 18px;
+    letter-spacing: 0.5px;
+    text-decoration: none;
+  }
+  .topnav .brand b { color: var(--gold); }
+  .topnav a.back {
+    color: #cfc7d6;
+    text-decoration: none;
+    font-size: 14px;
+  }
+  .topnav a.back:hover { color: var(--gold); }
+
+  .page-wrap {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 48px 24px 100px;
+  }
+
+  /* ===== Цитата-лид ===== */
+  .lead-quote {
+    font-size: 24px;
+    color: #5c2e1c;
+    font-style: italic;
+    line-height: 1.45;
+    margin-bottom: 8px;
+  }
+  .lead-quote::before { content: "«"; }
+  .lead-quote::after { content: "»"; }
+  .lead-credit {
+    color: #8a7a64;
+    font-size: 14px;
+    margin-bottom: 48px;
+  }
+
+  h1 {
+    color: #5c2e1c;
+    font-size: 28px;
+    margin-bottom: 8px;
+  }
+  h2 {
+    color: var(--amber-deep);
+    font-size: 21px;
+    margin: 48px 0 18px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(74,42,22,0.18);
+  }
+
+  /* ===== FAQ ===== */
+  .faq-item {
+    margin-bottom: 22px;
+  }
+  .faq-q {
+    color: #5c2e1c;
+    font-size: 17px;
+    font-weight: bold;
+    margin-bottom: 6px;
+  }
+  .faq-a {
+    color: #3a2a1a;
+    font-size: 15px;
+  }
+
+  /* ===== 5 фактов ===== */
+  .facts-list {
+    list-style: none;
+    counter-reset: facts;
+  }
+  .facts-list li {
+    counter-increment: facts;
+    position: relative;
+    padding-left: 38px;
+    margin-bottom: 16px;
+    font-size: 15px;
+    color: #3a2a1a;
+  }
+  .facts-list li::before {
+    content: counter(facts);
+    position: absolute;
+    left: 0;
+    top: -2px;
+    width: 26px;
+    height: 26px;
+    background: var(--amber-deep);
+    color: #fff8ec;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-family: Georgia, serif;
+  }
+
+  /* ===== Закулисье / текстовые блоки ===== */
+  .prose p {
+    font-size: 15px;
+    color: #3a2a1a;
+    margin-bottom: 12px;
+  }
+
+  /* ===== Любимые персонажи ===== */
+  .char-card {
+    background: var(--card-bg);
+    border-radius: 10px;
+    padding: 16px 18px;
+    margin-bottom: 14px;
+    box-shadow: 0 4px 14px rgba(74,42,22,0.1);
+  }
+  .char-card h3 {
+    color: var(--amber-deep);
+    font-size: 16px;
+    margin-bottom: 4px;
+  }
+  .char-card p {
+    color: #3a2a1a;
+    font-size: 14px;
+    margin: 0;
+  }
+
+  /* ===== Telegram-мостик ===== */
+  .tg-bridge {
+    margin-top: 56px;
+    padding: 24px;
+    background: var(--card-bg);
+    border-radius: 14px;
+    text-align: center;
+    box-shadow: 0 8px 24px rgba(74,42,22,0.12);
+  }
+  .tg-bridge p {
+    color: #5a4632;
+    font-size: 15px;
+    margin-bottom: 16px;
+  }
+  .tg-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--amber-deep);
+    color: #fff8ec;
+    text-decoration: none;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-size: 15px;
+  }
+  .tg-link svg { width: 18px; height: 18px; }
+
+  .placeholder-note {
+    margin-top: 56px;
+    padding: 14px 16px;
+    background: rgba(138,74,30,0.08);
+    border-left: 3px solid var(--amber-deep);
+    font-size: 13px;
+    color: #7a5a3a;
+  }
+</style>
+</head>
+<body>
+
+  <nav class="topnav">
+    <a href="./index.html" class="brand"><b>Отец Тук</b></a>
+    <a href="./index.html" class="back">← Главная</a>
+  </nav>
+
+  <div class="page-wrap">
+
+    <p class="lead-quote">Если в истории нет хотя бы одного ангела, одного человека и одной слезы — я не уверен, что это вообще история</p>
+    <p class="lead-credit">— примерно так я думаю о том, о чём пишу</p>
+
+    <h1>Об авторе</h1>
+
+    <div class="prose">
+      <p>Родился, рос и вырос при Советах!
+        <svg id="Capa_1" enable-background="new 0 0 511.954 511.954" width="20" height="20" viewBox="0 0 511.954 511.954" xmlns="http://www.w3.org/2000/svg">
+          <g>
+            <path d="m444.669 414.444-42.582 42.582c-.439.438-.905.849-1.386 1.231-46.238 35.985-101.555 53.698-156.681 53.697-65.917 0-131.557-25.293-181.161-74.897-5.862-5.862-5.862-15.351 0-21.213l42.568-42.582c2.814-2.814 6.626-4.391 10.607-4.398 3.981.007 7.806 1.584 10.621 4.398 57.148 57.148 146.152 64.905 212.104 18.625l40.772-40.772c41.443-59.178 34.273-140.113-18.731-211.998-.424-.58-.849-1.159-1.287-1.739-28.857-38.516-67.508-65.188-94.851-80.794-29.486-16.815-52.397-24.636-52.623-24.706-6.562-2.22-10.762-8.641-10.147-15.535.608-6.901 5.855-12.488 12.707-13.513 78.339-11.759 150.98 13.266 210.101 72.387 91.09 91.09 100.204 236.322 21.206 337.834-.389.488-.799.955-1.237 1.393z" fill="#ff6379">
+            </path>
+            <path d="m444.669 414.444-42.582 42.582c-.439.438-.905.849-1.386 1.231-46.238 35.985-101.555 53.698-156.681 53.697-65.917 0-131.557-25.293-181.161-74.897l63.795-63.795c57.148 57.148 146.152 64.905 212.104 18.625l40.772-40.772c41.443-59.178 34.273-140.113-18.731-211.998l63.901-63.9c91.09 91.09 100.204 236.322 21.206 337.834-.389.488-.799.955-1.237 1.393z" fill="#e40058"></path><path d="m213.146 182.925 213.874 239.924c11.752 11.752 35.94 28.953 24.181 40.712s-30.823 11.759-42.575.007l-238.062-238.061z" fill="#a5003c"></path><path d="m213.146 182.925 238.062 238.062c11.752 11.752 11.752 30.816-.007 42.575l-259.346-259.346z" fill="#89002a">
+            </path>
+            <path d="m284.543 118.105c1.909 5.445-74.418 17.523-78.491 21.596l-4.898 73.814-69.19 69.19c-2.927 2.927-6.767 4.391-10.607 4.398-3.84-.007-7.679-1.471-10.606-4.398l-53.224-53.224c-5.855-5.855-5.855-15.358 0-21.213l106.447-106.448c3.224-3.224 7.736-4.808 12.261-4.299l95.806 10.642c5.735.643 10.593 4.497 12.502 9.942z" fill="#ff6379"></path><path d="m284.543 118.105c1.909 5.445.523 11.498-3.55 15.571l-79.839 79.839-74.437-74.437 37.257-37.257c3.224-3.224 7.736-4.808 12.261-4.299l95.806 10.642c5.735.642 10.593 4.496 12.502 9.941z" fill="#e40058"></path><path d="m126.654 394.476-88.685 88.685c-2.928 2.928-6.767 4.391-10.607 4.384-3.839.007-7.679-1.457-10.607-4.384-5.862-5.862-5.855-15.358 0-21.213l88.685-88.685c5.855-5.855 15.351-5.862 21.213 0 5.856 5.854 5.856 15.358.001 21.213z" fill="#e40058"></path><path d="m126.654 394.476-88.685 88.685c-2.928 2.928-6.767 4.391-10.607 4.384-3.839.007-7.679-1.457-10.607-4.384l109.898-109.898c5.856 5.854 5.856 15.358.001 21.213z" fill="#a5003c">
+            </path>
+          </g>
+        </svg>
+      </p>
+      <p>Mужал и вертелся как мог в бурные 90-ые и 2000-ые.
+        <svg version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" width="20" height="20" viewBox="0 0 512 512" style="enable-background:new 0 0 512 512;" xml:space="preserve">
+          <path style="fill:#F5F5F5;" d="M512,162H27V64.6c0-4.7,3.8-8.4,8.4-8.4h468.1c4.7,0,8.4,3.8,8.4,8.4V162H512z">
+          </path>
+          <path style="fill:#FF4B55;" d="M503.6,373.9H35.4c-4.7,0-8.4-3.8-8.4-8.4V268h485v97.5C512,370.1,508.2,373.9,503.6,373.9z">
+          </path>
+          <rect x="27" y="162" style="fill:#41479B;" width="485" height="105.9"></rect>
+          <path style="fill:#2E3033;" d="M19.1,488.1L19.1,488.1C8.6,488.1,0,479.5,0,469V42.9c0-10.5,8.5-19,19-19h0.2 c10.6,0,19.1,8.6,19.1,19.1v426C38.2,479.5,29.7,488.1,19.1,488.1z">
+          </path>
+        </svg>
+      </p>
+      <p>Осознал ранее неосознанное, но всегда влёкшее, в 2009 году, вспомнил своё школьное :</p>
+      <pre style="font-family: sans-serif;font-weight: 500;font-style: italic; text-shadow: 1px 1px 3px rgba(75, 0, 130, 0.3); ">
+        Ваятель, взяв резец суровый,
+        ведёт дрожащею рукой
+        по воле мысли гений свой...
+      </pre>
+      <p> и удивлённое мамино лицо, случайно увидевшую школьную тетрадку в клетку с корявым почерком, решил что дальше жить в банальщине нельзя ...!</p>
+      <p>Свой стиль определяю как литературный импрессионизм! Фраза неожиданно "бумкнет" под внешним воздействием и voilà (вуаля) - прорывается плотина фантазий на бумагу, или на экран! Главное не забыть записать!</p>
+      <p>Очень люблю свой маленький мир и расширяю его как могу!</p>
+    </div>
+
+    <h2>FAQ — вопросы, которые мне правда задают</h2>
+
+    <div class="faq-item">
+      <p class="faq-q">Почему у вас в одной истории сразу ковбои, ангелы, вампиры и коты?</p>
+      <p class="faq-a">Потому что так сложилось! Разные части были написану в разное время и никак не были связаны друг с другом. Но мне захотелось совместить совершенно несовместимые вещи и посмотреть, что будет, если из них связать историю. Получился «Тёмный Восход».</p>
+    </div>
+
+    <div class="faq-item">
+      <p class="faq-q">Кто из персонажей больше всего похож на вас?</p>
+      <p class="faq-a">Думаю господин Треплев из "Будни Мейората", может быть Мелисент Жянович из "Немой рыбки". Но если честно — мне кажется никто. Все лица действуют в рамках книг, а я подглядываю.</p>
+    </div>
+
+    <div class="faq-item">
+      <p class="faq-q">Это читать серьёзно или с улыбкой?</p>
+      <p class="faq-a">Конечно с улыбкой. Местами — с очень широкой улыбкой. Но если вдруг зацепит за живое — можно с грустной улыбкой.</p>
+    </div>
+
+    <div class="faq-item">
+      <p class="faq-q">Любите ли вы писать книги с продолжением?</p>
+      <p class="faq-a">Я себе говорю — да! Но выходит плохо. "Чистория" замышлялась как продолжение "Тёмного Восхода". На деле книга совсем о другом. Хотя часть героев перекочевала в неё из первой книги. За анонсами и моими новостями следите здесь или в Telegram-канале.</p>
+      <p class="faq-a">Всем огромное спасибо и большой привет</p>
+    </div>
+
+    <h2>5 фактов об авторе</h2>
+    <ul class="facts-list">
+      <li>Пишу истории, в которых ковбои и ангелы соседствуют так, будто это совершенно нормально.</li>
+      <li>Любимое время для работы — его нет. Как сложится, так и сложится. Если не хочу, то и не пишу.</li>
+      <li>Названия книг придумываются тяжело, лучше бы совсем без них. Но нельзя(((</li>
+      <li>Иногда персонажи получаются упрямее, чем сам сюжет — приходится с ними договариваться.</li>
+      <li>Главный критерий хорошей сцены — если пишется сама. По каким-то своим законам.</li>
+    </ul>
+
+    <h2>Закулисье «Тёмного Восхода»</h2>
+    <div class="prose">
+      <p>"Тёмный Восход" неожиданный роман. Единственный пока дошедший до какого-то логического литературного финала. Далеко не первое, что мной написано и мне кажется не самое лучшее</p>
+      <p>Идея «Тёмного Восхода» началась с одного вопроса: кто определяет человека как хорошего или плохого. И поэтому Казимир Иванович попадает в место, где он сам себя вынужден судить, без уверенности, что разбирается в жизни.</p>
+      <p>Вампиры замыкают это место, они мостик между явью и неявью. Поэтому они такие по-человечески знакомые персонажи. Путаники, лентяи и бездельники, наделённый магической силой.</p>
+    </div>
+
+    <h2>Любимые персонажи (мои собственные)</h2>
+    <div class="char-card">
+      <h3>Казимир Иванович</h3>
+      <p>Это примерно мой ровесник. С моим мироощущением.</p>
+    </div>
+    <div class="char-card">
+      <h3>Ангел Василий</h3>
+      <p>Это воплощение моих размышлений о правильном пути человека в сложном и противоречивом мире.</p>
+    </div>
+    <div class="char-card">
+      <h3>Толян</h3>
+      <p>Это моя мечта. Я хотел бы таким быть, но уже никогда не стану.</p>
+    </div>
+
+    <h2>Что вдохновляет</h2>
+    <div class="prose">
+      <p>Фильмы и книги, где никто не извиняется за смешение жанров — вестерн посреди фэнтези, готика посреди комедии. Чем неожиданнее сочетание, тем интереснее с ним работать.</p>
+    </div>
+
+    <div class="tg-bridge">
+      <p>Здесь — официально. В Telegram — я больше похож на себя: черновики, мысли вслух и анонсы раньше, чем где-либо ещё.</p>
+      <a class="tg-link" href="https://t.me/otets_tuk" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.562 8.248-1.97 9.281c-.146.658-.537.818-1.084.51l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.022c.242-.213-.054-.333-.373-.12l-6.87 4.326-2.96-.924c-.643-.2-.658-.643.135-.953l11.566-4.458c.534-.196 1.006.13.834.934z"/></svg>
+        Подписаться в Telegram
+      </a>
+    </div>
+
+    <!--div class="placeholder-note">
+      Это черновик-заготовка под формат, который вы выбрали (FAQ + факты + закулисье + любимые персонажи + вдохновение + Telegram). Ответы в FAQ, «5 фактов», закулисье и вдохновение — примеры тона, а не настоящие факты о вас: замените их на свои реальные мысли и истории перед публикацией. Цитату в начале и реплики FAQ можно редактировать прямо в этом файле — они обычный текст, без скриптов.
+    </div-->
+
+  </div>
+
+</body>
+</html>
