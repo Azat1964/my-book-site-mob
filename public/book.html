@@ -250,6 +250,7 @@
           bookTitleEl.textContent = book.title;
           bookTitleEl.style.color = pickRandomColor();
           bookAuthorEl.textContent = book.author;
+          document.title = book.title;
           bookAuthorEl.style.color = pickRandomColor();
           if (book.cover_image) {
             bookCoverImage = book.cover_image;
