@@ -217,6 +217,12 @@
     line-height: 1;
   }
   .ann-close:hover { color: var(--amber-deep); }
+  .ann-body { display: flex; gap: 24px; align-items: flex-start; margin-top: 12px; }
+  .ann-text { flex: 1; min-width: 0; }
+  .ann-video { flex-shrink: 0; width: 200px; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 14px rgba(0,0,0,0.25); display: none; }
+  .ann-video.show { display: block; }
+  .ann-video iframe { width: 200px; height: 355px; border: none; display: block; }
+  @media (max-width: 640px) { .ann-body { flex-direction: column; } .ann-video, .ann-video iframe { width: 100%; } .ann-video iframe { height: 300px; } }
 </style>
 </head>
 <body>
@@ -238,8 +244,15 @@
       <button class="ann-close" id="annClose" aria-label="Закрыть">✕</button>
       <h2 id="annTitle"></h2>
       <p class="ann-meta" id="annMeta"></p>
-      <p class="ann-desc" id="annDesc"></p>
-      <a class="ann-link" id="annLink" href="#">Читать →</a>
+      <div class="ann-body">
+        <div class="ann-text">
+          <p class="ann-desc" id="annDesc"></p>
+          <a class="ann-link" id="annLink" href="#">Читать →</a>
+        </div>
+        <div class="ann-video" id="annVideo">
+          <iframe src="https://www.youtube.com/embed/4RKBYcoJgEU" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -286,6 +299,8 @@
         .filter(Boolean).join(' · ');
       annDesc.textContent = book.description || 'Аннотация пока не добавлена.';
       annLink.href = `./contents.html?book=${book.slug}`;
+      const annVideo = document.getElementById('annVideo');
+      if (book.slug === 'temny-voschod') { annVideo.classList.add('show'); } else { annVideo.classList.remove('show'); }
       annPanel.classList.add('show');
       annPanel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
