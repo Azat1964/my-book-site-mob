@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Агент продвижения — Отец Тук</title>
+<style>
+  :root {
+    --bg: #0f0d14;
+    --surface: #1a1625;
+    --surface2: #221e30;
+    --gold: #c9a227;
+    --gold-dim: rgba(201,162,39,0.15);
+    --amber: #d9763a;
+    --text: #e8e0f0;
+    --text-dim: #9a8fae;
+    --border: rgba(201,162,39,0.2);
+    --green: #2ecc71;
+    --red: #e74c3c;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: Georgia, serif; min-height: 100vh; }
+  .topnav { position: sticky; top: 0; z-index: 100; display: flex; align-items: center; justify-content: space-between; padding: 16px 32px; background: rgba(15,13,20,0.95); border-bottom: 1px solid var(--border); backdrop-filter: blur(8px); }
+  .brand { color: var(--gold); font-size: 18px; text-decoration: none; font-weight: bold; }
+  .back { color: var(--text-dim); font-size: 13px; text-decoration: none; }
+  .back:hover { color: var(--gold); }
+  .login-wrap { display: flex; align-items: center; justify-content: center; min-height: calc(100vh - 57px); }
+  .login-box { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 40px; width: 360px; text-align: center; }
+  .login-box h1 { color: var(--gold); font-size: 22px; margin-bottom: 8px; }
+  .login-box p { color: var(--text-dim); font-size: 13px; margin-bottom: 24px; }
+  input[type=password], input[type=text], textarea, select { width: 100%; padding: 10px 14px; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-size: 14px; font-family: inherit; outline: none; transition: border-color 0.2s; }
+  input:focus, textarea:focus, select:focus { border-color: var(--gold); }
+  textarea { resize: vertical; min-height: 120px; line-height: 1.6; }
+  .btn { display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px; border: none; border-radius: 8px; font-size: 14px; font-family: inherit; cursor: pointer; transition: opacity 0.2s, transform 0.1s; }
+  .btn:hover { opacity: 0.85; }
+  .btn:active { transform: scale(0.97); }
+  .btn-gold { background: var(--gold); color: #0f0d14; font-weight: bold; }
+  .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); }
+  .btn-outline:hover { border-color: var(--gold); color: var(--gold); }
+  .btn-vk { background: #4c75a3; color: #fff; }
+  .btn-tg { background: #229ED9; color: #fff; }
+  .btn-sm { padding: 6px 14px; font-size: 13px; }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .agent-wrap { display: none; max-width: 1100px; margin: 0 auto; padding: 32px 24px 80px; }
+  .page-title { color: var(--gold); font-size: 26px; margin-bottom: 4px; }
+  .page-sub { color: var(--text-dim); font-size: 14px; margin-bottom: 32px; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  @media (max-width: 700px) { .grid-2 { grid-template-columns: 1fr; } }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 24px; }
+  .card-title { font-size: 15px; font-weight: bold; color: var(--gold); margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+  .platform-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+  .platform-btn { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 14px 10px; border-radius: 10px; cursor: pointer; background: var(--surface2); border: 2px solid transparent; transition: all 0.2s; color: var(--text-dim); font-size: 12px; }
+  .platform-btn .picon { font-size: 22px; }
+  .platform-btn:hover { border-color: var(--gold); color: var(--text); }
+  .platform-btn.active { border-color: var(--gold); background: var(--gold-dim); color: var(--gold); }
+  .post-output { background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 16px; margin-top: 16px; font-size: 14px; line-height: 1.7; white-space: pre-wrap; min-height: 100px; color: var(--text); }
+  .post-actions { display: flex; gap: 10px; margin-top: 12px; flex-wrap: wrap; }
+  .site-card { background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; margin-bottom: 10px; }
+  .site-card h4 { font-size: 14px; color: var(--text); margin-bottom: 4px; }
+  .site-card p { font-size: 12px; color: var(--text-dim); margin-bottom: 8px; line-height: 1.5; }
+  .site-actions { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+  .status { font-size: 13px; padding: 8px 14px; border-radius: 8px; margin-top: 12px; }
+  .status.ok { background: rgba(46,204,113,0.15); color: var(--green); border: 1px solid rgba(46,204,113,0.3); }
+  .status.err { background: rgba(231,76,60,0.15); color: var(--red); border: 1px solid rgba(231,76,60,0.3); }
+  .status.loading { background: rgba(201,162,39,0.1); color: var(--gold); border: 1px solid var(--border); }
+  .advice-box { background: linear-gradient(135deg, rgba(201,162,39,0.08), rgba(217,118,58,0.08)); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 20px; line-height: 1.7; font-size: 14px; color: var(--text); }
+  .advice-box strong { color: var(--gold); }
+  .spinner { display: inline-block; animation: spin 1s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .full-card { grid-column: 1 / -1; }
+  label { font-size: 12px; color: var(--text-dim); display: block; margin-bottom: 6px; }
+</style>
+</head>
+<body>
+<nav class="topnav">
+  <a href="./index.html" class="brand">Отец Тук</a>
+  <a href="./admin.html" class="back">← Админка</a>
+</nav>
+
+<div class="login-wrap" id="loginWrap">
+  <div class="login-box">
+    <h1>🤖 Агент продвижения</h1>
+    <p>Введите токен администратора</p>
+    <input type="password" id="tokenInput" placeholder="Токен" style="margin-bottom:12px;">
+    <button class="btn btn-gold" style="width:100%" onclick="doLogin()">Войти</button>
+    <div id="loginErr" class="status err" style="display:none;margin-top:12px;"></div>
+  </div>
+</div>
+
+<div class="agent-wrap" id="agentWrap">
+  <h1 class="page-title">🤖 Агент продвижения</h1>
+  <p class="page-sub">Генерирует посты, ищет площадки и публикует контент автоматически</p>
+
+  <div class="advice-box" id="adviceBox"><span class="spinner">⏳</span> Получаю совет дня...</div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title"><span>✍️</span> Генератор постов</div>
+      <div style="margin-bottom:12px;">
+        <label>Платформа</label>
+        <div class="platform-grid">
+          <div class="platform-btn active" data-platform="vk" onclick="selectPlatform(this)"><span class="picon">🔵</span>ВКонтакте</div>
+          <div class="platform-btn" data-platform="tg" onclick="selectPlatform(this)"><span class="picon">✈️</span>Telegram</div>
+          <div class="platform-btn" data-platform="inst" onclick="selectPlatform(this)"><span class="picon">📸</span>Instagram</div>
+        </div>
+      </div>
+      <div style="margin-bottom:12px;">
+        <label>Тема поста</label>
+        <select id="postTopic">
+          <option value="new_chapter">Новая глава</option>
+          <option value="quote">Цитата из книги</option>
+          <option value="author">Об авторе</option>
+          <option value="teaser">Тизер / интрига</option>
+          <option value="review">Отзыв читателя</option>
+          <option value="behind">Закулисье автора</option>
+        </select>
+      </div>
+      <button class="btn btn-gold" style="width:100%;margin-top:4px;" onclick="generatePost()" id="genBtn">✨ Сгенерировать пост</button>
+      <div class="post-output" id="postOutput" style="display:none;"></div>
+      <div class="post-actions" id="postActions" style="display:none;">
+        <button class="btn btn-outline btn-sm" onclick="copyPost()">📋 Копировать</button>
+        <button class="btn btn-vk btn-sm" onclick="publishVK()" id="pubVkBtn">🔵 В ВКонтакте</button>
+        <button class="btn btn-tg btn-sm" onclick="publishTG()" id="pubTgBtn">✈️ В Telegram</button>
+        <button class="btn btn-outline btn-sm" onclick="generatePost()">🔄 Ещё вариант</button>
+      </div>
+      <div id="pubStatus"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span>🔍</span> Поиск площадок</div>
+      <div style="margin-bottom:12px;">
+        <label>Где искать</label>
+        <select id="searchType">
+          <option value="all">Все площадки</option>
+          <option value="vk">ВКонтакте группы</option>
+          <option value="tg">Telegram-каналы</option>
+          <option value="sites">Литературные сайты</option>
+        </select>
+      </div>
+      <button class="btn btn-gold" style="width:100%;margin-top:4px;" onclick="searchPlatforms()" id="searchBtn">🔍 Найти площадки</button>
+      <div id="searchResults" style="margin-top:16px;"></div>
+    </div>
+
+    <div class="card full-card">
+      <div class="card-title"><span>📋</span> История публикаций</div>
+      <div id="historyList" style="color:var(--text-dim);font-size:13px;">Загрузка...</div>
+    </div>
+  </div>
+</div>
+
+<script>
+let ADMIN_TOKEN = sessionStorage.getItem('adminToken') || '';
+let currentPlatform = 'vk';
+let currentPost = '';
+
+async function doLogin() {
+  const val = document.getElementById('tokenInput').value.trim();
+  if (!val) return;
+  const r = await fetch('/api/admin/analytics/summary', { headers: { 'x-admin-token': val } });
+  if (r.ok) { ADMIN_TOKEN = val; sessionStorage.setItem('adminToken', val); showAgent(); }
+  else { const el = document.getElementById('loginErr'); el.textContent = 'Неверный токен'; el.style.display = 'block'; }
+}
+document.getElementById('tokenInput').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+if (ADMIN_TOKEN) fetch('/api/admin/analytics/summary', { headers: { 'x-admin-token': ADMIN_TOKEN } }).then(r => { if (r.ok) showAgent(); });
+
+function showAgent() {
+  document.getElementById('loginWrap').style.display = 'none';
+  document.getElementById('agentWrap').style.display = 'block';
+  loadAdvice(); loadHistory();
+}
+
+function selectPlatform(el) {
+  document.querySelectorAll('.platform-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  currentPlatform = el.dataset.platform;
+}
+
+async function loadAdvice() {
+  const box = document.getElementById('adviceBox');
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 1000, messages: [{ role: 'user', content: 'Ты агент продвижения для авторского сайта booklo.ru писателя Азата Туктарова. Книга "Тёмный Восход" — городское фэнтези, Булгаков+Гай Ричи. Telegram @otets_tuk, группа ВКонтакте "Отец Тук". Дай один конкретный практичный совет по продвижению на сегодня — что именно сделать, где разместить, что написать. Выполнимо за 30 минут. Не более 80 слов.' }] })
+    });
+    const data = await res.json();
+    box.innerHTML = '<strong>💡 Совет дня:</strong> ' + (data.content?.[0]?.text || '');
+  } catch(e) {
+    box.innerHTML = '<strong>💡 Совет дня:</strong> Опубликуйте цитату из "Тёмного Восхода" в группе ВКонтакте с хэштегами #городскоефэнтези #русскаялитература #ТёмныйВосход';
+  }
+}
+
+async function generatePost() {
+  const btn = document.getElementById('genBtn');
+  const output = document.getElementById('postOutput');
+  const actions = document.getElementById('postActions');
+  const topic = document.getElementById('postTopic').value;
+  const pnames = { vk: 'ВКонтакте', tg: 'Telegram', inst: 'Instagram' };
+  const tnames = { new_chapter: 'анонс новой главы', quote: 'цитата из книги', author: 'пост об авторе', teaser: 'тизер с интригой', review: 'пост от лица читателя', behind: 'закулисье автора' };
+  btn.disabled = true; btn.innerHTML = '<span class="spinner">⏳</span> Генерирую...';
+  output.style.display = 'block'; output.textContent = 'Пишу пост...'; actions.style.display = 'none';
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 1000, messages: [{ role: 'user', content: `Напиши пост для ${pnames[currentPlatform]}, тема: ${tnames[topic]}.\nАвтор: Азат Туктаров "Отец Тук". Книга "Тёмный Восход" — вампир Клычков устал от вечности, кот Мотолыжников, ангел Василий, бобёр Ниофан. Стиль: Булгаков+Гай Ричи.\nСайт: https://booklo.ru, Telegram: @otets_tuk\n${currentPlatform === 'vk' ? 'До 1000 знаков, хэштеги в конце.' : currentPlatform === 'tg' ? 'До 500 знаков, разговорный тон.' : 'До 300 знаков, emoji, хэштеги.'}\nТолько текст поста.` }] })
+    });
+    const data = await res.json();
+    currentPost = data.content?.[0]?.text || 'Ошибка генерации';
+    output.textContent = currentPost; actions.style.display = 'flex';
+  } catch(e) { output.textContent = 'Ошибка: ' + e.message; }
+  btn.disabled = false; btn.innerHTML = '✨ Сгенерировать пост';
+}
+
+function copyPost() { navigator.clipboard.writeText(currentPost); showStatus('pubStatus', '✅ Скопировано!', 'ok'); }
+
+async function publishVK() {
+  if (!currentPost) return;
+  const btn = document.getElementById('pubVkBtn');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner">⏳</span>';
+  try {
+    const r = await fetch('/api/agent/publish-vk', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-admin-token': ADMIN_TOKEN }, body: JSON.stringify({ text: currentPost }) });
+    const data = await r.json();
+    if (data.ok) { showStatus('pubStatus', '✅ Опубликовано в ВКонтакте! Пост #' + data.post_id, 'ok'); saveHistory('ВКонтакте', currentPost); }
+    else showStatus('pubStatus', '❌ Ошибка ВК: ' + data.error, 'err');
+  } catch(e) { showStatus('pubStatus', '❌ ' + e.message, 'err'); }
+  btn.disabled = false; btn.innerHTML = '🔵 В ВКонтакте';
+}
+
+async function publishTG() {
+  if (!currentPost) return;
+  const btn = document.getElementById('pubTgBtn');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner">⏳</span>';
+  try {
+    const r = await fetch('/api/telegram/post', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-admin-token': ADMIN_TOKEN }, body: JSON.stringify({ text: currentPost }) });
+    if (r.ok) { showStatus('pubStatus', '✅ Опубликовано в Telegram!', 'ok'); saveHistory('Telegram', currentPost); }
+    else { const d = await r.json(); showStatus('pubStatus', '❌ Ошибка TG: ' + (d.error||''), 'err'); }
+  } catch(e) { showStatus('pubStatus', '❌ ' + e.message, 'err'); }
+  btn.disabled = false; btn.innerHTML = '✈️ В Telegram';
+}
+
+async function searchPlatforms() {
+  const btn = document.getElementById('searchBtn');
+  const results = document.getElementById('searchResults');
+  const type = document.getElementById('searchType').value;
+  btn.disabled = true; btn.innerHTML = '<span class="spinner">⏳</span> Ищу...';
+  results.innerHTML = '<div class="status loading">🔍 Агент ищет площадки...</div>';
+  try {
+    const typeDesc = { all: 'ВКонтакте группы, Telegram-каналы и литературные сайты', vk: 'группы ВКонтакте о литературе, фэнтези, мистике', tg: 'Telegram-каналы о книгах, фэнтези, русской литературе', sites: 'Author.Today, Проза.ру, LiveLib и подобные' };
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 1000, messages: [{ role: 'user', content: `Найди 5 реальных площадок для продвижения книги "Тёмный Восход" (городское фэнтези, мистика, юмор, Булгаков+Гай Ричи).\nТип: ${typeDesc[type]}\nДля каждой: name, url, why (почему подходит, 1 строка), what (что опубликовать, 1 строка).\nТолько JSON массив: [{"name":"...","url":"...","why":"...","what":"..."}]` }] })
+    });
+    const data = await res.json();
+    const text = data.content?.[0]?.text || '[]';
+    const platforms = JSON.parse(text.replace(/```json|```/g, '').trim());
+    results.innerHTML = platforms.map(p => `<div class="site-card"><h4>${p.name}</h4><p>${p.why}</p><p style="color:var(--gold);font-size:11px;">📝 ${p.what}</p><div class="site-actions"><a href="${p.url}" target="_blank" class="btn btn-outline btn-sm" style="text-decoration:none;">🔗 Открыть</a><button class="btn btn-outline btn-sm" onclick="generateForPlatform('${p.name.replace(/'/g,"\\'")}','${p.what.replace(/'/g,"\\'")}')">✍️ Написать пост</button></div></div>`).join('');
+  } catch(e) { results.innerHTML = '<div class="status err">Ошибка: ' + e.message + '</div>'; }
+  btn.disabled = false; btn.innerHTML = '🔍 Найти площадки';
+}
+
+async function generateForPlatform(name, task) {
+  const output = document.getElementById('postOutput');
+  const actions = document.getElementById('postActions');
+  output.style.display = 'block'; output.textContent = 'Пишу пост для ' + name + '...'; actions.style.display = 'none';
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 1000, messages: [{ role: 'user', content: `Напиши пост для "${name}". Задача: ${task}. Книга "Тёмный Восход" Азата Туктарова, booklo.ru. Только текст поста.` }] })
+    });
+    const data = await res.json();
+    currentPost = data.content?.[0]?.text || 'Ошибка';
+    output.textContent = currentPost; actions.style.display = 'flex';
+    output.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  } catch(e) { output.textContent = 'Ошибка: ' + e.message; }
+}
+
+function saveHistory(platform, text) {
+  const h = JSON.parse(localStorage.getItem('agent_history') || '[]');
+  h.unshift({ platform, text: text.slice(0,100)+'...', date: new Date().toLocaleString('ru') });
+  if (h.length > 20) h.pop();
+  localStorage.setItem('agent_history', JSON.stringify(h));
+  loadHistory();
+}
+
+function loadHistory() {
+  const h = JSON.parse(localStorage.getItem('agent_history') || '[]');
+  const el = document.getElementById('historyList');
+  if (!h.length) { el.textContent = 'Публикаций пока нет.'; return; }
+  el.innerHTML = h.map(p => `<div style="padding:10px 0;border-bottom:1px solid var(--border);font-size:13px;"><span style="color:var(--gold);">${p.platform}</span> <span style="color:var(--text-dim);">· ${p.date}</span><div style="color:var(--text);margin-top:4px;">${p.text}</div></div>`).join('');
+}
+
+function showStatus(id, msg, type) {
+  const el = document.getElementById(id);
+  el.className = 'status ' + type; el.textContent = msg; el.style.display = 'block';
+  setTimeout(() => { el.style.display = 'none'; }, 4000);
+}
+</script>
+</body>
+</html>
