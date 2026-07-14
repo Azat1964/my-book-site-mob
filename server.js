@@ -809,3 +809,46 @@ const port = 3000;
 app.listen(port, () => {
   console.log(`Сервер запущен на порту ${port}`);
 });
+
+// Прокси для Claude API (агент продвижения)
+app.post('/api/agent/claude', requireAdmin, async (req, res) => {
+  try {
+    const body = req.body;
+    // Добавляем веб-поиск если запрошен
+    if (body.web_search) {
+      delete body.web_search;
+      body.tools = [{ type: 'web_search_20250305', name: 'web_search' }];
+    }
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': process.env.ANTHROPIC_API_KEY,
+        'anthropic-version': '2023-06-01'
+      },
+      body: JSON.stringify(body)
+    });
+    const data = await response.json();
+    // Собираем текст из всех блоков включая tool_result
+    if (data.content && Array.isArray(data.content)) {
+      data.text = data.content.filter(b => b.type === 'text').map(b => b.text).join('\n');
+    }
+    res.json(data);
+  } catch(e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Статистика ВКонтакте для агента ЦА
+app.get('/api/agent/vk-stats', requireAdmin, async (req, res) => {
+  try {
+    const token = process.env.VK_TOKEN;
+    const groupId = process.env.VK_GROUP_ID;
+    const r = await fetch(`https://api.vk.com/method/groups.getById?group_id=${groupId}&fields=members_count&access_token=${token}&v=5.131`);
+    const data = await r.json();
+    const group = data.response?.groups?.[0];
+    res.json({ members: group?.members_count || 0, views: 0 });
+  } catch(e) {
+    res.status(500).json({ error: e.message });
+  }
+});

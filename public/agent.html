@@ -65,6 +65,8 @@
   .status.loading { background: rgba(201,162,39,0.1); color: var(--gold); border: 1px solid var(--border); }
   .advice-box { background: linear-gradient(135deg, rgba(201,162,39,0.08), rgba(217,118,58,0.08)); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 20px; line-height: 1.7; font-size: 14px; color: var(--text); }
   .advice-box strong { color: var(--gold); }
+  .tab { padding: 10px 20px; border-radius: 10px; font-size: 14px; cursor: pointer; background: var(--surface2); color: var(--text-dim); border: 1px solid transparent; transition: all 0.2s; font-family: inherit; }
+  .tab.active { background: var(--gold-dim); border-color: var(--gold); color: var(--gold); }
   .spinner { display: inline-block; animation: spin 1s linear infinite; }
   @keyframes spin { to { transform: rotate(360deg); } }
   .full-card { grid-column: 1 / -1; }
@@ -89,8 +91,14 @@
 
 <div class="agent-wrap" id="agentWrap">
   <h1 class="page-title">🤖 Агент продвижения</h1>
-  <p class="page-sub">Генерирует посты, ищет площадки и публикует контент автоматически</p>
+  <p class="page-sub">Генерирует посты, ищет площадки и анализирует аудиторию</p>
 
+  <div style="display:flex;gap:8px;margin-bottom:24px;">
+    <button class="tab active" onclick="switchTab('posts',this)">✍️ Посты</button>
+    <button class="tab" onclick="switchTab('audience',this)">👥 Аудитория</button>
+  </div>
+
+  <div id="tab-posts">
   <div class="advice-box" id="adviceBox"><span class="spinner">⏳</span> Получаю совет дня...</div>
 
   <div class="grid-2">
@@ -146,7 +154,36 @@
       <div id="historyList" style="color:var(--text-dim);font-size:13px;">Загрузка...</div>
     </div>
   </div>
-</div>
+</div><!-- end tab-posts -->
+
+  <!-- ВКЛАДКА АУДИТОРИЯ -->
+  <div id="tab-audience" style="display:none;">
+    <div class="advice-box" id="audienceAdvice" style="display:none;"></div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title"><span>📊</span> Данные сайта booklo.ru</div>
+        <p style="font-size:13px;color:var(--text-dim);margin-bottom:16px;">Просмотры, устройства, популярные главы</p>
+        <button class="btn btn-gold" style="width:100%" onclick="loadSiteData()" id="siteDataBtn">📊 Загрузить данные</button>
+        <div id="siteDataResult" style="margin-top:16px;"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title"><span>🔵</span> Аудитория ВКонтакте</div>
+        <p style="font-size:13px;color:var(--text-dim);margin-bottom:16px;">Подписчики группы "Отец Тук"</p>
+        <button class="btn btn-gold" style="width:100%" onclick="loadVKData()" id="vkDataBtn">🔵 Загрузить из ВК</button>
+        <div id="vkDataResult" style="margin-top:16px;"></div>
+      </div>
+
+      <div class="card full-card">
+        <div class="card-title"><span>🧠</span> Портрет целевой аудитории</div>
+        <button class="btn btn-gold" onclick="analyzeAudience()" id="analyzeBtn" style="margin-bottom:16px;">🧠 Проанализировать ЦА</button>
+        <div id="audienceResult" style="font-size:14px;line-height:1.8;color:var(--text);"></div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- end agentWrap -->
 
 <script>
 let ADMIN_TOKEN = sessionStorage.getItem('adminToken') || '';
@@ -178,9 +215,9 @@ function selectPlatform(el) {
 async function loadAdvice() {
   const box = document.getElementById('adviceBox');
   try {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
+    const res = await fetch('/api/agent/claude', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'x-admin-token': ADMIN_TOKEN },
       body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 1000, messages: [{ role: 'user', content: 'Ты агент продвижения для авторского сайта booklo.ru писателя Азата Туктарова. Книга "Тёмный Восход" — городское фэнтези, Булгаков+Гай Ричи. Telegram @otets_tuk, группа ВКонтакте "Отец Тук". Дай один конкретный практичный совет по продвижению на сегодня — что именно сделать, где разместить, что написать. Выполнимо за 30 минут. Не более 80 слов.' }] })
     });
     const data = await res.json();
@@ -200,9 +237,9 @@ async function generatePost() {
   btn.disabled = true; btn.innerHTML = '<span class="spinner">⏳</span> Генерирую...';
   output.style.display = 'block'; output.textContent = 'Пишу пост...'; actions.style.display = 'none';
   try {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
+    const res = await fetch('/api/agent/claude', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'x-admin-token': ADMIN_TOKEN },
       body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 1000, messages: [{ role: 'user', content: `Напиши пост для ${pnames[currentPlatform]}, тема: ${tnames[topic]}.\nАвтор: Азат Туктаров "Отец Тук". Книга "Тёмный Восход" — вампир Клычков устал от вечности, кот Мотолыжников, ангел Василий, бобёр Ниофан. Стиль: Булгаков+Гай Ричи.\nСайт: https://booklo.ru, Telegram: @otets_tuk\n${currentPlatform === 'vk' ? 'До 1000 знаков, хэштеги в конце.' : currentPlatform === 'tg' ? 'До 500 знаков, разговорный тон.' : 'До 300 знаков, emoji, хэштеги.'}\nТолько текст поста.` }] })
     });
     const data = await res.json();
@@ -247,10 +284,10 @@ async function searchPlatforms() {
   results.innerHTML = '<div class="status loading">🔍 Агент ищет площадки...</div>';
   try {
     const typeDesc = { all: 'ВКонтакте группы, Telegram-каналы и литературные сайты', vk: 'группы ВКонтакте о литературе, фэнтези, мистике', tg: 'Telegram-каналы о книгах, фэнтези, русской литературе', sites: 'Author.Today, Проза.ру, LiveLib и подобные' };
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
+    const res = await fetch('/api/agent/claude', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 1000, messages: [{ role: 'user', content: `Найди 5 реальных площадок для продвижения книги "Тёмный Восход" (городское фэнтези, мистика, юмор, Булгаков+Гай Ричи).\nТип: ${typeDesc[type]}\nДля каждой: name, url, why (почему подходит, 1 строка), what (что опубликовать, 1 строка).\nТолько JSON массив: [{"name":"...","url":"...","why":"...","what":"..."}]` }] })
+      headers: { 'Content-Type': 'application/json', 'x-admin-token': ADMIN_TOKEN },
+      body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 1000, web_search: true, messages: [{ role: 'user', content: `Найди 5 реальных площадок для продвижения книги "Тёмный Восход" (городское фэнтези, мистика, юмор, Булгаков+Гай Ричи).\nТип: ${typeDesc[type]}\nДля каждой: name, url, why (почему подходит, 1 строка), what (что опубликовать, 1 строка).\nТолько JSON массив: [{"name":"...","url":"...","why":"...","what":"..."}]` }] })
     });
     const data = await res.json();
     const text = data.content?.[0]?.text || '[]';
@@ -265,9 +302,9 @@ async function generateForPlatform(name, task) {
   const actions = document.getElementById('postActions');
   output.style.display = 'block'; output.textContent = 'Пишу пост для ' + name + '...'; actions.style.display = 'none';
   try {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
+    const res = await fetch('/api/agent/claude', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'x-admin-token': ADMIN_TOKEN },
       body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 1000, messages: [{ role: 'user', content: `Напиши пост для "${name}". Задача: ${task}. Книга "Тёмный Восход" Азата Туктарова, booklo.ru. Только текст поста.` }] })
     });
     const data = await res.json();
@@ -290,6 +327,124 @@ function loadHistory() {
   const el = document.getElementById('historyList');
   if (!h.length) { el.textContent = 'Публикаций пока нет.'; return; }
   el.innerHTML = h.map(p => `<div style="padding:10px 0;border-bottom:1px solid var(--border);font-size:13px;"><span style="color:var(--gold);">${p.platform}</span> <span style="color:var(--text-dim);">· ${p.date}</span><div style="color:var(--text);margin-top:4px;">${p.text}</div></div>`).join('');
+}
+
+// ПЕРЕКЛЮЧЕНИЕ ВКЛАДОК
+function switchTab(name, el) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('tab-posts').style.display = name === 'posts' ? 'block' : 'none';
+  document.getElementById('tab-audience').style.display = name === 'audience' ? 'block' : 'none';
+}
+
+// ДАННЫЕ САЙТА
+let siteStats = null;
+async function loadSiteData() {
+  const btn = document.getElementById('siteDataBtn');
+  const result = document.getElementById('siteDataResult');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner">⏳</span> Загружаю...';
+  try {
+    const [summary, devices, chapters] = await Promise.all([
+      fetch('/api/admin/analytics/summary', { headers: { 'x-admin-token': ADMIN_TOKEN } }).then(r => r.json()),
+      fetch('/api/admin/analytics/devices', { headers: { 'x-admin-token': ADMIN_TOKEN } }).then(r => r.json()),
+      fetch('/api/admin/analytics/top-chapters', { headers: { 'x-admin-token': ADMIN_TOKEN } }).then(r => r.json())
+    ]);
+    siteStats = { summary, devices, chapters };
+    const devLabels = { mobile: '📱 Мобильные', desktop: '🖥 Десктоп', tablet: '📋 Планшет' };
+    result.innerHTML = `
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
+        <div style="background:var(--surface2);border-radius:8px;padding:12px;text-align:center;">
+          <div style="font-size:22px;color:var(--gold);font-weight:bold;">${summary.totalViews||0}</div>
+          <div style="font-size:11px;color:var(--text-dim);">просмотров</div>
+        </div>
+        <div style="background:var(--surface2);border-radius:8px;padding:12px;text-align:center;">
+          <div style="font-size:22px;color:var(--gold);font-weight:bold;">${summary.totalUsers||0}</div>
+          <div style="font-size:11px;color:var(--text-dim);">читателей</div>
+        </div>
+      </div>
+      <div style="font-size:12px;color:var(--text-dim);margin-bottom:6px;">Устройства:</div>
+      ${devices.map(d => `<div style="font-size:13px;margin-bottom:4px;">${devLabels[d.device_type]||d.device_type}: <span style="color:var(--gold);">${d.views}</span></div>`).join('')}
+      <div style="font-size:12px;color:var(--text-dim);margin:10px 0 6px;">Топ глав:</div>
+      ${chapters.slice(0,3).map(ch => `<div style="font-size:13px;margin-bottom:4px;">Гл.${ch.chapter_number} ${ch.chapter||''}: <span style="color:var(--gold);">${ch.views}</span></div>`).join('')}
+    `;
+  } catch(e) { result.innerHTML = '<div class="status err">Ошибка: ' + e.message + '</div>'; }
+  btn.disabled = false; btn.innerHTML = '📊 Обновить данные';
+}
+
+// ДАННЫЕ ВК
+let vkStats = null;
+async function loadVKData() {
+  const btn = document.getElementById('vkDataBtn');
+  const result = document.getElementById('vkDataResult');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner">⏳</span> Загружаю...';
+  try {
+    const r = await fetch('/api/agent/vk-stats', { headers: { 'x-admin-token': ADMIN_TOKEN } });
+    const data = await r.json();
+    vkStats = data;
+    result.innerHTML = `
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div style="background:var(--surface2);border-radius:8px;padding:12px;text-align:center;">
+          <div style="font-size:22px;color:#4c75a3;font-weight:bold;">${data.members||0}</div>
+          <div style="font-size:11px;color:var(--text-dim);">подписчиков</div>
+        </div>
+        <div style="background:var(--surface2);border-radius:8px;padding:12px;text-align:center;">
+          <div style="font-size:22px;color:#4c75a3;font-weight:bold;">${data.views||0}</div>
+          <div style="font-size:11px;color:var(--text-dim);">просмотров постов</div>
+        </div>
+      </div>
+    `;
+  } catch(e) { result.innerHTML = '<div class="status err">Ошибка: ' + e.message + '</div>'; }
+  btn.disabled = false; btn.innerHTML = '🔵 Обновить из ВК';
+}
+
+// АНАЛИЗ ЦА
+async function analyzeAudience() {
+  const btn = document.getElementById('analyzeBtn');
+  const result = document.getElementById('audienceResult');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner">⏳</span> Анализирую...';
+  result.innerHTML = '<div class="status loading">🧠 Агент анализирует данные и строит портрет аудитории...</div>';
+
+  const siteInfo = siteStats ? `
+    Данные сайта booklo.ru:
+    - Просмотров: ${siteStats.summary.totalViews||0}
+    - Читателей: ${siteStats.summary.totalUsers||0}
+    - Устройства: ${JSON.stringify(siteStats.devices)}
+    - Топ глав: ${JSON.stringify(siteStats.chapters.slice(0,5))}
+  ` : 'Данные сайта не загружены.';
+
+  const vkInfo = vkStats ? `
+    Данные ВКонтакте:
+    - Подписчиков: ${vkStats.members||0}
+    - Просмотров: ${vkStats.views||0}
+  ` : 'Данные ВКонтакте не загружены.';
+
+  try {
+    const res = await fetch('/api/agent/claude', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-admin-token': ADMIN_TOKEN },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 1500,
+        messages: [{ role: 'user', content: `Ты аналитик целевой аудитории. Проанализируй данные и составь портрет ЦА для книги "Тёмный Восход" Азата Туктарова (городское фэнтези, мистика, юмор, стиль Булгаков+Гай Ричи).
+
+${siteInfo}
+${vkInfo}
+
+Составь анализ по разделам:
+1. **Сегменты аудитории** (2-3 портрета читателя с именем, возрастом, интересами)
+2. **Боли и потребности** (что ищут, чего не хватает)
+3. **Каналы потребления контента** (где сидят, что читают)
+4. **Рекомендации по продвижению** (конкретные действия для каждого сегмента)
+5. **Контент-план на неделю** (7 идей постов под ЦА)
+
+Пиши конкретно, с примерами. Используй эмодзи для разделов.` }]
+      })
+    });
+    const data = await res.json();
+    const text = data.text || data.content?.[0]?.text || 'Нет ответа';
+    result.innerHTML = text.replace(/\*\*(.*?)\*\*/g, '<strong style="color:var(--gold);">$1</strong>').replace(/\n/g, '<br>');
+  } catch(e) { result.innerHTML = '<div class="status err">Ошибка: ' + e.message + '</div>'; }
+  btn.disabled = false; btn.innerHTML = '🧠 Проанализировать снова';
 }
 
 function showStatus(id, msg, type) {
