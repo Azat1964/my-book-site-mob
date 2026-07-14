@@ -93,9 +93,10 @@
   <h1 class="page-title">🤖 Агент продвижения</h1>
   <p class="page-sub">Генерирует посты, ищет площадки и анализирует аудиторию</p>
 
-  <div style="display:flex;gap:8px;margin-bottom:24px;">
+  <div style="display:flex;gap:8px;margin-bottom:24px;flex-wrap:wrap;">
     <button class="tab active" onclick="switchTab('posts',this)">✍️ Посты</button>
     <button class="tab" onclick="switchTab('audience',this)">👥 Аудитория</button>
+    <button class="tab" onclick="switchTab('ads',this)">📢 Реклама</button>
   </div>
 
   <div id="tab-posts">
@@ -186,7 +187,7 @@
 </div><!-- end agentWrap -->
 
 <script>
-let ADMIN_TOKEN = sessionStorage.getItem('adminToken') || '';
+let ADMIN_TOKEN = localStorage.getItem('adminToken') || '';
 let currentPlatform = 'vk';
 let currentPost = '';
 
@@ -194,7 +195,7 @@ async function doLogin() {
   const val = document.getElementById('tokenInput').value.trim();
   if (!val) return;
   const r = await fetch('/api/admin/analytics/summary', { headers: { 'x-admin-token': val } });
-  if (r.ok) { ADMIN_TOKEN = val; sessionStorage.setItem('adminToken', val); showAgent(); }
+  if (r.ok) { ADMIN_TOKEN = val; localStorage.setItem('adminToken', val); showAgent(); }
   else { const el = document.getElementById('loginErr'); el.textContent = 'Неверный токен'; el.style.display = 'block'; }
 }
 document.getElementById('tokenInput').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
@@ -335,6 +336,7 @@ function switchTab(name, el) {
   el.classList.add('active');
   document.getElementById('tab-posts').style.display = name === 'posts' ? 'block' : 'none';
   document.getElementById('tab-audience').style.display = name === 'audience' ? 'block' : 'none';
+  document.getElementById('tab-ads').style.display = name === 'ads' ? 'block' : 'none';
 }
 
 // ДАННЫЕ САЙТА
@@ -445,6 +447,150 @@ ${vkInfo}
     result.innerHTML = text.replace(/\*\*(.*?)\*\*/g, '<strong style="color:var(--gold);">$1</strong>').replace(/\n/g, '<br>');
   } catch(e) { result.innerHTML = '<div class="status err">Ошибка: ' + e.message + '</div>'; }
   btn.disabled = false; btn.innerHTML = '🧠 Проанализировать снова';
+}
+
+// РЕКЛАМНЫЙ АГЕНТ
+async function analyzeAds() {
+  const btn = document.getElementById('analyzeAdsBtn');
+  const result = document.getElementById('adsResult');
+  const goal = document.getElementById('adGoal').value;
+  const budget = document.getElementById('adBudget').value;
+  const audience = document.getElementById('adAudience').value;
+  const region = document.getElementById('adRegion').value;
+
+  const goalNames = { reach: 'охват и узнаваемость', leads: 'лиды (подписки и регистрации)', sales: 'продажи книги' };
+  const audienceNames = { fantasy: 'любители фэнтези и мистики', literature: 'читатели русской литературы', humor: 'любители юмористической прозы', all: 'широкая аудитория 25-55 лет' };
+  const regionNames = { russia: 'вся Россия', moscow: 'Москва и МО', spb: 'Санкт-Петербург', cis: 'Россия и СНГ' };
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner">⏳</span> Анализирую каналы...';
+  result.innerHTML = '<div class="status loading">📢 Агент подбирает оптимальные каналы и форматы...</div>';
+
+  try {
+    const res = await fetch('/api/agent/claude', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-admin-token': ADMIN_TOKEN },
+      body: JSON.stringify({
+        model: 'yandexgpt',
+        max_tokens: 2000,
+        messages: [{ role: 'user', content: `Ты эксперт по digital-рекламе книг в России. Составь план рекламной кампании для книги "Тёмный Восход" Азата Туктарова.
+
+Параметры:
+- Цель: ${goalNames[goal]}
+- Бюджет: ${budget} руб/месяц
+- Аудитория: ${audienceNames[audience]}
+- Регион: ${regionNames[region]}
+- Сайт: https://booklo.ru
+- Жанр: городское фэнтези, мистика, юмор (стиль Булгаков+Гай Ричи)
+
+Для каждого канала укажи:
+1. Название канала и формат рекламы
+2. Рекомендуемый бюджет (руб/мес)
+3. Ожидаемый результат (охват/клики/лиды)
+4. Готовый текст объявления (заголовок + текст + призыв)
+5. Советы по настройке таргетинга
+
+Рассмотри каналы: ВКонтакте Реклама, Яндекс Директ, Telegram Ads, посевы в Telegram-каналах, Яндекс Дзен, литературные сообщества.
+Распредели бюджет между каналами с учётом эффективности для книг.
+Пиши конкретно с цифрами.` }]
+      })
+    });
+    const data = await res.json();
+    const text = data.text || data.content?.[0]?.text || 'Нет ответа';
+    result.innerHTML = `
+      <div class="card">
+        <div class="card-title"><span>📊</span> План рекламной кампании</div>
+        <div style="font-size:14px;line-height:1.8;color:var(--text);">
+          ${text.split('\n').join('<br>')}
+        </div>
+        <div style="margin-top:16px;display:flex;gap:10px;flex-wrap:wrap;">
+          <button class="btn btn-outline btn-sm" onclick="copyAdsResult()">📋 Скопировать план</button>
+          <button class="btn btn-gold btn-sm" onclick="analyzeAds()">🔄 Новый анализ</button>
+        </div>
+      </div>`;
+  } catch(e) {
+    result.innerHTML = '<div class="status err">Ошибка: ' + e.message + '</div>';
+  }
+  btn.disabled = false;
+  btn.innerHTML = '📢 Подобрать каналы и форматы';
+}
+
+function copyAdsResult() {
+  const text = document.getElementById('adsResult').innerText;
+  navigator.clipboard.writeText(text);
+  showStatus('adsResult', '✅ Скопировано!', 'ok');
+}
+
+// РЕКЛАМНЫЙ АГЕНТ
+async function analyzeAds() {
+  const btn = document.getElementById('analyzeAdsBtn');
+  const result = document.getElementById('adsResult');
+  const goal = document.getElementById('adGoal').value;
+  const budget = document.getElementById('adBudget').value;
+  const audience = document.getElementById('adAudience').value;
+  const region = document.getElementById('adRegion').value;
+
+  const goalNames = { reach: 'охват и узнаваемость', leads: 'лиды (подписки и регистрации)', sales: 'продажи книги' };
+  const audienceNames = { fantasy: 'любители фэнтези и мистики', literature: 'читатели русской литературы', humor: 'любители юмористической прозы', all: 'широкая аудитория 25-55 лет' };
+  const regionNames = { russia: 'вся Россия', moscow: 'Москва и МО', spb: 'Санкт-Петербург', cis: 'Россия и СНГ' };
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner">⏳</span> Анализирую каналы...';
+  result.innerHTML = '<div class="status loading">📢 Агент подбирает оптимальные каналы и форматы...</div>';
+
+  try {
+    const res = await fetch('/api/agent/claude', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-admin-token': ADMIN_TOKEN },
+      body: JSON.stringify({
+        model: 'yandexgpt',
+        max_tokens: 2000,
+        messages: [{ role: 'user', content: `Ты эксперт по digital-рекламе книг в России. Составь план рекламной кампании для книги "Тёмный Восход" Азата Туктарова.
+
+Параметры:
+- Цель: ${goalNames[goal]}
+- Бюджет: ${budget} руб/месяц
+- Аудитория: ${audienceNames[audience]}
+- Регион: ${regionNames[region]}
+- Сайт: https://booklo.ru
+- Жанр: городское фэнтези, мистика, юмор (стиль Булгаков+Гай Ричи)
+
+Для каждого канала укажи:
+1. Название канала и формат рекламы
+2. Рекомендуемый бюджет (руб/мес)
+3. Ожидаемый результат (охват/клики/лиды)
+4. Готовый текст объявления (заголовок + текст + призыв)
+5. Советы по настройке таргетинга
+
+Рассмотри каналы: ВКонтакте Реклама, Яндекс Директ, Telegram Ads, посевы в Telegram-каналах, Яндекс Дзен, литературные сообщества.
+Распредели бюджет между каналами с учётом эффективности для книг.
+Пиши конкретно с цифрами.` }]
+      })
+    });
+    const data = await res.json();
+    const text = data.text || data.content?.[0]?.text || 'Нет ответа';
+    result.innerHTML = `
+      <div class="card">
+        <div class="card-title"><span>📊</span> План рекламной кампании</div>
+        <div style="font-size:14px;line-height:1.8;color:var(--text);">
+          ${text.split('\n').join('<br>')}
+        </div>
+        <div style="margin-top:16px;display:flex;gap:10px;flex-wrap:wrap;">
+          <button class="btn btn-outline btn-sm" onclick="copyAdsResult()">📋 Скопировать план</button>
+          <button class="btn btn-gold btn-sm" onclick="analyzeAds()">🔄 Новый анализ</button>
+        </div>
+      </div>`;
+  } catch(e) {
+    result.innerHTML = '<div class="status err">Ошибка: ' + e.message + '</div>';
+  }
+  btn.disabled = false;
+  btn.innerHTML = '📢 Подобрать каналы и форматы';
+}
+
+function copyAdsResult() {
+  const text = document.getElementById('adsResult').innerText;
+  navigator.clipboard.writeText(text);
+  showStatus('adsResult', '✅ Скопировано!', 'ok');
 }
 
 function showStatus(id, msg, type) {

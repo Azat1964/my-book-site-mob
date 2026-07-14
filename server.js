@@ -810,30 +810,36 @@ app.listen(port, () => {
   console.log(`Сервер запущен на порту ${port}`);
 });
 
-// Прокси для Claude API (агент продвижения)
+// Прокси для YandexGPT API (агент продвижения)
 app.post('/api/agent/claude', requireAdmin, async (req, res) => {
   try {
     const body = req.body;
-    // Добавляем веб-поиск если запрошен
-    if (body.web_search) {
-      delete body.web_search;
-      body.tools = [{ type: 'web_search_20250305', name: 'web_search' }];
-    }
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
+    // Конвертируем формат Anthropic → YandexGPT
+    const messages = body.messages.map(m => ({
+      role: m.role === 'assistant' ? 'assistant' : 'user',
+      text: typeof m.content === 'string' ? m.content : m.content[0]?.text || ''
+    }));
+    const yandexBody = {
+      modelUri: `gpt://${process.env.YANDEX_FOLDER_ID}/yandexgpt/latest`,
+      completionOptions: {
+        stream: false,
+        temperature: 0.7,
+        maxTokens: body.max_tokens || 1000
+      },
+      messages
+    };
+    const response = await fetch('https://llm.api.cloud.yandex.net/foundationModels/v1/completion', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': process.env.ANTHROPIC_API_KEY,
-        'anthropic-version': '2023-06-01'
+        'Authorization': `Api-Key ${process.env.YANDEX_API_KEY}`
       },
-      body: JSON.stringify(body)
+      body: JSON.stringify(yandexBody)
     });
     const data = await response.json();
-    // Собираем текст из всех блоков включая tool_result
-    if (data.content && Array.isArray(data.content)) {
-      data.text = data.content.filter(b => b.type === 'text').map(b => b.text).join('\n');
-    }
-    res.json(data);
+    const text = data.result?.alternatives?.[0]?.message?.text || '';
+    // Возвращаем в формате совместимом с Anthropic
+    res.json({ content: [{ type: 'text', text }], text });
   } catch(e) {
     res.status(500).json({ error: e.message });
   }
@@ -848,6 +854,21 @@ app.get('/api/agent/vk-stats', requireAdmin, async (req, res) => {
     const data = await r.json();
     const group = data.response?.groups?.[0];
     res.json({ members: group?.members_count || 0, views: 0 });
+  } catch(e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Публикация поста в ВКонтакте
+app.post('/api/agent/publish-vk', requireAdmin, async (req, res) => {
+  const { text } = req.body;
+  if (!text) return res.status(400).json({ error: 'Нет текста' });
+  try {
+    const url = `https://api.vk.com/method/wall.post?owner_id=-${process.env.VK_GROUP_ID}&message=${encodeURIComponent(text)}&access_token=${process.env.VK_TOKEN}&v=5.131`;
+    const r = await fetch(url);
+    const data = await r.json();
+    if (data.error) return res.status(500).json({ error: data.error.error_msg });
+    res.json({ ok: true, post_id: data.response?.post_id });
   } catch(e) {
     res.status(500).json({ error: e.message });
   }
