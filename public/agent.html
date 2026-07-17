@@ -184,6 +184,58 @@
     </div>
   </div>
 
+
+  <!-- ВКЛАДКА РЕКЛАМА -->
+  <div id="tab-ads" style="display:none;">
+    <div class="card" style="margin-bottom:20px;">
+      <div class="card-title"><span>🎯</span> Параметры рекламной кампании</div>
+      <div class="grid-2" style="gap:16px;margin-bottom:16px;">
+        <div><label>Цель кампании</label>
+          <select id="adGoal">
+            <option value="reach">📣 Охват — узнаваемость книги</option>
+            <option value="leads">🎯 Лиды — подписки и регистрации</option>
+            <option value="sales">💰 Продажи — купить книгу</option>
+          </select></div>
+        <div><label>Месячный бюджет (руб)</label>
+          <select id="adBudget">
+            <option value="3000">до 3 000 руб</option>
+            <option value="10000">до 10 000 руб</option>
+            <option value="30000">до 30 000 руб</option>
+            <option value="100000">до 100 000 руб</option>
+          </select></div>
+        <div><label>Целевая аудитория</label>
+          <select id="adAudience">
+            <option value="fantasy">Любители фэнтези и мистики</option>
+            <option value="literature">Читатели русской литературы</option>
+            <option value="humor">Любители юмористической прозы</option>
+            <option value="all">Широкая аудитория 25-55 лет</option>
+          </select></div>
+        <div><label>Регион</label>
+          <select id="adRegion">
+            <option value="russia">Вся Россия</option>
+            <option value="moscow">Москва и МО</option>
+            <option value="spb">Санкт-Петербург</option>
+            <option value="cis">Россия + СНГ</option>
+          </select></div>
+      </div>
+      <button class="btn btn-gold" style="width:100%" onclick="analyzeAds()" id="analyzeAdsBtn">📢 Подобрать каналы и форматы</button>
+    </div>
+    <div id="adsResult"></div>
+
+    <!-- ПОИСК СООБЩЕСТВ ВК -->
+    <div class="card" style="margin-top:20px;">
+      <div class="card-title"><span>🔵</span> Тематические сообщества ВКонтакте</div>
+      <p style="font-size:13px;color:var(--text-dim);margin-bottom:16px;">Поиск сообществ для рекламных посевов — как Target Hunter</p>
+      <div style="margin-bottom:12px;">
+        <label>Ключевые слова для поиска</label>
+        <input type="text" id="vkGroupQuery" placeholder="городское фэнтези, мистика, книги, Булгаков" value="городское фэнтези, мистика, книги, русская литература, фэнтези">
+      </div>
+      <button class="btn btn-vk" style="width:100%" onclick="authAndSearchVK()" id="searchVKBtn">
+        🔵 Найти сообщества ВКонтакте
+      </button>
+      <div id="vkGroupsResult" style="margin-top:16px;"></div>
+    </div>
+  </div><!-- end tab-ads -->
 </div><!-- end agentWrap -->
 
 <script>
@@ -515,6 +567,134 @@ async function analyzeAds() {
   btn.innerHTML = '📢 Подобрать каналы и форматы';
 }
 
+function authAndSearchVK() {
+  const CLIENT_ID = '54675416';
+  const popup = window.open(
+    `https://oauth.vk.com/authorize?client_id=${CLIENT_ID}&scope=groups&redirect_uri=https://oauth.vk.com/blank.html&display=popup&response_type=token`,
+    'vk_auth', 'width=600,height=500'
+  );
+  const timer = setInterval(() => {
+    try {
+      if (popup.closed) { clearInterval(timer); return; }
+      const url = popup.location.href;
+      if (url.includes('access_token=')) {
+        clearInterval(timer);
+        popup.close();
+        const token = url.match(/access_token=([^&]+)/)[1];
+        searchVKGroups(token);
+      }
+    } catch(e) {}
+  }, 500);
+}
+
+async function searchVKGroups(userToken) {
+  const btn = document.getElementById('searchVKBtn');
+  const result = document.getElementById('vkGroupsResult');
+  const query = document.getElementById('vkGroupQuery').value;
+  const keywords = query.split(',').map(k => k.trim()).filter(Boolean);
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner">⏳</span> Ищу сообщества...';
+  result.innerHTML = '<div class="status loading">🔵 Ищу тематические сообщества ВКонтакте...</div>';
+
+  try {
+    // Ищем через VK API напрямую с пользовательским токеном
+    const allGroups = [];
+    for (const keyword of keywords.slice(0, 5)) {
+      const url = `https://api.vk.com/method/groups.search?q=${encodeURIComponent(keyword)}&type=group&count=10&sort=6&fields=members_count&access_token=${userToken}&v=5.131`;
+      const resp = await fetch(url);
+      const data = await resp.json();
+      if (data.response?.items) {
+        for (const g of data.response.items) {
+          if (g.is_closed === 0 && g.members_count > 1000) {
+            allGroups.push({
+              name: g.name,
+              url: `https://vk.com/${g.screen_name}`,
+              members: g.members_count,
+              keyword
+            });
+          }
+        }
+      }
+    }
+    const seen = new Set();
+    const groups = allGroups.filter(g => { if (seen.has(g.url)) return false; seen.add(g.url); return true; });
+    groups.sort((a, b) => b.members - a.members);
+
+    if (!groups.length) {
+      result.innerHTML = '<div class="status err">Сообщества не найдены</div>';
+      return;
+    }
+
+    result.innerHTML = `
+      <div style="margin-bottom:12px;font-size:13px;color:var(--text-dim);">
+        Найдено ${groups.length} сообществ — отсортированы по размеру аудитории
+      </div>
+      ${groups.map(g => `
+        <div class="site-card" style="display:flex;align-items:center;gap:14px;">
+          <div style="flex:1;min-width:0;">
+            <h4 style="margin-bottom:2px;">${g.name}</h4>
+            <div style="font-size:12px;color:var(--text-dim);margin-bottom:6px;">
+              👥 ${g.members.toLocaleString('ru')} подписчиков · 🔑 ${g.keyword}
+            </div>
+            <div class="site-actions">
+              <a href="${g.url}" target="_blank" class="btn btn-vk btn-sm" style="text-decoration:none;">🔵 Открыть</a>
+              <button class="btn btn-outline btn-sm" onclick="generatePostForGroup('${g.name.replace(/'/g, "\'")}', ${g.members})">✍️ Написать пост</button>
+            </div>
+          </div>
+          <div style="text-align:center;flex-shrink:0;">
+            <div style="font-size:18px;font-weight:bold;color:var(--gold);">${g.members > 1000000 ? (g.members/1000000).toFixed(1)+'M' : g.members > 1000 ? Math.round(g.members/1000)+'K' : g.members}</div>
+            <div style="font-size:10px;color:var(--text-dim);">подписч.</div>
+          </div>
+        </div>
+      `).join('')}
+    `;
+  } catch(e) {
+    result.innerHTML = '<div class="status err">Ошибка: ' + e.message + '</div>';
+  }
+  btn.disabled = false;
+  btn.innerHTML = '🔵 Найти сообщества ВКонтакте';
+}
+
+async function generatePostForGroup(groupName, members) {
+  const output = document.getElementById('postOutput');
+  const actions = document.getElementById('postActions');
+
+  // Переключаемся на вкладку постов
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab')[0].classList.add('active');
+  document.getElementById('tab-posts').style.display = 'block';
+  document.getElementById('tab-audience').style.display = 'none';
+  document.getElementById('tab-ads').style.display = 'none';
+
+  output.style.display = 'block';
+  output.textContent = 'Пишу пост для "' + groupName + '"...';
+  actions.style.display = 'none';
+  output.scrollIntoView({ behavior: 'smooth' });
+
+  try {
+    const res = await fetch('/api/agent/claude', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-admin-token': ADMIN_TOKEN },
+      body: JSON.stringify({
+        model: 'yandexgpt',
+        max_tokens: 1000,
+        messages: [{ role: 'user', content: `Напиши пост для размещения в сообществе ВКонтакте "${groupName}" (${members.toLocaleString('ru')} подписчиков).
+Книга: "Тёмный Восход" Азата Туктарова — городское фэнтези, вампир Клычков, кот Мотолыжников, ангел Василий. Стиль: Булгаков+Гай Ричи.
+Сайт: https://booklo.ru
+Пост должен органично вписаться в тематику сообщества. До 800 знаков. Хэштеги в конце.
+Только текст поста.` }]
+      })
+    });
+    const data = await res.json();
+    currentPost = data.text || data.content?.[0]?.text || 'Ошибка';
+    output.textContent = currentPost;
+    actions.style.display = 'flex';
+  } catch(e) {
+    output.textContent = 'Ошибка: ' + e.message;
+  }
+}
+
 function copyAdsResult() {
   const text = document.getElementById('adsResult').innerText;
   navigator.clipboard.writeText(text);
@@ -585,6 +765,134 @@ async function analyzeAds() {
   }
   btn.disabled = false;
   btn.innerHTML = '📢 Подобрать каналы и форматы';
+}
+
+function authAndSearchVK() {
+  const CLIENT_ID = '54675416';
+  const popup = window.open(
+    `https://oauth.vk.com/authorize?client_id=${CLIENT_ID}&scope=groups&redirect_uri=https://oauth.vk.com/blank.html&display=popup&response_type=token`,
+    'vk_auth', 'width=600,height=500'
+  );
+  const timer = setInterval(() => {
+    try {
+      if (popup.closed) { clearInterval(timer); return; }
+      const url = popup.location.href;
+      if (url.includes('access_token=')) {
+        clearInterval(timer);
+        popup.close();
+        const token = url.match(/access_token=([^&]+)/)[1];
+        searchVKGroups(token);
+      }
+    } catch(e) {}
+  }, 500);
+}
+
+async function searchVKGroups(userToken) {
+  const btn = document.getElementById('searchVKBtn');
+  const result = document.getElementById('vkGroupsResult');
+  const query = document.getElementById('vkGroupQuery').value;
+  const keywords = query.split(',').map(k => k.trim()).filter(Boolean);
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner">⏳</span> Ищу сообщества...';
+  result.innerHTML = '<div class="status loading">🔵 Ищу тематические сообщества ВКонтакте...</div>';
+
+  try {
+    // Ищем через VK API напрямую с пользовательским токеном
+    const allGroups = [];
+    for (const keyword of keywords.slice(0, 5)) {
+      const url = `https://api.vk.com/method/groups.search?q=${encodeURIComponent(keyword)}&type=group&count=10&sort=6&fields=members_count&access_token=${userToken}&v=5.131`;
+      const resp = await fetch(url);
+      const data = await resp.json();
+      if (data.response?.items) {
+        for (const g of data.response.items) {
+          if (g.is_closed === 0 && g.members_count > 1000) {
+            allGroups.push({
+              name: g.name,
+              url: `https://vk.com/${g.screen_name}`,
+              members: g.members_count,
+              keyword
+            });
+          }
+        }
+      }
+    }
+    const seen = new Set();
+    const groups = allGroups.filter(g => { if (seen.has(g.url)) return false; seen.add(g.url); return true; });
+    groups.sort((a, b) => b.members - a.members);
+
+    if (!groups.length) {
+      result.innerHTML = '<div class="status err">Сообщества не найдены</div>';
+      return;
+    }
+
+    result.innerHTML = `
+      <div style="margin-bottom:12px;font-size:13px;color:var(--text-dim);">
+        Найдено ${groups.length} сообществ — отсортированы по размеру аудитории
+      </div>
+      ${groups.map(g => `
+        <div class="site-card" style="display:flex;align-items:center;gap:14px;">
+          <div style="flex:1;min-width:0;">
+            <h4 style="margin-bottom:2px;">${g.name}</h4>
+            <div style="font-size:12px;color:var(--text-dim);margin-bottom:6px;">
+              👥 ${g.members.toLocaleString('ru')} подписчиков · 🔑 ${g.keyword}
+            </div>
+            <div class="site-actions">
+              <a href="${g.url}" target="_blank" class="btn btn-vk btn-sm" style="text-decoration:none;">🔵 Открыть</a>
+              <button class="btn btn-outline btn-sm" onclick="generatePostForGroup('${g.name.replace(/'/g, "\'")}', ${g.members})">✍️ Написать пост</button>
+            </div>
+          </div>
+          <div style="text-align:center;flex-shrink:0;">
+            <div style="font-size:18px;font-weight:bold;color:var(--gold);">${g.members > 1000000 ? (g.members/1000000).toFixed(1)+'M' : g.members > 1000 ? Math.round(g.members/1000)+'K' : g.members}</div>
+            <div style="font-size:10px;color:var(--text-dim);">подписч.</div>
+          </div>
+        </div>
+      `).join('')}
+    `;
+  } catch(e) {
+    result.innerHTML = '<div class="status err">Ошибка: ' + e.message + '</div>';
+  }
+  btn.disabled = false;
+  btn.innerHTML = '🔵 Найти сообщества ВКонтакте';
+}
+
+async function generatePostForGroup(groupName, members) {
+  const output = document.getElementById('postOutput');
+  const actions = document.getElementById('postActions');
+
+  // Переключаемся на вкладку постов
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab')[0].classList.add('active');
+  document.getElementById('tab-posts').style.display = 'block';
+  document.getElementById('tab-audience').style.display = 'none';
+  document.getElementById('tab-ads').style.display = 'none';
+
+  output.style.display = 'block';
+  output.textContent = 'Пишу пост для "' + groupName + '"...';
+  actions.style.display = 'none';
+  output.scrollIntoView({ behavior: 'smooth' });
+
+  try {
+    const res = await fetch('/api/agent/claude', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-admin-token': ADMIN_TOKEN },
+      body: JSON.stringify({
+        model: 'yandexgpt',
+        max_tokens: 1000,
+        messages: [{ role: 'user', content: `Напиши пост для размещения в сообществе ВКонтакте "${groupName}" (${members.toLocaleString('ru')} подписчиков).
+Книга: "Тёмный Восход" Азата Туктарова — городское фэнтези, вампир Клычков, кот Мотолыжников, ангел Василий. Стиль: Булгаков+Гай Ричи.
+Сайт: https://booklo.ru
+Пост должен органично вписаться в тематику сообщества. До 800 знаков. Хэштеги в конце.
+Только текст поста.` }]
+      })
+    });
+    const data = await res.json();
+    currentPost = data.text || data.content?.[0]?.text || 'Ошибка';
+    output.textContent = currentPost;
+    actions.style.display = 'flex';
+  } catch(e) {
+    output.textContent = 'Ошибка: ' + e.message;
+  }
 }
 
 function copyAdsResult() {

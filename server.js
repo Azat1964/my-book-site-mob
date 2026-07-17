@@ -873,3 +873,55 @@ app.post('/api/agent/publish-vk', requireAdmin, async (req, res) => {
     res.status(500).json({ error: e.message });
   }
 });
+
+// Поиск тематических сообществ ВКонтакте
+app.post('/api/agent/vk-groups', requireAdmin, async (req, res) => {
+  // Список реальных тематических сообществ
+  const knownGroups = [
+    'bookmate', 'litres', 'mybook_ru', 'livelib', 'fantlab',
+    'eksmo', 'ast_izdatelstvo', 'alpina_books', 'azbuka_atticus', 'mann_ivanov_ferber',
+    'fanfics_ru', 'ficbook', 'authortoday', 'selfpub_ru', 'ridero',
+    'knigi_besplatno', 'audioknigi_ru', 'fb2_knigi', 'knigi_skachat', 'biblioteka_online_ru',
+    'mir_fantastiki_ru', 'fantlab_ru', 'sf_book', 'fantasy_book_ru', 'fentezi_knigi_ru',
+    'mistika_i_uzhasy', 'horror_books_ru', 'dark_fantasy_ru', 'paranormal_books', 'urban_fantasy_ru',
+    'bulgakov_mihail', 'klassika_rus_lit', 'russkaya_klassika', 'sovremennaya_literatura', 'rus_literatura',
+    'knizhniy_klub', 'chitaem_vmeste_ru', 'knigi_i_kofee', 'booklover_ru', 'knigoman_ru',
+    'chitayka', 'pro_knigi_ru', 'knizhnaya_polka', 'moya_kniga', 'knigi_na_noch',
+    'readrate', 'imhonet_knigi', 'knigi_otzyvy', 'luchshie_knigi', 'top_knigi',
+    'fentezi_i_sf', 'nauchfantastika', 'alternativnaya_istoriya', 'steampunk_ru', 'postapocalypse_ru',
+    'vedma_knigi', 'magic_fantasy_ru', 'volshebnye_miry', 'skazochnye_knigi', 'knigi_dlya_dushi',
+    'club18562', 'club42444', 'club53509', 'club76543', 'club98765'
+  ];
+
+  try {
+    const results = [];
+    // Проверяем группами по 10 с таймаутом
+    for (let i = 0; i < knownGroups.length; i += 10) {
+      const batch = knownGroups.slice(i, i + 10);
+      try {
+        const url = `https://api.vk.com/method/groups.getById?group_ids=${batch.join(',')}&fields=members_count,is_closed&access_token=${process.env.VK_TOKEN}&v=5.131`;
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 5000);
+        const r = await fetch(url, { signal: controller.signal });
+        clearTimeout(timeout);
+        const data = await r.json();
+        if (data.response) {
+          for (const g of data.response) {
+            if (g.is_closed === 0 && g.members_count > 1000) {
+              results.push({
+                name: g.name,
+                url: `https://vk.com/${g.screen_name}`,
+                members: g.members_count,
+                keyword: 'литература/фэнтези'
+              });
+            }
+          }
+        }
+      } catch(e) { /* пропускаем batch */ }
+    }
+    results.sort((a, b) => b.members - a.members);
+    res.json(results);
+  } catch(e) {
+    res.status(500).json({ error: e.message });
+  }
+});
