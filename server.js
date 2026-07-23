@@ -422,11 +422,14 @@ app.get('/api/books', async (req, res) => {
 
 // Список .webp-файлов из папки обложек книги — для случайного фона на главной
 app.get('/api/covers/:folder', (req, res) => {
-  const dirPath = path.join(__dirname, 'public', 'img', 'covers', req.params.folder);
-
+  const folder = req.params.folder;
+  // Разрешаем только буквы, цифры, дефис и подчёркивание — блокирует path traversal
+  if (!/^[A-Za-z0-9_-]+$/.test(folder)) {
+    return res.status(400).json({ error: 'Недопустимое имя папки' });
+  }
+  const dirPath = path.join(__dirname, 'public', 'img', 'covers', folder);
   fs.readdir(dirPath, (err, files) => {
     if (err) {
-      console.error('Не удалось прочитать папку обложек:', err);
       return res.status(404).json({ error: 'Папка не найдена' });
     }
     const webpFiles = files.filter(f => f.toLowerCase().endsWith('.webp'));
