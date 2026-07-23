@@ -118,10 +118,11 @@ app.get(['/book.html', '/book_mob.html', '/contents.html'], async (req, res, nex
     const c = r.rows[0];
 
     const chapterTitle = c.title ? `${c.title}` : `Глава ${c.chapter_number}`;
+    const cleanTitle = chapterTitle.replace(/[.,;:\s]+$/, ''); // убираем хвостовую пунктуацию
     html = injectMeta(html, {
-      title: `${chapterTitle} — ${c.book_title} | Азат Туктаров`,
+      title: `${cleanTitle} — ${c.book_title} | Азат Туктаров`,
       description: clampDesc(c.epigraph) ||
-        `${chapterTitle} романа «${c.book_title}» Азата Туктарова. Читать онлайн бесплатно.`,
+        `«${c.book_title}» Азата Туктарова, глава ${c.chapter_number}: ${cleanTitle}. Читать онлайн бесплатно.`,
       url: `${SITE_URL}${req.path}?book=${encodeURIComponent(slug)}&chapter=${c.chapter_number}`
     });
     return res.type('html').send(html);
