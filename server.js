@@ -25,6 +25,112 @@ const pool = new Pool({
 const app = express();
 app.use(express.json()); // Обработчик JSON-запросов
 app.use(express.urlencoded({ extended: true })); // Обработчик URL-encoded запросов
+// ---------------------------------------------------------------------------
+// SEO: серверная подстановка метатегов для страниц чтения и оглавления.
+// Ставится ДО express.static, иначе статика отдаст файл раньше.
+// Если книга/глава не найдены или БД недоступна — молча отдаём файл как есть.
+// ---------------------------------------------------------------------------
+const SITE_URL = 'https://booklo.ru';
+const OG_IMAGE = SITE_URL + '/img/og-cover.jpg';
+
+// Экранирование для подстановки внутрь HTML-атрибута
+function escAttr(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g, '&amp;').replace(/"/g, '&quot;')
+    .replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+// Обрезка описания до разумной длины по границе слова
+function clampDesc(s, max = 160) {
+  const t = String(s == null ? '' : s).replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+  if (t.length <= max) return t;
+  const cut = t.slice(0, max);
+  const sp = cut.lastIndexOf(' ');
+  return (sp > 60 ? cut.slice(0, sp) : cut) + '…';
+}
+
+// Заменяет title и указанные meta в готовом HTML
+function injectMeta(html, meta) {
+  html = html.replace(/<title>[\s\S]*?<\/title>/i, '<title>' + escAttr(meta.title) + '</title>');
+
+  const set = (attr, key, value) => {
+    const re = new RegExp('(<meta\\s+' + attr + '="' + key + '"\\s+content=")[^"]*(")', 'i');
+    if (re.test(html)) {
+      html = html.replace(re, '$1' + escAttr(value) + '$2');
+    } else {
+      html = html.replace(/(<meta charset="UTF-8">)/i,
+        '$1\n    <meta ' + attr + '="' + key + '" content="' + escAttr(value) + '">');
+    }
+  };
+
+  set('name', 'description', meta.description);
+  set('property', 'og:title', meta.title);
+  set('property', 'og:description', meta.description);
+  set('property', 'og:url', meta.url);
+  set('property', 'og:image', OG_IMAGE);
+  set('property', 'og:type', 'book');
+
+  // Канонический адрес — чтобы варианты с разными параметрами не плодили дубли
+  if (/<link\s+rel="canonical"/i.test(html)) {
+    html = html.replace(/(<link\s+rel="canonical"\s+href=")[^"]*(")/i, '$1' + escAttr(meta.url) + '$2');
+  } else {
+    html = html.replace(/(<meta charset="UTF-8">)/i,
+      '$1\n    <link rel="canonical" href="' + escAttr(meta.url) + '">');
+  }
+  return html;
+}
+
+app.get(['/book.html', '/book_mob.html', '/contents.html'], async (req, res, next) => {
+  const file = path.join(__dirname, 'public', path.basename(req.path));
+  const slug = req.query.book;
+  const isContents = req.path === '/contents.html';
+
+  // Без ?book= подставлять нечего — пусть отдаёт статика
+  if (!slug) return next();
+
+  try {
+    let html = fs.readFileSync(file, 'utf8');
+
+    if (isContents) {
+      const r = await pool.query('SELECT title, description FROM books WHERE slug = $1', [slug]);
+      if (r.rows.length === 0) return next();
+      const b = r.rows[0];
+      html = injectMeta(html, {
+        title: `${b.title} — оглавление | Азат Туктаров`,
+        description: clampDesc(b.description) ||
+          `Оглавление романа «${b.title}» Азата Туктарова. Читать онлайн бесплатно.`,
+        url: `${SITE_URL}/contents.html?book=${encodeURIComponent(slug)}`
+      });
+      return res.type('html').send(html);
+    }
+
+    // Страница чтения: нужен номер главы
+    const num = parseInt(req.query.chapter, 10);
+    if (!Number.isInteger(num) || num < 1) return next();
+
+    const r = await pool.query(
+      `SELECT c.chapter_number, c.title, c.epigraph, b.title AS book_title
+         FROM chapters c JOIN books b ON b.id = c.book_id
+        WHERE b.slug = $1 AND c.chapter_number = $2`,
+      [slug, num]
+    );
+    if (r.rows.length === 0) return next();
+    const c = r.rows[0];
+
+    const chapterTitle = c.title ? `${c.title}` : `Глава ${c.chapter_number}`;
+    html = injectMeta(html, {
+      title: `${chapterTitle} — ${c.book_title} | Азат Туктаров`,
+      description: clampDesc(c.epigraph) ||
+        `${chapterTitle} романа «${c.book_title}» Азата Туктарова. Читать онлайн бесплатно.`,
+      url: `${SITE_URL}${req.path}?book=${encodeURIComponent(slug)}&chapter=${c.chapter_number}`
+    });
+    return res.type('html').send(html);
+  } catch (err) {
+    // Любая ошибка — не ломаем страницу, отдаём статику
+    return next();
+  }
+});
+
 app.use(express.static(path.join(__dirname, 'public'))); // Статические файлы
 
 // Явный маршрут для иллюстраций глав — на случай если основной static
@@ -422,14 +528,11 @@ app.get('/api/books', async (req, res) => {
 
 // Список .webp-файлов из папки обложек книги — для случайного фона на главной
 app.get('/api/covers/:folder', (req, res) => {
-  const folder = req.params.folder;
-  // Разрешаем только буквы, цифры, дефис и подчёркивание — блокирует path traversal
-  if (!/^[A-Za-z0-9_-]+$/.test(folder)) {
-    return res.status(400).json({ error: 'Недопустимое имя папки' });
-  }
-  const dirPath = path.join(__dirname, 'public', 'img', 'covers', folder);
+  const dirPath = path.join(__dirname, 'public', 'img', 'covers', req.params.folder);
+
   fs.readdir(dirPath, (err, files) => {
     if (err) {
+      console.error('Не удалось прочитать папку обложек:', err);
       return res.status(404).json({ error: 'Папка не найдена' });
     }
     const webpFiles = files.filter(f => f.toLowerCase().endsWith('.webp'));
