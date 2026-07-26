@@ -59,8 +59,15 @@ function formatChapterText(rawText) {
   const withImgTokens = rawText.replace(/\[img:(.+?)\]/g, (_, path) => `§IMG§${encodeURIComponent(path.trim())}§`);
 
   return withImgTokens
-    .replace(/\n{2,}/g, '\n') // схлопываем пустые строки между абзацами — иначе получался лишний пробел
+    // Пустая строка (два и более переноса) — намеренный отступ между абзацами:
+    // автор ставит её в admin.html, чтобы разделить смысловые куски текста.
+    // Схлопываем любое их количество в ОДИН разделитель фиксированной высоты,
+    // чтобы три пустые строки не давали втрое больший провал.
+    .replace(/\n{2,}/g, '§GAP§')
+    // Одиночный перенос — обычный новый абзац с красной строкой
     .replace(/\n/g, '<br><span style="margin-left: 16px;"></span>')
+    // Разворачиваем разделитель: перенос + пустая строка нужной высоты + красная строка
+    .replace(/§GAP§/g, '<br><span style="display:inline-block; height:0.7em;"></span><br><span style="margin-left: 16px;"></span>')
     .replace(/(^\S+)/, '<span style="margin-left: 16px;"></span>$1')
     .replace(/\*\*\*/g, '<div style="text-align: center;">***</div>'); // Центрирование символов ***
 }
