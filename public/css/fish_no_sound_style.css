@@ -85,11 +85,107 @@ h1, p {
     height: 100%;
     width: 100%;
     position: absolute;
-    background-color: hsl(30,40%,70%);
+    /* Базовый цвет и текстура задаются переменными — их выставляет
+       класс-текстура на .book (см. ниже), выбранный автором в admin. */
+    background-color: var(--page-bg, hsl(30,40%,70%));
+    background-image: var(--page-texture, none);
+    background-size: var(--page-size, auto);
     backface-visibility: hidden;
     overflow: hidden; /* было auto — страница должна вмещать текст целиком, без скролла */
     padding: 5% 8%;
     }
+
+  /* Левая сторона разворота (название книги, автор, обложка) — тот же
+     цвет и текстура страницы, что и у правой, чтобы разворот был единым. */
+  /* Фон левой стороны (базовый цвет + желоб) задан в fish_no_sound.css,
+     который грузится последним. Текстуру на левую не накладываем, чтобы
+     градиент желоба не конфликтовал с ней. */
+
+/* ──────────────────────────────────────────────────────────────────
+   Текстуры страницы. Автор выбирает одну в admin.html, значение
+   (texture-...) пишется классом на .book. Все — чистый CSS, без картинок.
+   ────────────────────────────────────────────────────────────────── */
+
+/* Классическая (по умолчанию) — тёплый коричнево-жёлтый, как было */
+.book.texture-classic {
+  --page-bg: hsl(30,40%,70%);
+  --page-texture: none;
+  --page-size: auto;
+}
+
+/* Кремовая бумага — тёплый старый тон, темнее по углам/краям, светлее в центре,
+   лёгкая пятнистость, как на выцветшей бумаге старой книги. */
+.book.texture-cream {
+  --page-bg: #e8ddc3;
+  --page-texture:
+    radial-gradient(ellipse at 50% 45%, rgba(255,250,235,.35), transparent 55%),
+    radial-gradient(ellipse at 0% 0%, rgba(90,65,35,.22), transparent 40%),
+    radial-gradient(ellipse at 100% 0%, rgba(90,65,35,.22), transparent 40%),
+    radial-gradient(ellipse at 0% 100%, rgba(90,65,35,.18), transparent 40%),
+    radial-gradient(ellipse at 100% 100%, rgba(90,65,35,.18), transparent 40%),
+    radial-gradient(circle at 25% 35%, rgba(150,120,80,.08) 0 3px, transparent 3px),
+    radial-gradient(circle at 65% 55%, rgba(150,120,80,.07) 0 3px, transparent 3px),
+    radial-gradient(circle at 40% 75%, rgba(150,120,80,.06) 0 3px, transparent 3px);
+  --page-size:
+    100% 100%, 100% 100%, 100% 100%, 100% 100%, 100% 100%,
+    70px 70px, 90px 90px, 85px 85px;
+}
+
+/* Белая бумага — чистая, почти без тона, мягкий блик от изгиба страниц,
+   лёгкая тень у сгиба, без пятнистости — как свежая книжная бумага. */
+.book.texture-white {
+  --page-bg: #f5f4f0;
+  --page-texture:
+    radial-gradient(ellipse at 50% 15%, rgba(255,255,255,.6), transparent 55%),
+    linear-gradient(90deg, rgba(0,0,0,.05), transparent 12%, transparent 88%, rgba(0,0,0,.05));
+  --page-size: 100% 100%, 100% 100%;
+}
+
+/* Пергамент — тёплый, с разводами и волокнами */
+/* Розовая акварель — светлый блик в углу, мягкие розовые пятна-разводы,
+   лёгкая точечная зернистость, как акварельная бумага. */
+.book.texture-parchment {
+  --page-bg: #f6d3d9;
+  --page-texture:
+    radial-gradient(ellipse at 85% 8%, rgba(255,248,248,.75), transparent 45%),
+    radial-gradient(ellipse at 10% 15%, rgba(240,165,180,.28), transparent 40%),
+    radial-gradient(ellipse at 25% 60%, rgba(235,150,170,.24), transparent 42%),
+    radial-gradient(ellipse at 75% 70%, rgba(238,158,175,.22), transparent 45%),
+    radial-gradient(ellipse at 55% 40%, rgba(255,235,235,.3), transparent 50%),
+    radial-gradient(circle at 30% 30%, rgba(200,110,135,.04) 0 2px, transparent 2px),
+    radial-gradient(circle at 70% 55%, rgba(200,110,135,.04) 0 2px, transparent 2px);
+  --page-size:
+    100% 100%, 100% 100%, 100% 100%, 100% 100%, 100% 100%,
+    26px 26px, 30px 30px;
+}
+
+/* Старая газета — сероватая, с частой сеткой волокон */
+/* Мятная акварель — светлые бирюзовые разводы и облачные пятна,
+   мягкий центр, лёгкие мазки-штрихи по краям. */
+.book.texture-oldpaper {
+  --page-bg: #d3ecec;
+  --page-texture:
+    radial-gradient(ellipse at 50% 40%, rgba(240,252,250,.65), transparent 55%),
+    radial-gradient(ellipse at 15% 20%, rgba(170,215,215,.3), transparent 40%),
+    radial-gradient(ellipse at 85% 15%, rgba(178,220,218,.26), transparent 42%),
+    radial-gradient(ellipse at 20% 80%, rgba(160,205,205,.26), transparent 42%),
+    radial-gradient(ellipse at 80% 75%, rgba(168,210,210,.28), transparent 45%),
+    radial-gradient(circle at 35% 35%, rgba(90,160,160,.05) 0 3px, transparent 3px),
+    radial-gradient(circle at 65% 60%, rgba(90,160,160,.05) 0 3px, transparent 3px);
+  --page-size:
+    100% 100%, 100% 100%, 100% 100%, 100% 100%, 100% 100%,
+    32px 32px, 28px 28px;
+}
+
+/* Тёмная (ночная) — для чтения в темноте: тёмный фон, текст переопределяется ниже */
+.book.texture-dark {
+  --page-bg: #2b2620;
+  --page-texture:
+    repeating-linear-gradient(0deg, rgba(255,255,255,.02) 0 1px, transparent 1px 5px);
+  --page-size: 100% 5px;
+}
+.book.texture-dark [class*='side'],
+.book.texture-dark .left-container { color: #d8cfc0; }
   .side-1 {
     z-index: 2;
     box-shadow: inset 50px 0 50px rgba(0,0,0,.5);

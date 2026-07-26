@@ -49,6 +49,16 @@
             <option value="finished">Завершена</option>
           </select>
           <input type="number" id="book-free-limit" placeholder="Бесплатных глав (пусто = вся книга бесплатно, 0 = только по регистрации)" min="0">
+          <label style="display:block; margin:6px 0 2px; font-size:0.9em; opacity:0.8;">Текстура страницы читалки</label>
+          <div id="texture-swatches" style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:10px;">
+            <button type="button" class="tex-swatch" data-tex="classic"   title="Классическая" style="background:hsl(30,40%,70%);"></button>
+            <button type="button" class="tex-swatch" data-tex="cream"      title="Кремовая бумага" style="background:#e8ddc3;"></button>
+            <button type="button" class="tex-swatch" data-tex="white"      title="Белая бумага" style="background:#f5f4f0;"></button>
+            <button type="button" class="tex-swatch" data-tex="parchment"  title="Розовая акварель" style="background:#f6d3d9;"></button>
+            <button type="button" class="tex-swatch" data-tex="oldpaper"   title="Мятная акварель" style="background:#d3ecec;"></button>
+            <button type="button" class="tex-swatch" data-tex="dark"       title="Тёмная (ночная)" style="background:#2b2620;"></button>
+          </div>
+          <input type="hidden" id="book-texture" value="classic">
           <button type="submit">Сохранить книгу</button>
         </form>
         <p id="book-status-msg" class="status-text"></p>

@@ -117,6 +117,8 @@ bookLoadBtn.addEventListener('click', async () => {
       document.getElementById('book-genre').value = data.genre || '';
       document.getElementById('book-cover').value = data.cover_image || '';
       document.getElementById('book-status').value = data.status || 'ongoing';
+      document.getElementById('book-texture').value = data.page_texture || 'classic';
+      highlightTextureSwatch(data.page_texture || 'classic');
       document.getElementById('book-free-limit').value =
         (data.free_chapters_limit === null || data.free_chapters_limit === undefined)
           ? ''
@@ -160,6 +162,7 @@ bookForm.addEventListener('submit', async (e) => {
     cover_image: document.getElementById('book-cover').value.trim(),
     status: document.getElementById('book-status').value,
     free_chapters_limit: freeLimitRaw === '' ? null : freeLimitRaw,
+    page_texture: document.getElementById('book-texture').value,
   };
 
   try {
@@ -520,3 +523,24 @@ telegramForm.addEventListener('submit', async (e) => {
   }
 });
 
+
+// ── Выбор текстуры страницы кликом по цветным квадратикам ──
+function highlightTextureSwatch(tex) {
+  document.querySelectorAll('.tex-swatch').forEach(el => {
+    el.classList.toggle('selected', el.dataset.tex === tex);
+  });
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const swatches = document.getElementById('texture-swatches');
+  if (!swatches) return;
+  swatches.addEventListener('click', (e) => {
+    const btn = e.target.closest('.tex-swatch');
+    if (!btn) return;
+    const tex = btn.dataset.tex;
+    document.getElementById('book-texture').value = tex;
+    highlightTextureSwatch(tex);
+  });
+  // По умолчанию — классическая
+  highlightTextureSwatch(document.getElementById('book-texture').value || 'classic');
+});

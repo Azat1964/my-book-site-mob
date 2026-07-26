@@ -9,6 +9,19 @@
     gtag('js', new Date());
     gtag('config', 'G-29GR2L5LFK');
   </script>
+<!-- Yandex.Metrika counter -->
+<script type="text/javascript">
+    (function(m,e,t,r,i,k,a){
+        m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};
+        m[i].l=1*new Date();
+        for (var j = 0; j < document.scripts.length; j++) {if (document.scripts[j].src === r) { return; }}
+        k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)
+    })(window, document,'script','https://mc.yandex.ru/metrika/tag.js?id=110915454', 'ym');
+    ym(110915454, 'init', {ssr:true, webvisor:true, clickmap:true, ecommerce:"dataLayer", referrer: document.referrer, url: location.href, accurateTrackBounce:true, trackLinks:true});
+</script>
+<noscript><div><img src="https://mc.yandex.ru/watch/110915454" style="position:absolute; left:-9999px;" alt="" /></div></noscript>
+<!-- /Yandex.Metrika counter -->
+
 <!-- Top.Mail.Ru counter -->
 <script type="text/javascript">
 var _tmr = window._tmr || (window._tmr = []);
@@ -25,8 +38,14 @@ _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
 <!-- /Top.Mail.Ru counter -->
 
       <meta charset="UTF-8">
+    <meta name="description" content="Читать роман «Тёмный Восход» Азата Туктарова онлайн бесплатно. Городское фэнтези: ковбои, ангелы и коты-трансформеры.">
+    <meta property="og:title" content="Тёмный Восход — читать онлайн">
+    <meta property="og:description" content="Читать роман «Тёмный Восход» Азата Туктарова онлайн бесплатно. Городское фэнтези: ковбои, ангелы и коты-трансформеры.">
+    <meta property="og:image" content="https://booklo.ru/img/og-cover.jpg">
+    <meta property="og:type" content="book">
+    <meta name="twitter:card" content="summary_large_image">
       <meta name="viewport" content="width=device-width, initial-scale=1">
-      <title>Book Fish No Sound 09sep</title>
+      <title>Тёмный Восход — читать онлайн | Азат Туктаров</title>
       <script>
         // Узкий экран — у нас для него отдельная страница (book_mob.html)
         // с однострочным чтением и свайпом, а не разворотом на две страницы.
@@ -275,6 +294,16 @@ _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
           bookAuthorEl.textContent = book.author;
           document.title = book.title;
           bookAuthorEl.style.color = pickRandomColor();
+
+          // Текстура страницы, выбранная автором в admin (поле page_texture).
+          // Вешаем класс texture-... на .book; если поля нет — классическая.
+          const bookEl = document.getElementById('outputContainer');
+          if (bookEl) {
+            const allowed = ['classic','cream','white','parchment','oldpaper','dark'];
+            const tex = allowed.includes(book.page_texture) ? book.page_texture : 'classic';
+            bookEl.classList.remove(...allowed.map(t => 'texture-' + t));
+            bookEl.classList.add('texture-' + tex);
+          }
           if (book.cover_image) {
             bookCoverImage = book.cover_image;
             document.getElementById('bookCoverImg').src = book.cover_image;
