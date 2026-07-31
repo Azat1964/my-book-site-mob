@@ -390,6 +390,11 @@ _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
         const registerPromptDismiss = document.getElementById('registerPromptDismiss');
         const DISMISS_KEY = 'registerPromptDismissed';
         let softPromptShownForChapter = false;
+        // Флаг «событие о дочитывании этой главы в GA4 уже отправлено» — как
+        // и softPromptShownForChapter, сбрасывается при переходе на другую
+        // главу (см. goToChapter и обработчик popstate ниже), чтобы одна и
+        // та же глава не отправляла событие повторно при пролистывании туда-сюда.
+        let chapterCompleteEventSent = false;
 
         function hideRegisterPrompt() {
           registerPrompt.classList.remove('show');
@@ -425,6 +430,32 @@ _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
             }
           });
         }
+
+        // ---- Событие "дочитал главу" для Google Analytics (GA4) ----
+        // Срабатывает для ВСЕХ читателей (в отличие от баннера регистрации
+        // выше, который показывается только неавторизованным) — как только
+        // человек долистал разворот до последней страницы текущей главы.
+        // Один раз на главу: chapterCompleteEventSent сбрасывается при
+        // переходе на другую главу (см. goToChapter и обработчик popstate).
+        // Событие называется chapter_complete — именно его нужно будет
+        // пометить как "ключевое событие" в интерфейсе GA4 (Админка →
+        // События → рядом с chapter_complete включить переключатель
+        // "Пометить как ключевое событие"), чтобы отслеживать не просто
+        // открытие главы, а именно её дочитывание.
+        document.addEventListener('currentSpreadChanged', (e) => {
+          if (chapterCompleteEventSent) return;
+          if (typeof gtag !== 'function') return; // блокировщик рекламы и т.п.
+
+          const totalPages = document.querySelectorAll('#outputContainer .page').length;
+          const pageIndex = e.detail ? e.detail.pageIndex : 0;
+          if (totalPages > 0 && pageIndex >= totalPages) {
+            chapterCompleteEventSent = true;
+            gtag('event', 'chapter_complete', {
+              book_slug: slug,
+              chapter_number: parseInt(currentChapterNum, 10),
+            });
+          }
+        });
 
         // ---- Жёсткая стена регистрации — для глав за бесплатным лимитом ----
         // Вызывается из fish_no_sound.js (window.showChapterRegisterWall), когда
@@ -541,6 +572,7 @@ _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
         function goToChapter(chapterNum) {
           currentChapterNum = String(chapterNum); // переменная объявлена в fish_no_sound.js
           softPromptShownForChapter = false;
+          chapterCompleteEventSent = false;
           hideRegisterPrompt();
           hideChapterRegisterWall();
           history.pushState({}, '', `./book.html?book=${slug}&chapter=${chapterNum}`);
@@ -561,6 +593,7 @@ _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
           if (!num) return;
           currentChapterNum = String(num);
           softPromptShownForChapter = false;
+          chapterCompleteEventSent = false;
           hideRegisterPrompt();
           hideChapterRegisterWall();
           loadAndRenderChapter().then(() => renderHeaderForChapter(num));
