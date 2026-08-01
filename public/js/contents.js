@@ -68,14 +68,22 @@ function render(book, slug, bookmark) {
   } else {
     const items = book.chapters
       .sort((a, b) => a.chapter_number - b.chapter_number)
-      .map(ch => `
+      .map(ch => {
+        // Если у главы есть название — показываем только его (для книг без
+        // привычной структуры "глав", например сборников стихов, уместнее
+        // видеть название стихотворения, а не техническое "Глава N").
+        // "Глава N" остаётся запасным вариантом, когда название не задано.
+        const label = ch.title
+          ? `<span class="chapter-title">${escapeHtml(ch.title)}</span>`
+          : `<span class="chapter-num">Глава ${ch.chapter_number}</span>`;
+        return `
         <li class="chapter-item">
           <a class="chapter-link" href="./book.html?book=${slug}&chapter=${ch.chapter_number}">
-            <span class="chapter-num">Глава ${ch.chapter_number}</span>
-            <span class="chapter-title">${escapeHtml(ch.title) || ''}</span>
+            ${label}
           </a>
         </li>
-      `).join('');
+      `;
+      }).join('');
     chaptersHtml = `<ul class="chapter-list">${items}</ul>`;
   }
 
