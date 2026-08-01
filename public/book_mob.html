@@ -566,6 +566,19 @@ _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
   }
 
   async function buildMobilePages(rawText, epigraph) {
+    // Ждём полной загрузки шрифта 'Gabriela' ПЕРЕД замером высоты страниц.
+    // Без этого первый показ главы (особенно на мобильном, где шрифт может
+    // грузиться медленнее) меряет текст запасным шрифтом (Georgia) — у него
+    // другие метрики (высота строки, ширина букв). Как только настоящий
+    // шрифт подгружается, текст "раздаётся" вширь/ввысь, но границы страниц
+    // уже зафиксированы по старому замеру — последняя строка вылезает за
+    // pageBox и обрезается его overflow:hidden. document.fonts.ready решает
+    // это: если шрифт уже загружен, промис резолвится мгновенно (задержки
+    // на повторных главах нет), если ещё нет — дожидаемся честно.
+    if (document.fonts && document.fonts.ready) {
+      try { await document.fonts.ready; } catch (e) { /* не критично, продолжаем */ }
+    }
+
     const tokens = tokenizeByParagraphs(rawText);
 
     const imageSrcs = tokens.filter(t => t.type === 'image').map(t => t.src);
