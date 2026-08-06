@@ -128,16 +128,27 @@ bookLoadBtn.addEventListener('click', async () => {
       document.getElementById('book-slug-original').value = data.slug;
       bookLoadMsg.textContent = `Книга «${data.title}» загружена — можно править поля и нажать «Сохранить книгу».`;
       bookLoadMsg.className = 'status-text ok';
+      // Кнопка удаления активна только для реально загруженной книги —
+      // так нельзя случайно удалить что-то по недописанному/неверному slug
+      const deleteBtn = document.getElementById('delete-book-btn');
+      if (deleteBtn) {
+        deleteBtn.disabled = false;
+        deleteBtn.dataset.slug = data.slug;
+        deleteBtn.dataset.title = data.title;
+      }
     } else if (res.status === 404) {
       bookLoadMsg.textContent = 'Книги с таким slug пока нет — можно заполнить форму и создать новую.';
       bookLoadMsg.className = 'status-text err';
+      disableDeleteBookBtn();
     } else {
       bookLoadMsg.textContent = data.message || 'Не удалось загрузить книгу';
       bookLoadMsg.className = 'status-text err';
+      disableDeleteBookBtn();
     }
   } catch (err) {
     bookLoadMsg.textContent = 'Ошибка сети: ' + err.message;
     bookLoadMsg.className = 'status-text err';
+    disableDeleteBookBtn();
   }
 });
 
@@ -543,4 +554,316 @@ document.addEventListener('DOMContentLoaded', () => {
   });
   // По умолчанию — классическая
   highlightTextureSwatch(document.getElementById('book-texture').value || 'classic');
+});
+
+// ── Вставка стихотворения из файла (.docx/.txt) в текст главы ──
+// Загружает файл, извлекает из него сырой текст через серверный маршрут
+// /api/admin/extract-text (mammoth для .docx, обычное чтение для .txt),
+// оборачивает в [poem]...[/poem] и вставляет в textarea #chapter-content
+// в позицию курсора — не затирая остальной текст главы.
+document.addEventListener('DOMContentLoaded', () => {
+  const poemBtn = document.getElementById('poem-file-insert-btn');
+  const poemInput = document.getElementById('poem-file-input');
+  const poemMsg = document.getElementById('poem-file-msg');
+  if (!poemBtn || !poemInput) return;
+
+  poemBtn.addEventListener('click', async () => {
+    const file = poemInput.files[0];
+    if (!file) {
+      poemMsg.textContent = 'Сначала выберите файл со стихотворением.';
+      poemMsg.style.color = '#c94a4a';
+      return;
+    }
+
+    poemMsg.textContent = 'Загрузка и извлечение текста…';
+    poemMsg.style.color = '#8a7a64';
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const res = await fetch('/api/admin/extract-text', {
+        method: 'POST',
+        headers: { 'x-admin-token': ADMIN_TOKEN },
+        body: formData,
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        poemMsg.textContent = data.message || 'Не удалось прочитать файл.';
+        poemMsg.style.color = '#c94a4a';
+        return;
+      }
+
+      // Нормализуем переносы строк (файл может быть с Windows CRLF) и убираем
+      // лишние пустые строки по краям — сама пустая строка внутри [poem]
+      // (между строфами) сохраняется, это нужно для визуального промежутка.
+      const cleanText = data.text.replace(/\r\n?/g, '\n').trim();
+
+      // Автораспознавание названий (подчёркнутый текст в .docx) добавляет
+      // в извлечённый текст маркеры [title]...[/title] МЕЖДУ стихами.
+      // Их нельзя заворачивать в [poem] вместе с текстом — [title] должен
+      // остаться отдельным маркером ВНЕ блока стиха, иначе он превращается
+      // в обычную "строку стихотворения" и вместо жирного курсива на
+      // странице показывается как есть, вместе с HTML-тегами. Поэтому
+      // оборачиваем в [poem]...[/poem] только куски МЕЖДУ заголовками,
+      // а сами заголовки оставляем как есть.
+      const pieces = cleanText
+        .split(/(\[title\][\s\S]*?\[\/title\])/gi)
+        .map(piece => {
+          if (/^\[title\]/i.test(piece)) return piece; // сам заголовок — не трогаем
+          const trimmed = piece.trim();
+          return trimmed ? `[poem]\n${trimmed}\n[/poem]` : '';
+        })
+        .filter(Boolean);
+
+      // Склеиваем куски: пустую строку (визуальный промежуток) ставим МЕЖДУ
+      // разными стихами, но НЕ между заголовком и его собственным стихом —
+      // иначе между названием и текстом появляется лишний видимый перенос
+      // строки в дополнение к отступу самого заголовка (margin в CSS).
+      const wrapped = pieces.reduce((acc, piece, i) => {
+        if (i === 0) return piece;
+        const prevIsTitle = /^\[title\]/i.test(pieces[i - 1]);
+        // Между заголовком и ЕГО стихом — вообще без переноса строки: даже
+        // один \n превращается в <br> и добавляет лишний видимый промежуток
+        // поверх собственного отступа заголовка (margin в CSS). Так отступ
+        // управляется только одним местом — стилем .poem-title.
+        return acc + (prevIsTitle ? '' : '\n\n') + piece;
+      }, '');
+
+      const textarea = document.getElementById('chapter-content');
+      const start = textarea.selectionStart ?? textarea.value.length;
+      const end = textarea.selectionEnd ?? textarea.value.length;
+      const before = textarea.value.slice(0, start);
+      const after = textarea.value.slice(end);
+
+      // Пустая строка перед/после вставки — чтобы стих не слипся с соседней
+      // прозой, если курсор стоял вплотную к другому тексту.
+      const needsGapBefore = before && !before.endsWith('\n\n');
+      const needsGapAfter = after && !after.startsWith('\n\n');
+      const insertion = (needsGapBefore ? '\n\n' : '') + wrapped + (needsGapAfter ? '\n\n' : '');
+
+      textarea.value = before + insertion + after;
+      const newCursorPos = before.length + insertion.length;
+      textarea.focus();
+      textarea.setSelectionRange(newCursorPos, newCursorPos);
+
+      poemMsg.textContent = 'Стихотворение вставлено в текст главы ниже.';
+      poemMsg.style.color = '#4ac97a';
+      poemInput.value = '';
+    } catch (err) {
+      poemMsg.textContent = 'Ошибка сети при загрузке файла.';
+      poemMsg.style.color = '#c94a4a';
+    }
+  });
+});
+
+// ── Удаление книги — полное и безвозвратное ──
+function disableDeleteBookBtn() {
+  const btn = document.getElementById('delete-book-btn');
+  if (!btn) return;
+  btn.disabled = true;
+  delete btn.dataset.slug;
+  delete btn.dataset.title;
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const deleteBtn = document.getElementById('delete-book-btn');
+  if (!deleteBtn) return;
+
+  deleteBtn.addEventListener('click', async () => {
+    const slug = deleteBtn.dataset.slug;
+    const title = deleteBtn.dataset.title;
+    if (!slug) return; // кнопка неактивна без загруженной книги, но на всякий случай
+
+    // Действие необратимое — обычного OK/Отмена мало. Просим ввести точное
+    // название книги, чтобы случайный клик или нажатие Enter не привели
+    // к безвозвратной потере книги и всех её глав.
+    const typed = window.prompt(
+      `Это удалит книгу «${title}» и ВСЕ её главы без возможности восстановления.\n\n` +
+      `Чтобы подтвердить, введите точное название книги:`
+    );
+    if (typed === null) return; // нажали "Отмена"
+    if (typed.trim() !== title) {
+      window.alert('Название не совпадает — книга не удалена.');
+      return;
+    }
+
+    const bookStatusMsg = document.getElementById('book-status-msg');
+    try {
+      const res = await fetch(`/api/admin/books/${slug}`, {
+        method: 'DELETE',
+        headers: { 'x-admin-token': ADMIN_TOKEN },
+      });
+      const data = await res.json();
+
+      if (res.ok) {
+        if (bookStatusMsg) {
+          bookStatusMsg.textContent = data.message;
+          bookStatusMsg.className = 'status-text ok';
+        }
+        document.getElementById('book-form').reset();
+        document.getElementById('book-slug-original').value = '';
+        disableDeleteBookBtn();
+        highlightTextureSwatch('classic');
+        loadBooksIntoSelect(); // обновляем выпадающие списки — удалённой книги там больше нет
+      } else {
+        if (bookStatusMsg) {
+          bookStatusMsg.textContent = data.message || 'Не удалось удалить книгу';
+          bookStatusMsg.className = 'status-text err';
+        }
+      }
+    } catch (err) {
+      if (bookStatusMsg) {
+        bookStatusMsg.textContent = 'Ошибка сети: ' + err.message;
+        bookStatusMsg.className = 'status-text err';
+      }
+    }
+  });
+});
+
+// ── Управление постами блога (источник контента для RSS-ленты) ──
+
+function disableDeletePostBtn() {
+  const btn = document.getElementById('delete-post-btn');
+  if (!btn) return;
+  btn.disabled = true;
+  delete btn.dataset.slug;
+  delete btn.dataset.title;
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const loadPostBtn = document.getElementById('load-post-btn');
+  const postLoadMsg = document.getElementById('post-load-msg');
+  const postStatusMsg = document.getElementById('post-status-msg');
+  if (!loadPostBtn) return;
+
+  loadPostBtn.addEventListener('click', async () => {
+    const slug = document.getElementById('post-slug').value.trim().toLowerCase();
+    if (!slug) {
+      postLoadMsg.textContent = 'Введите slug поста';
+      postLoadMsg.className = 'status-text err';
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/admin/posts/${slug}`, {
+        headers: { 'x-admin-token': ADMIN_TOKEN },
+      });
+      const data = await res.json();
+
+      if (res.ok) {
+        document.getElementById('post-slug-original').value = data.slug;
+        document.getElementById('post-title').value = data.title || '';
+        document.getElementById('post-excerpt').value = data.excerpt || '';
+        document.getElementById('post-cover').value = data.cover_image || '';
+        document.getElementById('post-content').value = data.content || '';
+
+        postLoadMsg.textContent = `Пост «${data.title}» загружен — можно править поля и нажать «Опубликовать пост».`;
+        postLoadMsg.className = 'status-text ok';
+
+        const deleteBtn = document.getElementById('delete-post-btn');
+        if (deleteBtn) {
+          deleteBtn.disabled = false;
+          deleteBtn.dataset.slug = data.slug;
+          deleteBtn.dataset.title = data.title;
+        }
+      } else if (res.status === 404) {
+        postLoadMsg.textContent = 'Поста с таким slug пока нет — можно заполнить форму и создать новый.';
+        postLoadMsg.className = 'status-text err';
+        document.getElementById('post-slug-original').value = '';
+        disableDeletePostBtn();
+      } else {
+        postLoadMsg.textContent = data.message || 'Не удалось загрузить пост';
+        postLoadMsg.className = 'status-text err';
+        disableDeletePostBtn();
+      }
+    } catch (err) {
+      postLoadMsg.textContent = 'Ошибка сети: ' + err.message;
+      postLoadMsg.className = 'status-text err';
+      disableDeletePostBtn();
+    }
+  });
+
+  const postForm = document.getElementById('post-form');
+  postForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const originalSlug = document.getElementById('post-slug-original').value.trim();
+    const slugFromField = document.getElementById('post-slug').value.trim().toLowerCase();
+    const payload = {
+      slug: originalSlug || slugFromField,
+      title: document.getElementById('post-title').value.trim(),
+      excerpt: document.getElementById('post-excerpt').value.trim(),
+      cover_image: document.getElementById('post-cover').value.trim(),
+      content: document.getElementById('post-content').value,
+    };
+
+    try {
+      const res = await fetch('/api/admin/posts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-admin-token': ADMIN_TOKEN },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+
+      if (res.ok) {
+        postStatusMsg.textContent = `Пост «${data.title}» опубликован.`;
+        postStatusMsg.className = 'status-text ok';
+        document.getElementById('post-slug-original').value = data.slug;
+        const deleteBtn = document.getElementById('delete-post-btn');
+        if (deleteBtn) {
+          deleteBtn.disabled = false;
+          deleteBtn.dataset.slug = data.slug;
+          deleteBtn.dataset.title = data.title;
+        }
+      } else {
+        postStatusMsg.textContent = data.message || 'Не удалось сохранить пост';
+        postStatusMsg.className = 'status-text err';
+      }
+    } catch (err) {
+      postStatusMsg.textContent = 'Ошибка сети: ' + err.message;
+      postStatusMsg.className = 'status-text err';
+    }
+  });
+
+  const deletePostBtn = document.getElementById('delete-post-btn');
+  deletePostBtn.addEventListener('click', async () => {
+    const slug = deletePostBtn.dataset.slug;
+    const title = deletePostBtn.dataset.title;
+    if (!slug) return;
+
+    const typed = window.prompt(
+      `Это удалит пост «${title}» без возможности восстановления.\n\n` +
+      `Чтобы подтвердить, введите точное название поста:`
+    );
+    if (typed === null) return;
+    if (typed.trim() !== title) {
+      window.alert('Название не совпадает — пост не удалён.');
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/admin/posts/${slug}`, {
+        method: 'DELETE',
+        headers: { 'x-admin-token': ADMIN_TOKEN },
+      });
+      const data = await res.json();
+
+      if (res.ok) {
+        postStatusMsg.textContent = data.message;
+        postStatusMsg.className = 'status-text ok';
+        postForm.reset();
+        document.getElementById('post-slug-original').value = '';
+        document.getElementById('post-slug').value = '';
+        disableDeletePostBtn();
+      } else {
+        postStatusMsg.textContent = data.message || 'Не удалось удалить пост';
+        postStatusMsg.className = 'status-text err';
+      }
+    } catch (err) {
+      postStatusMsg.textContent = 'Ошибка сети: ' + err.message;
+      postStatusMsg.className = 'status-text err';
+    }
+  });
 });

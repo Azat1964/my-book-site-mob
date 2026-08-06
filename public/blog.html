@@ -41,14 +41,14 @@ _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
   <meta name="description" content="Заметки о работе над книгами, черновики и истории из-за кулис.">
   <meta property="og:title" content="Блог — Отец Тук">
   <meta property="og:description" content="Заметки о работе над книгами, черновики и истории из-за кулис.">
-  <meta property="og:image" content="https://my-book-site-mob.onrender.com/img/og-cover.jpg">
-  <meta property="og:url" content="https://my-book-site-mob.onrender.com/blog.html">
+  <meta property="og:image" content="https://booklo.ru/img/og-cover.jpg">
+  <meta property="og:url" content="https://booklo.ru/blog.html">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="Отец Тук">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="Блог — Отец Тук">
   <meta name="twitter:description" content="Заметки о работе над книгами, черновики и истории из-за кулис.">
-  <meta name="twitter:image" content="https://my-book-site-mob.onrender.com/img/og-cover.jpg">
+  <meta name="twitter:image" content="https://booklo.ru/img/og-cover.jpg">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Блог — Отец Тук</title>
 <link href="https://fonts.googleapis.com/css2?family=Gabriela&family=Archivo+Black&display=swap" rel="stylesheet">
@@ -138,6 +138,49 @@ _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
     margin-top: 18px;
   }
 
+  /* ===== Список постов (главная страница блога) ===== */
+  .post-list {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    margin-bottom: 48px;
+  }
+  .post-card {
+    display: block;
+    background: var(--card-bg);
+    border-radius: 14px;
+    padding: 22px 26px;
+    text-decoration: none;
+    box-shadow: 0 6px 18px rgba(74,42,22,0.10);
+    transition: transform 0.15s, box-shadow 0.15s;
+  }
+  .post-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 26px rgba(74,42,22,0.16);
+  }
+  .post-card-date {
+    color: #8a7a64;
+    font-size: 13px;
+    margin-bottom: 6px;
+  }
+  .post-card-title {
+    color: #5c2e1c;
+    font-size: 20px;
+    line-height: 1.3;
+    margin-bottom: 8px;
+  }
+  .post-card-excerpt {
+    color: #5a4632;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+  .empty-blog {
+    color: #7a4a35;
+    text-align: center;
+    padding: 24px;
+    font-size: 15px;
+  }
+
   .subtitle {
     color: #7a4a35;
     font-size: 14px;
@@ -182,16 +225,9 @@ _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
   <div class="page-wrap">
     <p class="page-title">Блог</p>
 
-    <article class="post">
-      <p class="post-date">28 июня 2026</p>
-      <h1 class="post-title">Первый пост. Видимо, начало.</h1>
-      <div class="post-body">
-        <p>Технически это первый пост в блоге, которого ещё час назад не существовало — так что не ждите от меня торжественной речи, я и сам не успел к ней подготовиться.</p>
-        <p>Здесь не будет расписания. Будет то, что пишется само: кусочки, не вошедшие в текст, мысли о персонажах, которые ведут себя не так, как задумывалось, иногда — просто строчка без объяснений, потому что объяснять её мне не хочется.</p>
-        <p>Если вы здесь — скорее всего, уже читали «Тёмный Восход», или только начинаете. В обоих случаях — спасибо, что заглянули. Дальше будет интереснее, обещаю не громко.</p>
-      </div>
-      <p class="post-signoff">— Отец Тук</p>
-    </article>
+    <div class="post-list" id="postList">
+      <p class="empty-blog">Загрузка...</p>
+    </div>
 
     <p class="subtitle">Анонсы новых постов и глав — в Telegram-канале.</p>
     <div class="tg-bridge">
@@ -201,6 +237,44 @@ _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
       </a>
     </div>
   </div>
+
+  <script>
+    function escapeHtml(s) {
+      return String(s == null ? '' : s)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+
+    async function loadPosts() {
+      const listEl = document.getElementById('postList');
+      try {
+        const res = await fetch('/api/posts');
+        const posts = await res.json();
+
+        if (!Array.isArray(posts) || posts.length === 0) {
+          listEl.innerHTML = '<p class="empty-blog">Постов пока нет — загляните позже.</p>';
+          return;
+        }
+
+        listEl.innerHTML = posts.map(p => {
+          const dateStr = new Date(p.published_at).toLocaleDateString('ru-RU', {
+            day: 'numeric', month: 'long', year: 'numeric',
+          });
+          return `
+            <a class="post-card" href="./blog/${encodeURIComponent(p.slug)}">
+              <p class="post-card-date">${dateStr}</p>
+              <h2 class="post-card-title">${escapeHtml(p.title)}</h2>
+              ${p.excerpt ? `<p class="post-card-excerpt">${escapeHtml(p.excerpt)}</p>` : ''}
+            </a>
+          `;
+        }).join('');
+      } catch (err) {
+        listEl.innerHTML = '<p class="empty-blog">Не удалось загрузить посты. Попробуйте обновить страницу.</p>';
+        console.error(err);
+      }
+    }
+
+    loadPosts();
+  </script>
 
 </body>
 </html>

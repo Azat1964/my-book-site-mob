@@ -12,6 +12,36 @@ const { splitByAutoHeadings, splitByToc } = require('./lib/chapterSplitter');
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 25 * 1024 * 1024 } });
 
+// Превращает HTML, полученный от mammoth.convertToHtml(), в чистый текст —
+// так, чтобы результат совпадал с тем, что видно в самом .docx: каждый
+// ручной перенос строки (Shift+Enter → mammoth отдаёт его как <br>) остаётся
+// отдельной строкой, а разрыв абзаца (¶) — пустой строкой между ними.
+// В отличие от mammoth.extractRawText(), которая ручные переносы просто
+// выбрасывает (без даже пробела на их месте), здесь ничего не теряется.
+function docxHtmlToPlainText(html) {
+  return html
+    // Подчёркнутый текст (<u>) — по договорённости это название стихотворения
+    // в исходном .docx. Превращаем в маркер [title]...[/title] СРАЗУ, до того
+    // как остальные теги будут стёрты (иначе сигнал "это заголовок" потеряется
+    // безвозвратно). Если внутри подчёркивания есть ещё теги (например, само
+    // название дополнительно жирное) — они переживут этот шаг и будут убраны
+    // позже обычной чисткой тегов, а сам текст останется между [title]/[/title].
+    .replace(/<u>([\s\S]*?)<\/u>/gi, (_, inner) => `[title]${inner.trim()}[/title]`)
+    .replace(/<br\s*\/?>/gi, '\n')                    // ручной перенос строки → \n
+    .replace(/<\/(p|h[1-6]|li)>\s*<(p|h[1-6]|li)[^>]*>/gi, '\n\n') // граница между абзацами → пустая строка
+    .replace(/<\/?(p|h[1-6]|li|ul|ol)[^>]*>/gi, '')    // остатки тегов абзацев/списков — убираем
+    .replace(/<[^>]+>/g, '')                           // любые прочие теги (strong, em и т.п.) — убираем, текст внутри остаётся
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/[ \t]+\n/g, '\n')                        // пробелы перед переносом — убираем как мусор
+    .replace(/\n{3,}/g, '\n\n')                        // три и более пустых строки подряд (пустые ¶ в Word) → одна пустая строка
+    .trim();
+}
+
 // Подключение к базе данных PostgreSQL
 // Значения берутся из .env — см. .env.example
 const pool = new Pool({
@@ -47,6 +77,22 @@ function clampDesc(s, max = 160) {
   const cut = t.slice(0, max);
   const sp = cut.lastIndexOf(' ');
   return (sp > 60 ? cut.slice(0, sp) : cut) + '…';
+}
+
+// Экранирование для подстановки простого текста (не HTML-разметки) внутрь
+// HTML — используется для заголовка поста в шаблоне blog-post.html, где
+// заголовок должен остаться именно текстом, а не интерпретироваться как теги
+function escapeHtmlBasic(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+// Экранирование для XML (RSS-лента) — свои правила, шире чем HTML:
+// XML требует экранировать ещё и кавычки внутри атрибутов
+function escapeXml(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&apos;');
 }
 
 // Заменяет title и указанные meta в готовом HTML
@@ -129,6 +175,111 @@ app.get(['/book.html', '/book_mob.html', '/contents.html'], async (req, res, nex
   } catch (err) {
     // Любая ошибка — не ломаем страницу, отдаём статику
     return next();
+  }
+});
+
+// ---------------------------------------------------------------------------
+// Блог: список постов (публичный, для blog.html), чистая ссылка на отдельный
+// пост (/blog/slug — без параметров, так требует Яндекс.Дзен для RSS) и сама
+// RSS-лента. Админские операции (создание/удаление постов) — ниже, в общем
+// разделе admin API.
+// ---------------------------------------------------------------------------
+
+// Список опубликованных постов — используется публичной страницей blog.html
+app.get('/api/posts', async (req, res) => {
+  try {
+    const r = await pool.query(
+      `SELECT slug, title, excerpt, cover_image, published_at
+         FROM posts ORDER BY published_at DESC`
+    );
+    res.json(r.rows);
+  } catch (err) {
+    console.error('Ошибка получения списка постов:', err);
+    res.status(500).json({ message: 'Ошибка сервера' });
+  }
+});
+
+// Чистая ссылка на отдельный пост: /blog/moy-post — без параметров в URL,
+// это отдельное требование Дзена к формату ссылок в RSS-ленте. Отдаём
+// готовую HTML-страницу с текстом поста, подставленным на сервере (SSR) —
+// так и краулер Дзена, и поисковики видят полный текст сразу, без JS.
+app.get('/blog/:slug', async (req, res) => {
+  const slug = (req.params.slug || '').trim().toLowerCase();
+  try {
+    const r = await pool.query('SELECT * FROM posts WHERE slug = $1', [slug]);
+    if (r.rows.length === 0) {
+      return res.status(404).send('Пост не найден');
+    }
+    const post = r.rows[0];
+    const template = fs.readFileSync(path.join(__dirname, 'public', 'blog-post.html'), 'utf8');
+
+    const dateStr = new Date(post.published_at).toLocaleDateString('ru-RU', {
+      day: 'numeric', month: 'long', year: 'numeric',
+    });
+
+    let html = template
+      .replace(/__POST_TITLE__/g, escapeHtmlBasic(post.title))
+      .replace(/__POST_DATE__/g, dateStr)
+      .replace('__POST_BODY__', post.content); // content — доверенный HTML, вводит только администратор через admin.html
+
+    html = injectMeta(html, {
+      title: `${post.title} — Блог | Азат Туктаров`,
+      description: clampDesc(post.excerpt) || clampDesc(post.content.replace(/<[^>]+>/g, ' ')),
+      url: `${SITE_URL}/blog/${slug}`,
+    });
+
+    res.type('html').send(html);
+  } catch (err) {
+    console.error('Ошибка получения поста:', err);
+    res.status(500).send('Ошибка сервера');
+  }
+});
+
+// RSS-лента для Яндекс.Дзен и подобных агрегаторов. Требования Дзена:
+// - минимум 10 материалов при первой разметке, минимум 3 новых в месяц дальше
+// - разрешённый набор HTML-тегов в контенте (p, img, figure и т.п.)
+// - ЧПУ-ссылки без параметров (см. /blog/:slug выше)
+// - обложка через <enclosure>
+app.get('/rss.xml', async (req, res) => {
+  try {
+    const r = await pool.query(
+      `SELECT slug, title, excerpt, content, cover_image, published_at
+         FROM posts ORDER BY published_at DESC LIMIT 50`
+    );
+
+    const items = r.rows.map(post => {
+      const link = `${SITE_URL}/blog/${post.slug}`;
+      const pubDate = new Date(post.published_at).toUTCString();
+      const description = escapeXml(clampDesc(post.excerpt) || clampDesc(post.content.replace(/<[^>]+>/g, ' ')));
+      const enclosure = post.cover_image
+        ? `<enclosure url="${escapeXml(SITE_URL + post.cover_image)}" type="image/${post.cover_image.toLowerCase().endsWith('.png') ? 'png' : 'jpeg'}" />`
+        : '';
+      return `
+    <item>
+      <title>${escapeXml(post.title)}</title>
+      <link>${link}</link>
+      <guid isPermaLink="true">${link}</guid>
+      <pubDate>${pubDate}</pubDate>
+      <description>${description}</description>
+      <content:encoded><![CDATA[${post.content}]]></content:encoded>
+      ${enclosure}
+    </item>`;
+    }).join('');
+
+    const rss = `<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:content="http://purl.org/rss/1.0/modules/content/">
+  <channel>
+    <title>Отец Тук — блог</title>
+    <link>${SITE_URL}/blog.html</link>
+    <description>Заметки о работе над книгами, черновики и истории из-за кулис.</description>
+    <language>ru</language>${items}
+  </channel>
+</rss>`;
+
+    res.type('application/rss+xml; charset=utf-8').send(rss);
+  } catch (err) {
+    console.error('Ошибка формирования RSS:', err);
+    res.status(500).send('Ошибка сервера');
   }
 });
 
@@ -805,6 +956,94 @@ app.post('/api/books', requireAdmin, async (req, res) => {
   }
 });
 
+// Полное безвозвратное удаление книги (только администратор, через admin.html).
+// Главы, статистика просмотров и прогресс чтения удаляются автоматически —
+// в схеме БД на них стоит ON DELETE CASCADE от books(id), отдельно чистить
+// эти таблицы не нужно. Файлы обложки/иллюстраций на диске НЕ удаляются
+// (только запись в базе) — их можно почистить вручную при необходимости.
+app.delete('/api/admin/books/:slug', requireAdmin, async (req, res) => {
+  const slug = (req.params.slug || '').trim().toLowerCase();
+  if (!slug) {
+    return res.status(400).json({ message: 'Не указан slug книги' });
+  }
+  try {
+    const result = await pool.query('DELETE FROM books WHERE slug = $1 RETURNING title', [slug]);
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: 'Книга не найдена' });
+    }
+    res.json({ message: `Книга «${result.rows[0].title}» удалена безвозвратно` });
+  } catch (error) {
+    console.error('Ошибка удаления книги:', error);
+    res.status(500).json({ message: 'Ошибка сервера' });
+  }
+});
+
+// Получить один пост по slug — для формы редактирования в admin.html
+app.get('/api/admin/posts/:slug', requireAdmin, async (req, res) => {
+  const slug = (req.params.slug || '').trim().toLowerCase();
+  try {
+    const r = await pool.query('SELECT * FROM posts WHERE slug = $1', [slug]);
+    if (r.rows.length === 0) {
+      return res.status(404).json({ message: 'Пост не найден' });
+    }
+    res.json(r.rows[0]);
+  } catch (error) {
+    console.error('Ошибка получения поста:', error);
+    res.status(500).json({ message: 'Ошибка сервера' });
+  }
+});
+
+// Добавление нового поста ИЛИ обновление существующего — определяется по slug
+// (только администратор, через admin.html). Та же логика upsert, что у книг.
+app.post('/api/admin/posts', requireAdmin, async (req, res) => {
+  const rawSlug = req.body.slug;
+  const { title, content, excerpt, cover_image } = req.body;
+
+  if (!rawSlug || !title || !content) {
+    return res.status(400).json({ message: 'Заполните slug, заголовок и текст поста' });
+  }
+  const slug = rawSlug.trim().toLowerCase();
+  if (!/^[a-z0-9-]+$/.test(slug)) {
+    return res.status(400).json({ message: 'Slug может содержать только латинские буквы, цифры и дефис' });
+  }
+
+  try {
+    const result = await pool.query(
+      `INSERT INTO posts (slug, title, content, excerpt, cover_image)
+       VALUES ($1, $2, $3, $4, $5)
+       ON CONFLICT (slug) DO UPDATE SET
+         title = EXCLUDED.title,
+         content = EXCLUDED.content,
+         excerpt = EXCLUDED.excerpt,
+         cover_image = EXCLUDED.cover_image
+       RETURNING *`,
+      [slug, title, content, excerpt || null, cover_image || null]
+    );
+    res.status(201).json(result.rows[0]);
+  } catch (error) {
+    console.error('Ошибка добавления/обновления поста:', error);
+    res.status(500).json({ message: 'Ошибка сервера' });
+  }
+});
+
+// Полное безвозвратное удаление поста (только администратор)
+app.delete('/api/admin/posts/:slug', requireAdmin, async (req, res) => {
+  const slug = (req.params.slug || '').trim().toLowerCase();
+  if (!slug) {
+    return res.status(400).json({ message: 'Не указан slug поста' });
+  }
+  try {
+    const result = await pool.query('DELETE FROM posts WHERE slug = $1 RETURNING title', [slug]);
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: 'Пост не найден' });
+    }
+    res.json({ message: `Пост «${result.rows[0].title}» удалён безвозвратно` });
+  } catch (error) {
+    console.error('Ошибка удаления поста:', error);
+    res.status(500).json({ message: 'Ошибка сервера' });
+  }
+});
+
 // Добавление/обновление главы (только администратор, через admin.html)
 // Если глава с таким номером уже есть — текст обновляется (удобно для правок).
 app.post('/api/books/:slug/chapters', requireAdmin, async (req, res) => {
@@ -839,6 +1078,47 @@ app.post('/api/books/:slug/chapters', requireAdmin, async (req, res) => {
 });
 
 // Массовая загрузка ВСЕЙ книги через admin.html — .docx файл романа (+ опционально файл содержания)
+// Извлечение текста из файла со стихотворением (.docx или .txt), чтобы автор
+// мог загрузить готовый файл вместо ручного набора/копирования текста стиха.
+// Возвращает только сырой текст — вставка в главу и обёртка [poem]...[/poem]
+// делаются на клиенте (admin.js), в текстовое поле главы.
+app.post('/api/admin/extract-text', requireAdmin, upload.single('file'), async (req, res) => {
+  const file = req.file;
+  if (!file) {
+    return res.status(400).json({ message: 'Файл не загружен' });
+  }
+  try {
+    let text;
+    if (file.originalname.toLowerCase().endsWith('.docx')) {
+      // ВАЖНО: mammoth.extractRawText() полностью игнорирует ручные переносы
+      // строк (Shift+Enter в Word) — не вставляет на их месте даже пробел,
+      // просто склеивает соседние строки. Для стихов, где почти каждая
+      // строка — это ручной перенос внутри одного абзаца, это ломает весь
+      // текст ("моста" + "И" превращается в "мостаИ"). Поэтому используем
+      // convertToHtml(), которая сохраняет ручные переносы как <br>, и сами
+      // аккуратно разбираем получившийся HTML обратно в чистый текст —
+      // это даёт результат, который выглядит ровно как в исходном .docx.
+      // ВАЖНО: mammoth по умолчанию сохраняет жирный/курсив (strong/em),
+      // но НЕ подчёркивание — его приходится явно запрашивать через styleMap.
+      // Нужно, чтобы автоматически распознавать названия стихов: в исходном
+      // .docx они помечены подчёркиванием, и мы используем это как сигнал
+      // "это заголовок" — см. docxHtmlToPlainText ниже.
+      const result = await mammoth.convertToHtml(
+        { buffer: file.buffer },
+        { styleMap: ['u => u'] }
+      );
+      text = docxHtmlToPlainText(result.value);
+    } else {
+      // .txt и всё остальное — читаем как обычный текст (UTF-8)
+      text = file.buffer.toString('utf8');
+    }
+    res.json({ text });
+  } catch (err) {
+    console.error('Ошибка извлечения текста из файла:', err);
+    res.status(500).json({ message: 'Не удалось прочитать файл' });
+  }
+});
+
 app.post('/api/books/:slug/import', requireAdmin, upload.fields([
   { name: 'bookFile', maxCount: 1 },
   { name: 'tocFile', maxCount: 1 },

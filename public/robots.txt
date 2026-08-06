@@ -1,5 +1,6 @@
 User-agent: *
 Allow: /
+Allow: /rss.xml
 Disallow: /admin.html
 Disallow: /analytics.html
 Disallow: /api/

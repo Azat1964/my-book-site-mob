@@ -420,6 +420,11 @@ _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
      прямо на обложке, как у настоящей книги */
   .book-card.photo-cover .book-cover {
     position: relative;
+    height: 100%;       /* заполняет всю высоту карточки, растянутой сеткой
+                           под соседей (например, карточку без фото, у которой
+                           название/автор идут отдельным текстом под обложкой
+                           и потому она выше) — иначе снизу проступал тёмный
+                           фон самой карточки там, где фото уже закончилось */
     background-size: cover;
     background-position: center;
     align-items: stretch;
@@ -755,29 +760,31 @@ _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
           const cfg = photoCoverConfig[book.title];
           const randomFile = randomCovers[book.title];
 
+          // Приоритет обложки: 1) случайная картинка из папки (только для
+          // книг со спец-конфигом — сейчас "Тёмный Восход" и "Чистория",
+          // у них заведено много вариантов фото); 2) обычная обложка книги
+          // из поля "Путь к обложке" в admin.html — так оформляется ЛЮБАЯ
+          // книга, включая все будущие, без правки этого кода; 3) если
+          // обложки вовсе нет — просто красивый градиентный фон (уже задан
+          // в CSS по умолчанию для .book-cover) с названием и автором поверх,
+          // тем же единым шаблоном, что и у книг с фото.
+          let coverUrl = null;
           if (cfg && randomFile) {
-            const coverUrl = `./img/covers/${cfg.folder}/${randomFile}`;
-            const themeClass = cfg.themeClass ? ` ${cfg.themeClass}` : '';
-            return `
-              <a class="book-card photo-cover${themeClass}" href="./contents.html?book=${book.slug}">
-                <div class="book-cover" style="background-image:url('${coverUrl}')">
-                  <h3 class="cover-title">${escapeHtml(book.title)}</h3>
-                  <div class="cover-text">
-                    <p>${escapeHtml(book.author)}</p>
-                  </div>
-                </div>
-              </a>
-            `;
+            coverUrl = `./img/covers/${cfg.folder}/${randomFile}`;
+          } else if (book.cover_image) {
+            coverUrl = book.cover_image;
           }
+          const themeClass = cfg && cfg.themeClass ? ` ${cfg.themeClass}` : '';
+          const coverStyle = coverUrl ? ` style="background-image:url('${coverUrl}')"` : '';
+
           return `
-            <a class="book-card" href="./contents.html?book=${book.slug}">
-              <div class="book-cover">
-                ${book.cover_image
-                  ? `<img src="${book.cover_image}" alt="">`
-                  : `<img src="./img/svg/fugu1.svg" alt="" style="opacity:0.5">`}
+            <a class="book-card photo-cover${themeClass}" href="./contents.html?book=${book.slug}">
+              <div class="book-cover"${coverStyle}>
+                <h3 class="cover-title">${escapeHtml(book.title)}</h3>
+                <div class="cover-text">
+                  <p>${escapeHtml(book.author)}</p>
+                </div>
               </div>
-              <h3>${escapeHtml(book.title)}</h3>
-              <p>${escapeHtml(book.author)}</p>
             </a>
           `;
         }).join('');

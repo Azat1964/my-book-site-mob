@@ -61,6 +61,14 @@
           <input type="hidden" id="book-texture" value="classic">
           <button type="submit">Сохранить книгу</button>
         </form>
+        <button type="button" id="delete-book-btn" disabled
+                style="margin-top:10px; width:auto; background:transparent; border:1px solid #c94a4a; color:#c94a4a;">
+          Удалить книгу безвозвратно
+        </button>
+        <p style="font-size:12px; color:#8a7a64; margin:4px 0 0;">
+          Удаляет книгу и все её главы без возможности восстановления. Сначала загрузите
+          книгу для редактирования кнопкой выше — тогда эта кнопка станет активной.
+        </p>
         <p id="book-status-msg" class="status-text"></p>
       </section>
 
@@ -118,10 +126,58 @@
             до ~150 КБ (картинка показывается на странице уменьшенной, бóльшее разрешение
             только зря увеличивает вес страницы).
           </p>
+          <div style="display:flex; gap:8px; align-items:center; margin-bottom:8px;">
+            <input type="file" id="poem-file-input" accept=".docx,.txt" style="flex:1;">
+            <button type="button" id="poem-file-insert-btn" style="width:auto; white-space:nowrap; background:transparent; border:1px solid #c9a227; color:#c9a227;">Вставить как стих</button>
+          </div>
+          <p id="poem-file-msg" class="status-text" style="font-size:12px; margin:-6px 0 8px;">
+            Загрузите файл со стихотворением (.docx или .txt) — текст вставится в поле ниже,
+            в позицию курсора, автоматически обёрнутый в <code>[poem]...[/poem]</code>. Ручные
+            отступы и переносы строк из файла сохранятся как есть. Для сборника стихов без
+            деления на главы: перед каждой вставкой добавьте заголовок стихотворения вручную —
+            <code>[title]Название[/title]</code> — так стихи в общем тексте не сольются.</p>
+          <p style="font-size:12px; color:#8a7a64; margin:-4px 0 8px;">
+            Пример структуры одной большой главы-сборника:<br>
+            <code>[title]Новогоднее[/title]</code><br>
+            <code>[poem]</code><br>
+            <code>Скоро, скоро...</code><br>
+            <code>&nbsp;&nbsp;Я раскрою</code><br>
+            <code>[/poem]</code><br>
+            <code>[title]Утреннее[/title]</code><br>
+            <code>[poem]</code> ...</p>
+
+          </p>
           <textarea id="chapter-content" placeholder="Текст главы...&#10;&#10;Можно вставить иллюстрацию отдельной строкой:&#10;[img:/img/covers/Tyumny_voshod/example.webp]" rows="14" required></textarea>
           <button type="submit">Опубликовать главу</button>
         </form>
         <p id="chapter-status-msg" class="status-text"></p>
+      </section>
+
+      <!-- Управление постами блога (источник контента для RSS-ленты / Дзена) -->
+      <section>
+        <h2>Добавить / отредактировать пост блога</h2>
+        <input type="text" id="post-slug" placeholder="slug поста (латиницей, например: pervyy-post)">
+        <button type="button" id="load-post-btn">Загрузить для редактирования</button>
+        <p id="post-load-msg" class="status-text"></p>
+
+        <form id="post-form">
+          <input type="hidden" id="post-slug-original">
+          <input type="text" id="post-title" placeholder="Заголовок поста" required>
+          <textarea id="post-excerpt" placeholder="Краткое описание (для превью в блоге и RSS, необязательно)" rows="2"></textarea>
+          <input type="text" id="post-cover" placeholder="Путь к обложке (/img/covers/...), необязательно — для RSS enclosure">
+          <p style="font-size:12px; color:#8a7a64; margin:-6px 0 8px;">
+            Текст поста — в разрешённой Дзеном разметке: абзацы <code>&lt;p&gt;...&lt;/p&gt;</code>,
+            картинки <code>&lt;img src="..."&gt;</code> или <code>&lt;figure&gt;&lt;img ...&gt;&lt;figcaption&gt;подпись&lt;/figcaption&gt;&lt;/figure&gt;</code>.
+            Минимальная ширина картинок для ленты — 700px.
+          </p>
+          <textarea id="post-content" placeholder="&lt;p&gt;Текст поста...&lt;/p&gt;" rows="10" required></textarea>
+          <button type="submit">Опубликовать пост</button>
+        </form>
+        <button type="button" id="delete-post-btn" disabled
+                style="margin-top:10px; width:auto; background:transparent; border:1px solid #c94a4a; color:#c94a4a;">
+          Удалить пост безвозвратно
+        </button>
+        <p id="post-status-msg" class="status-text"></p>
       </section>
 
       <!-- Публикация в Telegram-канал -->

@@ -83,6 +83,21 @@ CREATE INDEX IF NOT EXISTS idx_page_views_viewed_at ON page_views(viewed_at);
 
 ALTER TABLE reading_progress ADD COLUMN IF NOT EXISTS word_offset INTEGER DEFAULT 0;
 
+-- Посты блога — источник контента для RSS-ленты (Яндекс.Дзен и подобные).
+-- slug используется в человеко-понятном URL /blog/slug (без параметров —
+-- это отдельное требование Дзена к формату ссылок в RSS).
+-- cover_image нужен для <enclosure> в RSS — обложка поста в ленте.
+CREATE TABLE IF NOT EXISTS posts (
+  id SERIAL PRIMARY KEY,
+  slug VARCHAR(255) UNIQUE NOT NULL,
+  title VARCHAR(255) NOT NULL,
+  content TEXT NOT NULL,             -- HTML тела поста (разрешённые Дзеном теги: p, img, figure и т.п.)
+  excerpt TEXT,                      -- краткое описание для RSS <description> и превью в блоге
+  cover_image VARCHAR(255),          -- путь к обложке поста, для RSS <enclosure>
+  published_at TIMESTAMP DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_posts_published_at ON posts(published_at DESC);
+
 -- ============================================================
 -- Таблицу "session" для connect-pg-simple обычно НЕ нужно создавать
 -- руками — модуль делает это сам при первом запуске сервера.

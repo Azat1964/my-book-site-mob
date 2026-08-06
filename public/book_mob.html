@@ -163,6 +163,48 @@ _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
     margin-bottom: 14px;
     text-indent: 0;
   }
+  /* Заголовок отдельного стихотворения ([title]...[/title]) — используется,
+     когда вся книга (сборник стихов без деления на главы) хранится как один
+     сплошной текст: подписывает, где начинается новое стихотворение. */
+  #pageContent .poem-title {
+    display: block;
+    font-weight: bold;
+    font-style: italic;
+    font-size: 17px;
+    line-height: 1.3;
+    color: #2b1d0f;
+    margin: 18px 0 4px;
+    text-indent: 0;
+  }
+  /* Строка стихотворения ([poem]...[/poem]). В отличие от обычного абзаца
+     <p> (line-height 1.55, отступ 0.7em снизу — рассчитан на прозу с
+     переносами внутри одного смыслового блока), здесь КАЖДАЯ строка — это
+     самостоятельный блочный элемент безо всякого отступа между строками:
+     раньше вся книга стихов проходила через тот же <p>-конвейер, что и
+     проза, и получала полный абзацный интервал на КАЖДУЮ строку стиха —
+     отсюда и неестественно большие промежутки. */
+  #pageContent .poem-line {
+    display: block;
+    font-size: 16px;
+    line-height: 1.4;
+    text-indent: 0;
+    text-align: left;
+    color: #2b1d0f;
+  }
+  /* Иллюстрация к стихотворению ([img:...] внутри [poem]...[/poem]) —
+     НЕ обтекание текстом, как у обычной .chapter-illustration в прозе:
+     отдельный центрированный блок, обычно сразу после заголовка стихотворения
+     и перед его текстом (автор ставит [img:...] первой строкой внутри
+     [poem], тогда картинка окажется прямо под названием). */
+  #pageContent .poem-illustration {
+    display: block;
+    max-width: 70%;
+    max-height: 220px;
+    height: auto;
+    margin: 6px auto 14px;
+    border-radius: 8px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+  }
   /* Иллюстрация внутри текста главы — "оптимальный размер" означает:
      не на весь экран (текст вокруг неё всё равно должен читаться удобно),
      но и не миниатюра — 38% ширины страницы с потолком в 200px netto смотрится
@@ -491,6 +533,18 @@ _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
   // картинка, без какой-либо отдельной ручной логики сдвига.
   const IMG_MARKER_RE = /^\[img:(.+?)\]$/;
 
+  // Заголовок стихотворения [title]Название[/title] и сам блок стихотворения
+  // [poem]...[/poem] — та же разметка, что и в десктопной читалке (см.
+  // fish_no_sound.js). Здесь, в отличие от десктопа, НЕ нужен трюк с
+  // упаковкой в закодированный текстовый токен: мобильная пагинация с самого
+  // начала работает не со строкой, а с МАССИВОМ отдельных токенов, и берёт
+  // для страницы непрерывный СРЕЗ этого массива — поэтому если оформить
+  // заголовок и каждую строку стиха как ОДИН элемент массива, разбивка по
+  // страницам физически не может разорвать их середину, это гарантировано
+  // самой структурой данных, без дополнительной защиты.
+  const TITLE_BLOCK_RE = /\[title\]([\s\S]*?)\[\/title\]/gi;
+  const POEM_BLOCK_RE = /\[poem\]([\s\S]*?)\[\/poem\]/gi;
+
   function escapeHtml(str) {
     const div = document.createElement('div');
     div.textContent = str;
@@ -510,19 +564,89 @@ _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
     })));
   }
 
+  // Разбирает СЫРОЙ текст главы (ещё до разбивки на абзацы/слова) на чередующиеся
+  // куски: обычная проза и блоки [title]/[poem]. Порядок сохраняется, куски
+  // идут строго в том же месте, где были в исходном тексте.
+  function splitByPoemMarkers(rawText) {
+    const segments = [];
+    let lastIndex = 0;
+
+    // Сканируем текст один раз слева направо, находя ближайший из двух видов
+    // маркеров на каждом шаге — иначе (если сканировать [title] и [poem]
+    // раздельно) куски могли бы перепутаться местами при смешении разметки.
+    const combinedRe = /\[title\]([\s\S]*?)\[\/title\]|\[poem\]([\s\S]*?)\[\/poem\]/gi;
+    let match;
+    while ((match = combinedRe.exec(rawText)) !== null) {
+      if (match.index > lastIndex) {
+        segments.push({ kind: 'prose', text: rawText.slice(lastIndex, match.index) });
+      }
+      if (match[1] !== undefined) {
+        segments.push({ kind: 'title', text: match[1].trim() });
+      } else {
+        segments.push({ kind: 'poem', text: match[2] });
+      }
+      lastIndex = combinedRe.lastIndex;
+    }
+    if (lastIndex < rawText.length) {
+      segments.push({ kind: 'prose', text: rawText.slice(lastIndex) });
+    }
+    return segments;
+  }
+
   function tokenizeByParagraphs(rawText) {
-    const paragraphs = rawText.split('\n').map(p => p.trim()).filter(p => p.length > 0);
     const tokens = [];
-    paragraphs.forEach((para, paraIndex) => {
-      const imgMatch = para.match(IMG_MARKER_RE);
-      if (imgMatch) {
-        tokens.push({ type: 'image', src: imgMatch[1].trim(), paraIndex });
+    let paraIndex = 0;
+
+    splitByPoemMarkers(rawText).forEach(segment => {
+      if (segment.kind === 'title') {
+        // Заголовок — один-единственный токен, независимо от того, сколько
+        // слов в названии. Пагинация никогда не разрежет его пополам.
+        tokens.push({ type: 'poem-title', text: segment.text, paraIndex: paraIndex++ });
         return;
       }
-      para.split(/\s+/).filter(w => w.length > 0).forEach(word => {
-        tokens.push({ type: 'word', word, paraIndex });
+
+      if (segment.kind === 'poem') {
+        // Каждая строка стихотворения — свой отдельный токен. Ведущие
+        // пробелы (авторский ручной отступ, "лесенка") сохраняются как есть —
+        // они не пробел-разделитель между словами, а часть визуального
+        // рисунка строки, поэтому в отличие от прозы здесь НЕ режем строку
+        // на отдельные слова.
+        // Исключение — строка-маркер [img:...] (иллюстрация к стихотворению):
+        // такую строку нужно распознать как картинку, а не как текст строки,
+        // иначе она отобразится как сырой код разметки вместо изображения.
+        segment.text
+          .split('\n')
+          .map(line => line.replace(/\r$/, ''))
+          .filter((line, i, arr) => !(line.trim() === '' && (i === 0 || i === arr.length - 1)))
+          .forEach(line => {
+            const imgMatch = line.trim().match(IMG_MARKER_RE);
+            if (imgMatch) {
+              // poem-image — отдельный тип, стилизуется иначе, чем обычная
+              // иллюстрация в прозе (там обтекание текстом сбоку); здесь —
+              // отдельным блоком над строками стихотворения, см. CSS ниже.
+              tokens.push({ type: 'poem-image', src: imgMatch[1].trim(), paraIndex: paraIndex++ });
+              return;
+            }
+            tokens.push({ type: 'poem-line', text: line, paraIndex: paraIndex++ });
+          });
+        return;
+      }
+
+      // Обычная проза — прежняя логика: строки → абзацы → отдельные слова
+      const paragraphs = segment.text.split('\n').map(p => p.trim()).filter(p => p.length > 0);
+      paragraphs.forEach(para => {
+        const imgMatch = para.match(IMG_MARKER_RE);
+        if (imgMatch) {
+          tokens.push({ type: 'image', src: imgMatch[1].trim(), paraIndex: paraIndex++ });
+          return;
+        }
+        const thisPara = paraIndex++;
+        para.split(/\s+/).filter(w => w.length > 0).forEach(word => {
+          tokens.push({ type: 'word', word, paraIndex: thisPara });
+        });
       });
     });
+
     return tokens;
   }
 
@@ -548,6 +672,35 @@ _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
         flush();
         html += `<img class="chapter-illustration" src="${escapeHtml(t.src)}" alt="">`;
         currentPara = -1; // следующий текст всё равно начнёт новый абзац
+        continue;
+      }
+      if (t.type === 'poem-title') {
+        flush();
+        html += `<div class="poem-title">${escapeHtml(t.text)}</div>`;
+        currentPara = -1;
+        continue;
+      }
+      if (t.type === 'poem-image') {
+        flush();
+        // .poem-illustration — НЕ обтекание текстом (в отличие от обычной
+        // .chapter-illustration в прозе): отдельный блок над строками стиха.
+        html += `<img class="poem-illustration" src="${escapeHtml(t.src)}" alt="">`;
+        currentPara = -1;
+        continue;
+      }
+      if (t.type === 'poem-line') {
+        flush();
+        // Ведущие пробелы (авторский ручной отступ) — переводим в &nbsp;,
+        // иначе браузер схлопнет их в один пробел, как обычно с HTML.
+        // Пустая строка (промежуток между строфами) — минимум один &nbsp;,
+        // иначе пустой блочный элемент схлопнется до нулевой высоты и
+        // промежуток исчезнет.
+        const leadSpaces = t.text.match(/^ */)[0].length;
+        const rest = escapeHtml(t.text.slice(leadSpaces));
+        const indent = '&nbsp;'.repeat(leadSpaces);
+        const content = (indent + rest) || '&nbsp;';
+        html += `<span class="poem-line">${content}</span>`;
+        currentPara = -1;
         continue;
       }
       if (t.paraIndex !== currentPara) {
@@ -581,7 +734,7 @@ _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
 
     const tokens = tokenizeByParagraphs(rawText);
 
-    const imageSrcs = tokens.filter(t => t.type === 'image').map(t => t.src);
+    const imageSrcs = tokens.filter(t => t.type === 'image' || t.type === 'poem-image').map(t => t.src);
     if (imageSrcs.length) await preloadImages(imageSrcs);
 
     const epigraphHtml = epigraph ? `<p class="epigraph">${escapeHtml(epigraph)}</p>` : '';
