@@ -341,7 +341,7 @@ _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
       annMeta.textContent = [book.author, book.genre, book.status === 'finished' ? 'завершена' : 'в процессе']
         .filter(Boolean).join(' · ');
       annDesc.textContent = book.description || 'Аннотация пока не добавлена.';
-      annLink.href = `./contents.html?book=${book.slug}`;
+      annLink.href = `./contents.html?book=${encodeURIComponent(book.slug)}`;
       const annVideo = document.getElementById('annVideo');
       if (book.slug === 'temny-voschod') { annVideo.classList.add('show'); } else { annVideo.classList.remove('show'); }
       annPanel.classList.add('show');
@@ -406,7 +406,7 @@ _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
             <div class="book-card" data-index="${index}">
               <div class="book-cover">
                 ${book.cover_image
-                  ? `<img src="${book.cover_image}" alt="">`
+                  ? `<img src="${book.cover_image}" alt="Обложка книги «${escapeHtml(book.title)}», автор ${escapeHtml(book.author)}">`
                   : `<img src="./img/fugu1.svg" alt="" style="opacity:0.5">`}
               </div>
               <h3>${escapeHtml(book.title)}</h3>

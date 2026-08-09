@@ -818,7 +818,8 @@ document.addEventListener('DOMContentLoaded', () => {
           deleteBtn.dataset.title = data.title;
         }
       } else {
-        postStatusMsg.textContent = data.message || 'Не удалось сохранить пост';
+        postStatusMsg.textContent = (data.message || 'Не удалось сохранить пост') +
+          (data.detail ? ` — ${data.detail}` : '');
         postStatusMsg.className = 'status-text err';
       }
     } catch (err) {

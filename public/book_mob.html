@@ -219,6 +219,23 @@ _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
     border-radius: 6px;
     box-shadow: 0 4px 14px rgba(0,0,0,0.35);
   }
+  /* Видео в тексте главы ([video:...]) — в отличие от иллюстрации, НЕ
+     обтекание сбоку: на телефоне мелкое видео сбоку от текста было бы
+     неудобно смотреть. Занимает всю ширину страницы, пропорция 16:9
+     держится через CSS независимо от того, что указано в самом видео —
+     это же и позволяет пагинации измерить высоту сразу, без ожидания
+     реальной загрузки видео (в отличие от картинок, у которых natural
+     размер известен только после загрузки файла). */
+  #pageContent .chapter-video {
+    display: block;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    height: auto;
+    border: 0;
+    border-radius: 8px;
+    margin: 10px 0 14px;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.35);
+  }
   /* Если иллюстрация — последнее, что есть на странице (после неё больше
      нет текста для обтекания), контейнер обязан "видеть" её высоту целиком —
      иначе scrollHeight в измерении подгонки может не учесть float. */
@@ -533,6 +550,30 @@ _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
   // картинка, без какой-либо отдельной ручной логики сдвига.
   const IMG_MARKER_RE = /^\[img:(.+?)\]$/;
 
+  // Видео внутри текста главы — через маркер [video:ссылка], тем же
+  // принципом, что и [img:...] выше: отдельная строка, отдельный токен,
+  // высота видеоблока измеряется через DOM наравне с остальным текстом.
+  // Поддерживаются два источника: YouTube (ссылка любого обычного вида —
+  // youtube.com/watch?v=..., youtu.be/..., уже готовая embed-ссылка) и
+  // собственный видеофайл (.mp4/.webm/.ogg), лежащий на сайте так же,
+  // как обложки и иллюстрации. Какой из двух вариантов — определяется
+  // автоматически по самой ссылке, см. classifyVideoUrl() ниже.
+  const VIDEO_MARKER_RE = /^\[video:(.+?)\]$/;
+
+  // Превращает ссылку из маркера [video:...] в данные для рендера:
+  // тип (youtube/file) и итоговый src для <iframe> или <video>.
+  function classifyVideoUrl(rawUrl) {
+    const url = rawUrl.trim();
+    const ytMatch = url.match(
+      /(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([A-Za-z0-9_-]{6,})/
+    );
+    if (ytMatch) {
+      return { type: 'youtube', embedSrc: `https://www.youtube.com/embed/${ytMatch[1]}` };
+    }
+    // Не похоже на YouTube — считаем ссылкой на собственный видеофайл
+    return { type: 'file', src: url };
+  }
+
   // Заголовок стихотворения [title]Название[/title] и сам блок стихотворения
   // [poem]...[/poem] — та же разметка, что и в десктопной читалке (см.
   // fish_no_sound.js). Здесь, в отличие от десктопа, НЕ нужен трюк с
@@ -640,6 +681,11 @@ _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
           tokens.push({ type: 'image', src: imgMatch[1].trim(), paraIndex: paraIndex++ });
           return;
         }
+        const videoMatch = para.match(VIDEO_MARKER_RE);
+        if (videoMatch) {
+          tokens.push({ type: 'video', ...classifyVideoUrl(videoMatch[1]), paraIndex: paraIndex++ });
+          return;
+        }
         const thisPara = paraIndex++;
         para.split(/\s+/).filter(w => w.length > 0).forEach(word => {
           tokens.push({ type: 'word', word, paraIndex: thisPara });
@@ -672,6 +718,21 @@ _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
         flush();
         html += `<img class="chapter-illustration" src="${escapeHtml(t.src)}" alt="">`;
         currentPara = -1; // следующий текст всё равно начнёт новый абзац
+        continue;
+      }
+      if (t.type === 'video') {
+        flush();
+        if (t.type === 'video' && t.embedSrc) {
+          // YouTube — встраиваем через iframe. allowfullscreen нужен, чтобы
+          // читатель мог развернуть видео на весь экран телефона.
+          html += `<iframe class="chapter-video" src="${escapeHtml(t.embedSrc)}" ` +
+                  `frameborder="0" allow="accelerometer; autoplay; clipboard-write; ` +
+                  `encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
+        } else {
+          // Свой файл — обычный HTML5-плеер с элементами управления
+          html += `<video class="chapter-video" src="${escapeHtml(t.src)}" controls playsinline></video>`;
+        }
+        currentPara = -1;
         continue;
       }
       if (t.type === 'poem-title') {
