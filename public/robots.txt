@@ -3,6 +3,8 @@ Allow: /
 Allow: /rss.xml
 Disallow: /admin.html
 Disallow: /analytics.html
+Disallow: /registration.html
+Disallow: /blog-post.html
 Disallow: /api/
 
 Sitemap: https://booklo.ru/sitemap.xml

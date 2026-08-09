@@ -38,6 +38,7 @@ _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
 <!-- /Top.Mail.Ru counter -->
 
 <meta charset="UTF-8">
+<link rel="canonical" href="https://booklo.ru/">
   <meta name="description" content="Книги Азата Туктарова: городское фэнтези с ковбоями, ангелами и котами-трансформерами. Читать онлайн.">
   <meta property="og:title" content="Отец Тук — городское фэнтези с характером">
   <meta property="og:description" content="Книги Азата Туктарова: городское фэнтези с ковбоями, ангелами и котами-трансформерами. Читать онлайн.">
@@ -188,6 +189,19 @@ _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
   .mobile-menu a:last-child { border-bottom: none; }
 
   /* ===== Hero bento-сетка ===== */
+  /* Видим только скринридерам и поисковым роботам — не влияет на вёрстку.
+     Используется для h1 на главной, т.к. видимый заголовок "КНИГИ" в
+     .hero-big-word — оформительский, без ключевых слов и имени автора. */
+  .sr-only {
+    position: absolute;
+    width: 1px; height: 1px;
+    padding: 0; margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
   .hero-wrap {
     padding: 28px 32px 60px;
     background:
@@ -648,6 +662,7 @@ _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
     <div class="hero-card">
 
       <div class="hero-main">
+        <h1 class="sr-only">Азат Туктаров — книги в жанре городского фэнтези: «Тёмный Восход» и другие истории</h1>
         <div class="author-label">
           <span>Автор</span>
           Азат Туктаров
