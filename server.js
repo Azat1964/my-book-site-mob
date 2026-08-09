@@ -138,7 +138,10 @@ app.get(['/book.html', '/book_mob.html', '/contents.html'], async (req, res, nex
     let html = fs.readFileSync(file, 'utf8');
 
     if (isContents) {
-      const r = await pool.query('SELECT title, description FROM books WHERE slug = $1', [slug]);
+      const r = await pool.query(
+        'SELECT title, description, author, genre, status, cover_image FROM books WHERE slug = $1',
+        [slug]
+      );
       if (r.rows.length === 0) return next();
       const b = r.rows[0];
       html = injectMeta(html, {
@@ -147,6 +150,24 @@ app.get(['/book.html', '/book_mob.html', '/contents.html'], async (req, res, nex
           `Оглавление романа «${b.title}» Азата Туктарова. Читать онлайн бесплатно.`,
         url: `${SITE_URL}/contents.html?book=${encodeURIComponent(slug)}`
       });
+
+      // Structured data (Schema.org Book) — помогает поиску показать книгу
+      // с автором и жанром прямо в сниппете, а не просто ссылкой на страницу.
+      const jsonLd = {
+        '@context': 'https://schema.org',
+        '@type': 'Book',
+        name: b.title,
+        author: { '@type': 'Person', name: b.author },
+        description: clampDesc(b.description) || undefined,
+        genre: b.genre || undefined,
+        bookFormat: 'https://schema.org/EBook',
+        url: `${SITE_URL}/contents.html?book=${encodeURIComponent(slug)}`,
+        image: b.cover_image ? `${SITE_URL}${b.cover_image}` : OG_IMAGE,
+        isAccessibleForFree: b.status === 'finished' ? undefined : true,
+      };
+      html = html.replace('<!--__JSONLD__-->',
+        `<script type="application/ld+json">${JSON.stringify(jsonLd)}</script>`);
+
       return res.type('html').send(html);
     }
 
@@ -228,6 +249,21 @@ app.get('/blog/:slug', async (req, res) => {
       url: `${SITE_URL}/blog/${slug}`,
     });
 
+    // Structured data (Schema.org BlogPosting) — даёт поиску автора и дату
+    // публикации прямо в сниппете.
+    const jsonLd = {
+      '@context': 'https://schema.org',
+      '@type': 'BlogPosting',
+      headline: post.title,
+      datePublished: new Date(post.published_at).toISOString(),
+      author: { '@type': 'Person', name: 'Азат Туктаров' },
+      image: post.cover_image ? `${SITE_URL}${post.cover_image}` : OG_IMAGE,
+      url: `${SITE_URL}/blog/${slug}`,
+      mainEntityOfPage: `${SITE_URL}/blog/${slug}`,
+    };
+    html = html.replace('<!--__JSONLD__-->',
+      `<script type="application/ld+json">${JSON.stringify(jsonLd)}</script>`);
+
     res.type('html').send(html);
   } catch (err) {
     console.error('Ошибка получения поста:', err);
@@ -279,6 +315,58 @@ app.get('/rss.xml', async (req, res) => {
     res.type('application/rss+xml; charset=utf-8').send(rss);
   } catch (err) {
     console.error('Ошибка формирования RSS:', err);
+    res.status(500).send('Ошибка сервера');
+  }
+});
+
+// ---------------------------------------------------------------------------
+// Динамический sitemap.xml — собирается из базы при каждом запросе, поэтому
+// новые посты блога и главы книг попадают в него сами, без ручного
+// редактирования файла. Статические страницы (главная, об авторе и т.п.)
+// перечислены прямо здесь — их список меняется редко.
+// Должен стоять ДО express.static, иначе будет отдан старый public/sitemap.xml.
+// ---------------------------------------------------------------------------
+app.get('/sitemap.xml', async (req, res) => {
+  try {
+    const urls = [];
+    const add = (loc, changefreq, priority, lastmod) => {
+      urls.push(`  <url>\n    <loc>${escapeXml(loc)}</loc>\n` +
+        (lastmod ? `    <lastmod>${lastmod}</lastmod>\n` : '') +
+        `    <changefreq>${changefreq}</changefreq>\n    <priority>${priority}</priority>\n  </url>`);
+    };
+    const today = new Date().toISOString().slice(0, 10);
+
+    add(`${SITE_URL}/`, 'weekly', '1.0', today);
+    add(`${SITE_URL}/about.html`, 'monthly', '0.8', today);
+    add(`${SITE_URL}/blog.html`, 'weekly', '0.9', today);
+    add(`${SITE_URL}/annotations.html`, 'weekly', '0.8', today);
+    add(`${SITE_URL}/privacy.html`, 'yearly', '0.3', today);
+
+    const books = await pool.query('SELECT slug, created_at FROM books ORDER BY id');
+    for (const b of books.rows) {
+      const bDate = new Date(b.created_at).toISOString().slice(0, 10);
+      add(`${SITE_URL}/contents.html?book=${encodeURIComponent(b.slug)}`, 'weekly', '0.9', bDate);
+
+      const chapters = await pool.query(
+        'SELECT chapter_number, published_at FROM chapters WHERE book_id = (SELECT id FROM books WHERE slug = $1) ORDER BY chapter_number',
+        [b.slug]
+      );
+      for (const c of chapters.rows) {
+        const cDate = new Date(c.published_at).toISOString().slice(0, 10);
+        add(`${SITE_URL}/book.html?book=${encodeURIComponent(b.slug)}&chapter=${c.chapter_number}`, 'monthly', '0.7', cDate);
+      }
+    }
+
+    const posts = await pool.query('SELECT slug, published_at FROM posts ORDER BY published_at DESC');
+    for (const p of posts.rows) {
+      const pDate = new Date(p.published_at).toISOString().slice(0, 10);
+      add(`${SITE_URL}/blog/${p.slug}`, 'monthly', '0.7', pDate);
+    }
+
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.join('\n')}\n</urlset>`;
+    res.type('application/xml; charset=utf-8').send(xml);
+  } catch (err) {
+    console.error('Ошибка формирования sitemap:', err);
     res.status(500).send('Ошибка сервера');
   }
 });
@@ -1022,7 +1110,9 @@ app.post('/api/admin/posts', requireAdmin, async (req, res) => {
     res.status(201).json(result.rows[0]);
   } catch (error) {
     console.error('Ошибка добавления/обновления поста:', error);
-    res.status(500).json({ message: 'Ошибка сервера' });
+    // ВРЕМЕННО: показываем реальную причину прямо в админке, чтобы не искать
+    // её в консоли сервера. Уберите поле detail, когда причина будет найдена.
+    res.status(500).json({ message: 'Ошибка сервера', detail: error.message, code: error.code });
   }
 });
 

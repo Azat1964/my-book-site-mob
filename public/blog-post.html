@@ -136,7 +136,32 @@ _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
     margin-top: 6px;
     text-align: center;
   }
+  /* Видео в посте — вставляется как обычный HTML: код вставки от YouTube/VK
+     ("Поделиться" → "Код для вставки") или свой <video> с файлом. Задача
+     этих правил — сделать вставленное видео отзывчивым: у YouTube и VK код
+     вставки обычно с фиксированной шириной/высотой в пикселях (например
+     width="560" height="315"), из-за чего видео либо вылезает за узкую
+     колонку блога на телефоне, либо остаётся мелким на широком экране.
+     aspect-ratio:16/9 держит стандартную пропорцию видео независимо от
+     того, что указано в атрибутах самого вставленного кода. */
+  .post-body iframe {
+    display: block;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    height: auto;
+    border: 0;
+    border-radius: 8px;
+    margin: 16px 0;
+  }
+  .post-body video {
+    display: block;
+    max-width: 100%;
+    height: auto;
+    border-radius: 8px;
+    margin: 16px 0;
+  }
 </style>
+<!--__JSONLD__-->
 </head>
 <body>
 
