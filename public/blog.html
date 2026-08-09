@@ -97,6 +97,11 @@ _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
     font-size: 14px;
   }
   .topnav a.back:hover { color: var(--gold); }
+  .topnav .nav-links {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
 
   .page-wrap {
     max-width: 680px;
@@ -220,7 +225,10 @@ _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
 
   <nav class="topnav">
     <a href="./index.html" class="brand"><b>Отец Тук</b></a>
-    <a href="./index.html" class="back">← Главная</a>
+    <div class="nav-links">
+      <a href="./index.html" class="back">← Главная</a>
+      <a href="./annotations.html" class="back">Содержание</a>
+    </div>
   </nav>
 
   <div class="page-wrap">
