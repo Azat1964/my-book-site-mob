@@ -111,6 +111,19 @@ CREATE INDEX IF NOT EXISTS idx_posts_published_at ON posts(published_at DESC);
 -- ALTER TABLE "session" ADD CONSTRAINT "session_pkey" PRIMARY KEY ("sid") NOT DEFERRABLE INITIALLY IMMEDIATE;
 
 -- ============================================================
+-- Комментарии к постам блога — доступны только зарегистрированным
+-- читателям (используется та же таблица users, что и для книг).
+-- ============================================================
+CREATE TABLE IF NOT EXISTS post_comments (
+  id SERIAL PRIMARY KEY,
+  post_id INTEGER NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  content TEXT NOT NULL,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_post_comments_post_id ON post_comments(post_id);
+
+-- ============================================================
 -- Пример: добавление первой книги (замените на свои данные)
 -- ============================================================
 -- INSERT INTO books (slug, title, author, description, genre, status)

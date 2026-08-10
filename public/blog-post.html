@@ -160,6 +160,90 @@ _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
     border-radius: 8px;
     margin: 16px 0;
   }
+
+  /* ===== Комментарии ===== */
+  .comments {
+    margin-top: 40px;
+    padding-top: 28px;
+    border-top: 1px solid rgba(90, 60, 30, 0.15);
+  }
+  .comments-title {
+    color: #5c2e1c;
+    font-size: 20px;
+    margin-bottom: 18px;
+  }
+  .comment-item {
+    background: rgba(255, 255, 255, 0.5);
+    border-radius: 10px;
+    padding: 14px 16px;
+    margin-bottom: 12px;
+  }
+  .comment-author {
+    color: var(--amber-deep);
+    font-weight: bold;
+    font-size: 14px;
+    margin-bottom: 4px;
+  }
+  .comment-date {
+    color: #8a7a64;
+    font-size: 12px;
+    margin-left: 8px;
+    font-weight: normal;
+  }
+  .comment-text {
+    color: #3a2a1a;
+    font-size: 15px;
+    line-height: 1.5;
+    white-space: pre-wrap;
+  }
+  .comments-empty {
+    color: #8a7a64;
+    font-size: 14px;
+    margin-bottom: 16px;
+  }
+  .comment-login-prompt {
+    background: rgba(201, 162, 39, 0.12);
+    border: 1px solid rgba(201, 162, 39, 0.35);
+    border-radius: 10px;
+    padding: 14px 16px;
+    color: #5c2e1c;
+    font-size: 14px;
+  }
+  .comment-login-prompt a {
+    color: var(--amber-deep);
+    font-weight: bold;
+    text-decoration: underline;
+  }
+  .comment-form textarea {
+    width: 100%;
+    min-height: 90px;
+    padding: 12px;
+    border: 1px solid rgba(90, 60, 30, 0.25);
+    border-radius: 8px;
+    font-family: 'Gabriela', Georgia, serif;
+    font-size: 15px;
+    resize: vertical;
+    box-sizing: border-box;
+    background: #fffdf8;
+    color: #1a1a24;
+  }
+  .comment-form button {
+    margin-top: 10px;
+    padding: 10px 22px;
+    background: var(--gold);
+    color: #1a1a24;
+    border: none;
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+  }
+  .comment-form button:hover { background: var(--amber); }
+  .comment-form button:disabled { opacity: 0.6; cursor: default; }
+  .comment-status { font-size: 13px; margin-top: 8px; }
+  .comment-status.err { color: #b33; }
+  .comment-status.ok { color: #2a7a2a; }
 </style>
 <!--__JSONLD__-->
 </head>
@@ -176,7 +260,122 @@ _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
       <h1 class="post-title">__POST_TITLE__</h1>
       <div class="post-body">__POST_BODY__</div>
     </article>
+
+    <section class="comments">
+      <p class="comments-title">Комментарии</p>
+      <div id="commentsList"></div>
+      <div id="commentsArea"></div>
+    </section>
   </div>
+
+  <script>
+    const POST_SLUG = '__POST_SLUG__';
+
+    function escapeHtml(s) {
+      const div = document.createElement('div');
+      div.textContent = s == null ? '' : String(s);
+      return div.innerHTML;
+    }
+
+    function formatDate(iso) {
+      return new Date(iso).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' });
+    }
+
+    async function loadComments() {
+      const list = document.getElementById('commentsList');
+      try {
+        const res = await fetch(`/api/posts/${encodeURIComponent(POST_SLUG)}/comments`);
+        const comments = await res.json();
+        if (!Array.isArray(comments) || comments.length === 0) {
+          list.innerHTML = '<p class="comments-empty">Комментариев пока нет — станьте первым.</p>';
+          return;
+        }
+        list.innerHTML = comments.map(c => `
+          <div class="comment-item">
+            <p class="comment-author">${escapeHtml(c.nickname)}<span class="comment-date">${formatDate(c.created_at)}</span></p>
+            <p class="comment-text">${escapeHtml(c.content)}</p>
+          </div>
+        `).join('');
+      } catch (err) {
+        list.innerHTML = '<p class="comments-empty">Не удалось загрузить комментарии.</p>';
+        console.error(err);
+      }
+    }
+
+    async function renderCommentArea() {
+      const area = document.getElementById('commentsArea');
+      let loggedIn = false;
+      try {
+        const meRes = await fetch('/api/me');
+        const me = await meRes.json();
+        loggedIn = !!me.loggedIn;
+      } catch (err) {
+        console.error(err);
+      }
+
+      if (!loggedIn) {
+        area.innerHTML = `
+          <div class="comment-login-prompt">
+            Чтобы оставить комментарий, нужна простая регистрация на сайте —
+            это займёт меньше минуты.
+            <a href="/registration.html">Войти или зарегистрироваться</a>
+          </div>
+        `;
+        return;
+      }
+
+      area.innerHTML = `
+        <form class="comment-form" id="commentForm">
+          <textarea id="commentText" placeholder="Ваш комментарий..." maxlength="2000"></textarea><br>
+          <button type="submit">Отправить</button>
+          <p class="comment-status" id="commentStatus"></p>
+        </form>
+      `;
+
+      document.getElementById('commentForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const textEl = document.getElementById('commentText');
+        const statusEl = document.getElementById('commentStatus');
+        const btn = e.target.querySelector('button');
+        const content = textEl.value.trim();
+
+        if (!content) {
+          statusEl.textContent = 'Комментарий не может быть пустым';
+          statusEl.className = 'comment-status err';
+          return;
+        }
+
+        btn.disabled = true;
+        statusEl.textContent = '';
+        try {
+          const res = await fetch(`/api/posts/${encodeURIComponent(POST_SLUG)}/comments`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ content }),
+          });
+          const data = await res.json();
+          if (res.ok) {
+            textEl.value = '';
+            statusEl.textContent = 'Комментарий добавлен';
+            statusEl.className = 'comment-status ok';
+            loadComments();
+          } else {
+            statusEl.textContent = data.message || 'Не удалось отправить комментарий';
+            statusEl.className = 'comment-status err';
+          }
+        } catch (err) {
+          statusEl.textContent = 'Ошибка сети';
+          statusEl.className = 'comment-status err';
+          console.error(err);
+        } finally {
+          btn.disabled = false;
+        }
+      });
+    }
+
+    loadComments();
+    renderCommentArea();
+  </script>
 
 </body>
 </html>

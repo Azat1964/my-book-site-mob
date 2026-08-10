@@ -220,6 +220,67 @@ app.get('/api/posts', async (req, res) => {
   }
 });
 
+// ---------------------------------------------------------------------------
+// Комментарии к постам блога. Оставлять может только зарегистрированный
+// читатель (та же система входа, что и для книг — /api/register, /api/login).
+// ---------------------------------------------------------------------------
+
+// Список комментариев к посту — публичный, без авторизации
+app.get('/api/posts/:slug/comments', async (req, res) => {
+  const slug = (req.params.slug || '').trim().toLowerCase();
+  try {
+    const r = await pool.query(
+      `SELECT pc.id, pc.content, pc.created_at, u.nickname
+         FROM post_comments pc
+         JOIN posts p ON p.id = pc.post_id
+         JOIN users u ON u.id = pc.user_id
+        WHERE p.slug = $1
+        ORDER BY pc.created_at ASC`,
+      [slug]
+    );
+    res.json(r.rows);
+  } catch (err) {
+    console.error('Ошибка получения комментариев:', err);
+    res.status(500).json({ message: 'Ошибка сервера' });
+  }
+});
+
+// Добавление комментария — только для вошедших пользователей
+app.post('/api/posts/:slug/comments', async (req, res) => {
+  if (!req.session || !req.session.userId) {
+    return res.status(401).json({ message: 'Чтобы оставить комментарий, войдите или зарегистрируйтесь' });
+  }
+  const slug = (req.params.slug || '').trim().toLowerCase();
+  const content = (req.body.content || '').trim();
+
+  if (!content) {
+    return res.status(400).json({ message: 'Комментарий не может быть пустым' });
+  }
+  if (content.length > 2000) {
+    return res.status(400).json({ message: 'Слишком длинный комментарий (максимум 2000 символов)' });
+  }
+
+  try {
+    const postResult = await pool.query('SELECT id FROM posts WHERE slug = $1', [slug]);
+    if (postResult.rows.length === 0) {
+      return res.status(404).json({ message: 'Пост не найден' });
+    }
+    const postId = postResult.rows[0].id;
+
+    const result = await pool.query(
+      `INSERT INTO post_comments (post_id, user_id, content)
+       VALUES ($1, $2, $3)
+       RETURNING id, content, created_at`,
+      [postId, req.session.userId, content]
+    );
+
+    res.status(201).json({ ...result.rows[0], nickname: req.session.username });
+  } catch (err) {
+    console.error('Ошибка добавления комментария:', err);
+    res.status(500).json({ message: 'Ошибка сервера' });
+  }
+});
+
 // Чистая ссылка на отдельный пост: /blog/moy-post — без параметров в URL,
 // это отдельное требование Дзена к формату ссылок в RSS-ленте. Отдаём
 // готовую HTML-страницу с текстом поста, подставленным на сервере (SSR) —
@@ -241,6 +302,7 @@ app.get('/blog/:slug', async (req, res) => {
     let html = template
       .replace(/__POST_TITLE__/g, escapeHtmlBasic(post.title))
       .replace(/__POST_DATE__/g, dateStr)
+      .replace(/__POST_SLUG__/g, escapeHtmlBasic(slug))
       .replace('__POST_BODY__', post.content); // content — доверенный HTML, вводит только администратор через admin.html
 
     html = injectMeta(html, {
