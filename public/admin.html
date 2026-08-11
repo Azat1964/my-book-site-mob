@@ -118,6 +118,17 @@
           <input type="text" id="chapter-title" placeholder="Заголовок главы (необязательно)">
           <textarea id="chapter-epigraph" placeholder="Эпиграф главы (необязательно) — показывается на титульной странице главы" rows="3"></textarea>
           <input type="text" id="chapter-illustration" placeholder="Путь к рисунку (необязательно, например: /img/covers/glava1.png) — заменит рыбку на титульной странице главы">
+          <div style="display:flex; gap:10px; align-items:center; margin:8px 0 8px;">
+            <input type="file" id="chapter-audio-file" accept="audio/mpeg,audio/wav,audio/ogg,audio/mp4,.mp3,.wav,.ogg,.m4a" style="flex:1;">
+            <button type="button" id="chapter-audio-upload-btn" style="flex:0 0 auto; width:auto; padding:10px 18px; background:transparent; border:1px solid #c9a227; color:#c9a227;">Загрузить аудио</button>
+          </div>
+          <p id="chapter-audio-upload-msg" class="status-text" style="margin:-6px 0 8px;"></p>
+          <p style="font-size:12px; color:#8a7a64; margin:-6px 0 8px;">
+            Загрузите файл кнопкой выше — появится готовый маркер вида
+            <code>[audio:/audio/имя-файла.mp3]</code>, скопируйте его и вставьте
+            отдельной строкой в текст главы (поле «Текст главы» ниже) в нужном
+            месте — плеер встанет там, с обтеканием текстом, как картинка.
+          </p>
           <p style="font-size:12px; color:#8a7a64; margin:-6px 0 8px;">
             Чтобы вставить картинку прямо внутрь текста главы — поставьте отдельной строкой
             маркер <code>[img:/img/covers/имя-файла.jpg]</code> в нужном месте. Текст обтечёт

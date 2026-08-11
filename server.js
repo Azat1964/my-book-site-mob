@@ -651,6 +651,46 @@ function requireAdmin(req, res, next) {
   next();
 }
 
+// Загрузка аудиофайла озвучки главы (только администратор, через admin.html).
+// Файл сохраняется прямо на сервере в public/audio/ — в отличие от картинок,
+// не требует ручного заливания через Git. Возвращает путь, из которого в
+// admin.html собирается маркер [audio:путь] для вставки в текст главы.
+app.post('/api/admin/upload-audio', requireAdmin, upload.single('file'), async (req, res) => {
+  const file = req.file;
+  if (!file) {
+    return res.status(400).json({ message: 'Файл не загружен' });
+  }
+  const allowedExt = ['.mp3', '.wav', '.ogg', '.m4a'];
+  const ext = path.extname(file.originalname).toLowerCase();
+  if (!allowedExt.includes(ext)) {
+    return res.status(400).json({ message: `Неподдерживаемый формат файла. Разрешены: ${allowedExt.join(', ')}` });
+  }
+
+  try {
+    const audioDir = path.join(__dirname, 'public', 'audio');
+    if (!fs.existsSync(audioDir)) {
+      fs.mkdirSync(audioDir, { recursive: true });
+    }
+
+    // Безопасное имя файла: только латиница/цифры/дефис из оригинального имени,
+    // плюс метка времени — чтобы новая загрузка не затёрла случайно старый файл
+    // с таким же именем.
+    const baseName = path.basename(file.originalname, ext)
+      .toLowerCase()
+      .replace(/[^a-z0-9-]+/g, '-')
+      .replace(/^-+|-+$/g, '') || 'audio';
+    const fileName = `${baseName}-${Date.now()}${ext}`;
+    const filePath = path.join(audioDir, fileName);
+
+    fs.writeFileSync(filePath, file.buffer);
+
+    res.json({ path: `/audio/${fileName}` });
+  } catch (err) {
+    console.error('Ошибка загрузки аудио:', err);
+    res.status(500).json({ message: 'Не удалось сохранить файл на сервере' });
+  }
+});
+
 // Публикация поста в Telegram-канал через Bot API (только администратор).
 // Бота нужно один раз создать через @BotFather и добавить АДМИНОМ в канал
 // с правом "публиковать сообщения" — дальше всё работает из админки сайта.

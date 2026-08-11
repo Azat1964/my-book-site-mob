@@ -237,6 +237,7 @@ chapterLoadBtn.addEventListener('click', async () => {
       document.getElementById('chapter-title').value = data.title || '';
       document.getElementById('chapter-epigraph').value = data.epigraph || '';
       document.getElementById('chapter-illustration').value = data.illustration || '';
+      // (аудио вставляется маркером [audio:...] прямо в текст главы, отдельного поля нет)
       document.getElementById('chapter-content').value = data.content || '';
       chapterLoadMsg.textContent = `Глава ${data.chapter_number} загружена — можно править поля и нажать «Опубликовать главу».`;
       chapterLoadMsg.className = 'status-text ok';
@@ -250,6 +251,56 @@ chapterLoadBtn.addEventListener('click', async () => {
   } catch (err) {
     chapterLoadMsg.textContent = 'Ошибка сети: ' + err.message;
     chapterLoadMsg.className = 'status-text err';
+  }
+});
+
+// ---- Загрузка аудиофайла озвучки главы ----
+// Загружает файл на сервер и показывает готовый маркер [audio:...] —
+// его нужно скопировать и вставить в текст главы вручную, в нужное место
+// (та же логика, что и с маркером [img:...] для картинок).
+document.getElementById('chapter-audio-upload-btn').addEventListener('click', async () => {
+  const fileInput = document.getElementById('chapter-audio-file');
+  const msg = document.getElementById('chapter-audio-upload-msg');
+  const file = fileInput.files[0];
+
+  if (!file) {
+    msg.textContent = 'Сначала выберите аудиофайл (.mp3, .wav, .ogg, .m4a)';
+    msg.className = 'status-text err';
+    return;
+  }
+
+  msg.textContent = 'Загружаю файл…';
+  msg.className = 'status-text';
+
+  const formData = new FormData();
+  formData.append('file', file);
+
+  try {
+    const res = await fetch('/api/admin/upload-audio', {
+      method: 'POST',
+      headers: { 'x-admin-token': ADMIN_TOKEN },
+      body: formData,
+    });
+    const data = await res.json();
+
+    if (!res.ok) {
+      msg.textContent = data.message || 'Не удалось загрузить файл';
+      msg.className = 'status-text err';
+      return;
+    }
+
+    const marker = `[audio:${data.path}]`;
+    try {
+      await navigator.clipboard.writeText(marker);
+      msg.textContent = `Готово! Маркер скопирован в буфер обмена: ${marker} — вставьте его в текст главы в нужном месте.`;
+    } catch (clipErr) {
+      msg.textContent = `Готово! Скопируйте маркер и вставьте в текст главы: ${marker}`;
+    }
+    msg.className = 'status-text ok';
+    fileInput.value = '';
+  } catch (err) {
+    msg.textContent = 'Ошибка сети: ' + err.message;
+    msg.className = 'status-text err';
   }
 });
 

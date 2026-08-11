@@ -219,6 +219,31 @@ _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
     border-radius: 6px;
     box-shadow: 0 4px 14px rgba(0,0,0,0.35);
   }
+  /* Аудиоплеер внутри текста главы — та же логика обтекания, что и у
+     иллюстрации (float), но шире (родной размер контролов <audio> не даёт
+     ужать плеер до размера картинки без потери удобства использования). */
+  #pageContent audio.chapter-audio-inline {
+    float: right;
+    width: 55%;
+    max-width: 230px;
+    height: 32px;
+    margin: 2px 0 10px 14px;
+    /* Если рядом в тексте стоит [img:...] (тоже float:right) — без clear
+       плеер накладывается на картинку и клик проваливается в неё, а не
+       в плеер. clear гарантирует, что плеер начнётся ниже любой картинки
+       перед ним, а не поверх неё. */
+    clear: right;
+  }
+  /* Аудио внутри стихотворения ([audio:...] внутри [poem]...[/poem]) — как и
+     иллюстрация к стиху, НЕ обтекание: отдельный блок над строками, автор
+     ставит маркер первой строкой стиха, сразу под заголовком. */
+  #pageContent audio.poem-audio {
+    display: block;
+    width: 90%;
+    max-width: 320px;
+    height: 36px;
+    margin: 4px auto 14px;
+  }
   /* Видео в тексте главы ([video:...]) — в отличие от иллюстрации, НЕ
      обтекание сбоку: на телефоне мелкое видео сбоку от текста было бы
      неудобно смотреть. Занимает всю ширину страницы, пропорция 16:9
@@ -549,6 +574,7 @@ _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
   // вставки автоматически пересчитываются с учётом места, которое забрала
   // картинка, без какой-либо отдельной ручной логики сдвига.
   const IMG_MARKER_RE = /^\[img:(.+?)\]$/;
+  const AUDIO_MARKER_RE = /^\[audio:(.+?)\]$/;
 
   // Видео внутри текста главы — через маркер [video:ссылка], тем же
   // принципом, что и [img:...] выше: отдельная строка, отдельный токен,
@@ -668,6 +694,11 @@ _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
               tokens.push({ type: 'poem-image', src: imgMatch[1].trim(), paraIndex: paraIndex++ });
               return;
             }
+            const audioMatch = line.trim().match(AUDIO_MARKER_RE);
+            if (audioMatch) {
+              tokens.push({ type: 'poem-audio', src: audioMatch[1].trim(), paraIndex: paraIndex++ });
+              return;
+            }
             tokens.push({ type: 'poem-line', text: line, paraIndex: paraIndex++ });
           });
         return;
@@ -679,6 +710,11 @@ _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
         const imgMatch = para.match(IMG_MARKER_RE);
         if (imgMatch) {
           tokens.push({ type: 'image', src: imgMatch[1].trim(), paraIndex: paraIndex++ });
+          return;
+        }
+        const audioMatch = para.match(AUDIO_MARKER_RE);
+        if (audioMatch) {
+          tokens.push({ type: 'audio', src: audioMatch[1].trim(), paraIndex: paraIndex++ });
           return;
         }
         const videoMatch = para.match(VIDEO_MARKER_RE);
@@ -720,6 +756,14 @@ _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
         currentPara = -1; // следующий текст всё равно начнёт новый абзац
         continue;
       }
+      if (t.type === 'audio') {
+        flush();
+        // .chapter-audio-inline — та же логика, что у .chapter-illustration:
+        // обтекание текстом сбоку (float), а не разрыв страницы.
+        html += `<audio class="chapter-audio-inline" controls src="${escapeHtml(t.src)}"></audio>`;
+        currentPara = -1;
+        continue;
+      }
       if (t.type === 'video') {
         flush();
         if (t.type === 'video' && t.embedSrc) {
@@ -746,6 +790,12 @@ _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
         // .poem-illustration — НЕ обтекание текстом (в отличие от обычной
         // .chapter-illustration в прозе): отдельный блок над строками стиха.
         html += `<img class="poem-illustration" src="${escapeHtml(t.src)}" alt="">`;
+        currentPara = -1;
+        continue;
+      }
+      if (t.type === 'poem-audio') {
+        flush();
+        html += `<audio class="poem-audio" controls src="${escapeHtml(t.src)}"></audio>`;
         currentPara = -1;
         continue;
       }

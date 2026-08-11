@@ -58,6 +58,11 @@ function formatChapterText(rawText) {
   // настоящий размер картинки.
   const withImgTokens = rawText.replace(/\[img:(.+?)\]/g, (_, path) => `§IMG§${encodeURIComponent(path.trim())}§`);
 
+  // Маркер [audio:путь] — аудиоплеер внутри текста главы, та же логика
+  // атомного токена, что и у §IMG§ выше: пагинация режет текст на "слова"
+  // по пробелу, а путь к аудиофайлу не должен быть разорван на середине.
+  const withAudioTokens = withImgTokens.replace(/\[audio:(.+?)\]/g, (_, path) => `§AUDIO§${encodeURIComponent(path.trim())}§`);
+
   // Главы приходят из разных источников (ручной ввод в admin.html, импорт
   // .docx через mammoth), и переносы строк в них бывают разного вида:
   // \n (Unix/Mac), \r\n (Windows) или даже одиночный \r. Без нормализации
@@ -65,7 +70,7 @@ function formatChapterText(rawText) {
   // стоит \r, и для регулярки это не два подряд идущих \n. Из-за этого
   // отступы схлопывались в одних главах (введённых как \n) и оставались
   // в других (импортированных с \r\n) — приводим всё к единому виду сразу.
-  const normalized = withImgTokens.replace(/\r\n?/g, '\n');
+  const normalized = withAudioTokens.replace(/\r\n?/g, '\n');
 
   // Заголовок отдельного стихотворения внутри сплошного текста книги —
   // [title]Название[/title]. Нужен, когда вся книга (например, сборник
@@ -160,6 +165,7 @@ function formatPoemSegment(text) {
       // ВАЖНО: нельзя заново заворачивать в §PLINE§ — получится "упаковка
       // внутри упаковки", и распаковка картинок не найдёт токен.
       if (/^§IMG§.*§$/.test(trimmed)) return trimmed;
+      if (/^§AUDIO§.*§$/.test(trimmed)) return trimmed;
       return `§PLINE§${encodeURIComponent(line)}§`;
     })
     .join(' ');
@@ -183,6 +189,63 @@ function preloadImages(srcList) {
     img.src = src;
   })));
 }
+
+// ──────────────────────────────────────────────────────────────────
+// Кастомная кнопка play/pause для аудио внутри текста главы (см. §AUDIO§
+// в addTextToSide/buildPages ниже). Обычная HTML-кнопка вместо нативных
+// controls — у неё нет бага с потерянными кликами внутри 3D-перспективы
+// разворота книги (см. подробный комментарий в css/fish_no_sound.css).
+// ──────────────────────────────────────────────────────────────────
+function formatAudioTime(sec) {
+  if (!isFinite(sec) || sec < 0) sec = 0;
+  const m = Math.floor(sec / 60);
+  const s = Math.floor(sec % 60).toString().padStart(2, '0');
+  return `${m}:${s}`;
+}
+
+document.addEventListener('click', (e) => {
+  // Ловим клик по ВСЕЙ капсуле плеера (.chapter-audio-inline), а не только
+  // по маленькой кнопке ▶ внутри неё — так остаётся запас на случай, если
+  // 3D-контекст страницы всё же немного сдвигает координаты клика.
+  const wrapper = e.target.closest('.chapter-audio-inline');
+  if (!wrapper) return;
+  const btn = wrapper.querySelector('.audio-toggle-btn');
+  if (!btn) return;
+  e.stopPropagation(); // не даём клику дойти до .page и перевернуть страницу
+  const audio = document.getElementById(btn.dataset.audioTarget);
+  if (!audio) return;
+  if (audio.paused) {
+    // Останавливаем другие играющие плееры на странице — чтобы одновременно
+    // не звучало сразу несколько озвучек.
+    document.querySelectorAll('audio').forEach(a => { if (a !== audio) a.pause(); });
+    audio.play();
+  } else {
+    audio.pause();
+  }
+});
+
+// 'play'/'pause'/'timeupdate'/'loadedmetadata' у <audio> НЕ всплывают
+// (не bubbling) — единственный способ поймать их делегированно на document
+// это подписка на фазе capture (третий аргумент true).
+['play', 'pause'].forEach(evt => {
+  document.addEventListener(evt, (e) => {
+    if (!e.target.matches || !e.target.matches('audio')) return;
+    const btn = document.querySelector(`.audio-toggle-btn[data-audio-target="${e.target.id}"]`);
+    if (btn) btn.textContent = evt === 'play' ? '⏸' : '▶';
+  }, true);
+});
+
+document.addEventListener('timeupdate', (e) => {
+  if (!e.target.matches || !e.target.matches('audio')) return;
+  const timeEl = document.querySelector(`[data-audio-time="${e.target.id}"]`);
+  if (timeEl) timeEl.textContent = `${formatAudioTime(e.target.currentTime)} / ${formatAudioTime(e.target.duration)}`;
+}, true);
+
+document.addEventListener('loadedmetadata', (e) => {
+  if (!e.target.matches || !e.target.matches('audio')) return;
+  const timeEl = document.querySelector(`[data-audio-time="${e.target.id}"]`);
+  if (timeEl) timeEl.textContent = `0:00 / ${formatAudioTime(e.target.duration)}`;
+}, true);
 
 // ──────────────────────────────────────────────────────────────────
 // Полная загрузка и отрисовка текущей главы (с учётом сквозной нумерации страниц)
@@ -445,13 +508,27 @@ function buildPages(container, inputText, pageOffsetSides) {
             const withImgTags = sideText.replace(/§IMG§(.+?)§/g, (_, encoded) =>
                 `<img class="chapter-illustration" src="${decodeURIComponent(encoded)}" alt="">`
             );
+            // §AUDIO§ — аудиоплеер, обтекание текстом как у картинки, но со
+            // своей кнопкой play/pause (см. подробный комментарий про 3D-баг
+            // нативных controls в css/fish_no_sound.css). Каждому плееру —
+            // свой уникальный id, чтобы обработчик клика (см. ниже, глобальный
+            // делегированный слушатель) точно знал, каким <audio> управлять.
+            const withAudioTags = withImgTags.replace(/§AUDIO§(.+?)§/g, (_, encoded) => {
+                const audioId = 'audio-' + Math.random().toString(36).slice(2, 10);
+                const src = decodeURIComponent(encoded);
+                return `<span class="chapter-audio-inline">` +
+                    `<button type="button" class="audio-toggle-btn" data-audio-target="${audioId}">▶</button>` +
+                    `<span class="audio-time" data-audio-time="${audioId}">0:00 / 0:00</span>` +
+                    `<audio id="${audioId}" preload="metadata" src="${src}"></audio>` +
+                    `</span>`;
+            });
             // §PLINE§ — одна строка стихотворения, упакованная в formatPoemSegment().
             // Каждая строка декодируется независимо и оборачивается в блочный
             // span (.poem-line) — он сам переносится на новую строку, поэтому
             // отдельный <br> не нужен. Ведущие пробелы (авторская "лесенка")
             // превращаем в &nbsp; явно: родительский .content использует
             // white-space:pre-line, который иначе схлопнул бы повторные пробелы.
-            const withPoemLines = withImgTags.replace(/§PLINE§(.*?)§/g, (_, encoded) => {
+            const withPoemLines = withAudioTags.replace(/§PLINE§(.*?)§/g, (_, encoded) => {
                 const raw = decodeURIComponent(encoded);
                 const leadSpaces = raw.match(/^ */)[0].length;
                 const rest = raw

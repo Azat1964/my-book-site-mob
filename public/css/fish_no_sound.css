@@ -102,6 +102,66 @@
     box-shadow: 0 4px 16px rgba(0,0,0,0.35);
   }
 
+  /* Аудиоплеер внутри текста главы — та же логика обтекания (float), что и
+     у иллюстрации. ВАЖНО: своя кнопка play/pause вместо нативных браузерных
+     controls — у всей страницы книги стоит perspective/preserve-3d (эффект
+     разворота), а в этом 3D-контексте клики по нативным controls аудио
+     физически не долетают до кнопок (известный баг рендеринга в браузерах:
+     виджет рисуется корректно, но хит-тест координат съезжает). Обычная
+     HTML-кнопка этой проблеме не подвержена. */
+  .content .chapter-audio-inline {
+    float: right;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 55%;
+    max-width: 260px;
+    height: 34px;
+    margin: 2px 0 12px 16px;
+    padding: 0 12px;
+    background: rgba(20, 14, 8, 0.55);
+    border: 1px solid rgba(201, 162, 39, 0.4);
+    border-radius: 17px;
+    cursor: pointer;
+    /* ВАЖНО: у всей страницы (body *) стоит transform-style:preserve-3d —
+       без явного сброса на flat здесь вложенные 3D-контексты съедают
+       координаты клика мыши (программный .click() при этом срабатывает
+       нормально — проверено). "Плоский" контекст возвращает клику точность. */
+    transform-style: flat;
+    /* Плеер (float) визуально накладывается на строки стиха под ним из-за
+       того же 3D-контекста — клик проваливался в текст позади. Явный слой
+       (isolation + z-index) гарантирует, что клик попадает в плеер, а не
+       в то, что нарисовано "под" ним. */
+    isolation: isolate;
+    z-index: 50;
+    /* Если рядом в тексте стоит [img:...] (тоже float:right) — без clear
+       плеер накладывается на картинку и клик проваливается в неё, а не
+       в плеер (было замечено на практике). clear гарантирует, что плеер
+       начнётся ниже любой картинки перед ним, а не поверх неё. */
+    clear: right;
+  }
+  .content .chapter-audio-inline .audio-toggle-btn {
+    flex: 0 0 auto;
+    width: 22px;
+    height: 22px;
+    padding: 0;
+    background: transparent;
+    border: none;
+    color: #e8cfa0;
+    font-size: 14px;
+    line-height: 1;
+    cursor: pointer;
+  }
+  .content .chapter-audio-inline .audio-time {
+    flex: 1;
+    font-family: monospace;
+    font-size: 12px;
+    color: #d1b394;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
   /* Строка стихотворения ([poem]...[/poem] в тексте главы, см. formatPoemSegment
      в fish_no_sound.js). Каждая строка стиха — отдельный блочный элемент:
      это позволяет пагинации переносить стихотворение на следующую страницу
