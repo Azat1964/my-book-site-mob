@@ -224,8 +224,11 @@ _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
      ужать плеер до размера картинки без потери удобства использования). */
   #pageContent audio.chapter-audio-inline {
     float: right;
-    width: 55%;
-    max-width: 230px;
+    /* Та же ширина, что и у картинки (.chapter-illustration выше) — при
+       одинаковой ширине оба float:right выравниваются по правому краю
+       ровно друг под другом, визуально центрированно под картинкой. */
+    width: 38%;
+    max-width: 190px;
     height: 32px;
     margin: 2px 0 10px 14px;
     /* Если рядом в тексте стоит [img:...] (тоже float:right) — без clear

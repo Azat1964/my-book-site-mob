@@ -113,15 +113,17 @@
     float: right;
     display: flex;
     align-items: center;
+    justify-content: center;
     gap: 8px;
-    width: 55%;
-    max-width: 260px;
+    /* Та же ширина, что и у картинки (.chapter-illustration ниже) — при
+       одинаковой ширине оба float:right выравниваются по правому краю
+       ровно друг под другом, визуально центрированно под картинкой. */
+    width: 42%;
+    max-width: 220px;
     height: 34px;
     margin: 2px 0 12px 16px;
-    padding: 0 12px;
-    background: rgba(20, 14, 8, 0.55);
-    border: 1px solid rgba(201, 162, 39, 0.4);
-    border-radius: 17px;
+    padding: 0;
+    background: transparent;
     cursor: pointer;
     /* ВАЖНО: у всей страницы (body *) стоит transform-style:preserve-3d —
        без явного сброса на flat здесь вложенные 3D-контексты съедают
@@ -147,7 +149,7 @@
     padding: 0;
     background: transparent;
     border: none;
-    color: #e8cfa0;
+    color: #3a2a1a;
     font-size: 14px;
     line-height: 1;
     cursor: pointer;
@@ -156,7 +158,7 @@
     flex: 1;
     font-family: monospace;
     font-size: 12px;
-    color: #d1b394;
+    color: #3a2a1a;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;

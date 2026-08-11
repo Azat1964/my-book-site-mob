@@ -421,7 +421,22 @@ const handleResize = debounce(() => {
   if (newHeight !== lastWindowHeight || newWidth !== lastWindowWidth) {
     lastWindowHeight = newHeight;
     lastWindowWidth = newWidth;
-    loadAndRenderChapter(); // содержимое глав уже в кэше — переотправки на сервер не будет
+
+    // Запоминаем, на каком слове (не просто номере страницы — при пересчёте
+    // разбивка на страницы меняется, номера "плывут") читатель находился ДО
+    // пересчёта, чтобы вернуться туда же после. window.getCurrentSpreadInfo
+    // уже существует и используется для этого при переходе по ссылке-закладке
+    // (?word=...) — здесь используем ту же логику для resize.
+    const wordBeforeResize = typeof window.getCurrentSpreadInfo === 'function'
+      ? window.getCurrentSpreadInfo().startWord
+      : 0;
+
+    loadAndRenderChapter().then(() => { // содержимое глав уже в кэше — переотправки на сервер не будет
+      if (wordBeforeResize && typeof window.jumpToPageIndex === 'function') {
+        const pageIdx = findPageIndexForWordOffset(wordBeforeResize);
+        window.jumpToPageIndex(pageIdx);
+      }
+    });
   }
 }, 250);
 
