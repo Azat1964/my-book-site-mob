@@ -220,10 +220,16 @@ _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
     box-shadow: 0 4px 14px rgba(0,0,0,0.35);
   }
   /* Аудиоплеер внутри текста главы — та же логика обтекания, что и у
-     иллюстрации (float), но шире (родной размер контролов <audio> не даёт
-     ужать плеер до размера картинки без потери удобства использования). */
-  #pageContent audio.chapter-audio-inline {
+     иллюстрации (float). Своя кнопка play/pause вместо нативных браузерных
+     controls — так фон можно сделать полностью прозрачным (просвечивает
+     цвет страницы), а не рисовать поверх непрозрачный нативный виджет.
+     Такой же подход, как и на десктопе. */
+  #pageContent .chapter-audio-inline {
     float: right;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
     /* Та же ширина, что и у картинки (.chapter-illustration выше) — при
        одинаковой ширине оба float:right выравниваются по правому краю
        ровно друг под другом, визуально центрированно под картинкой. */
@@ -231,6 +237,8 @@ _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
     max-width: 190px;
     height: 32px;
     margin: 2px 0 10px 14px;
+    background: transparent;
+    cursor: pointer;
     /* Если рядом в тексте стоит [img:...] (тоже float:right) — без clear
        плеер накладывается на картинку и клик проваливается в неё, а не
        в плеер. clear гарантирует, что плеер начнётся ниже любой картинки
@@ -240,12 +248,37 @@ _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
   /* Аудио внутри стихотворения ([audio:...] внутри [poem]...[/poem]) — как и
      иллюстрация к стиху, НЕ обтекание: отдельный блок над строками, автор
      ставит маркер первой строкой стиха, сразу под заголовком. */
-  #pageContent audio.poem-audio {
-    display: block;
+  #pageContent .poem-audio {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
     width: 90%;
     max-width: 320px;
     height: 36px;
     margin: 4px auto 14px;
+    background: transparent;
+    cursor: pointer;
+  }
+  #pageContent .chapter-audio-inline .audio-toggle-btn,
+  #pageContent .poem-audio .audio-toggle-btn {
+    flex: 0 0 auto;
+    width: 20px;
+    height: 20px;
+    padding: 0;
+    background: transparent;
+    border: none;
+    color: #3a2a1a;
+    font-size: 13px;
+    line-height: 1;
+    cursor: pointer;
+  }
+  #pageContent .chapter-audio-inline .audio-time,
+  #pageContent .poem-audio .audio-time {
+    font-family: monospace;
+    font-size: 12px;
+    color: #3a2a1a;
+    white-space: nowrap;
   }
   /* Видео в тексте главы ([video:...]) — в отличие от иллюстрации, НЕ
      обтекание сбоку: на телефоне мелкое видео сбоку от текста было бы
@@ -621,6 +654,56 @@ _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
     return div.innerHTML;
   }
 
+  // ──────────────────────────────────────────────────────────────────
+  // Кастомная кнопка play/pause для аудио внутри текста главы (см.
+  // renderAudioWidget ниже, в tokensToHtml). Один общий делегированный
+  // обработчик на весь документ — виджеты создаются и пересоздаются
+  // динамически при листании страниц.
+  // ──────────────────────────────────────────────────────────────────
+  function formatAudioTime(sec) {
+    if (!isFinite(sec) || sec < 0) sec = 0;
+    const m = Math.floor(sec / 60);
+    const s = Math.floor(sec % 60).toString().padStart(2, '0');
+    return `${m}:${s}`;
+  }
+
+  document.addEventListener('click', (e) => {
+    const wrapper = e.target.closest('.chapter-audio-inline, .poem-audio');
+    if (!wrapper) return;
+    const btn = wrapper.querySelector('.audio-toggle-btn');
+    if (!btn) return;
+    const audio = document.getElementById(btn.dataset.audioTarget);
+    if (!audio) return;
+    if (audio.paused) {
+      document.querySelectorAll('audio').forEach(a => { if (a !== audio) a.pause(); });
+      audio.play();
+    } else {
+      audio.pause();
+    }
+  });
+
+  // 'play'/'pause'/'timeupdate'/'loadedmetadata' у <audio> НЕ всплывают —
+  // ловим делегированно на document через фазу capture (третий аргумент true).
+  ['play', 'pause'].forEach(evt => {
+    document.addEventListener(evt, (e) => {
+      if (!e.target.matches || !e.target.matches('audio')) return;
+      const btn = document.querySelector(`.audio-toggle-btn[data-audio-target="${e.target.id}"]`);
+      if (btn) btn.textContent = evt === 'play' ? '⏸' : '▶';
+    }, true);
+  });
+
+  document.addEventListener('timeupdate', (e) => {
+    if (!e.target.matches || !e.target.matches('audio')) return;
+    const timeEl = document.querySelector(`[data-audio-time="${e.target.id}"]`);
+    if (timeEl) timeEl.textContent = `${formatAudioTime(e.target.currentTime)} / ${formatAudioTime(e.target.duration)}`;
+  }, true);
+
+  document.addEventListener('loadedmetadata', (e) => {
+    if (!e.target.matches || !e.target.matches('audio')) return;
+    const timeEl = document.querySelector(`[data-audio-time="${e.target.id}"]`);
+    if (timeEl) timeEl.textContent = `0:00 / ${formatAudioTime(e.target.duration)}`;
+  }, true);
+
   // Картинки нужно загрузить ДО начала разбивки на страницы — иначе в момент
   // измерения высоты (scrollHeight) браузер может ещё не знать реальные
   // размеры ещё не загруженной картинки, и расчёт страниц съедет, когда
@@ -739,6 +822,20 @@ _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
   // правильно начиная новый <p> на каждой границе абзаца. Токен-картинка
   // вставляется как плывущий (float) элемент — текст после него обтекает
   // картинку, как в журнальной вёрстке, а не разрывает страницу пополам.
+
+  // Своя кнопка play/pause вместо нативных браузерных controls — тогда фон
+  // можно сделать полностью прозрачным (просвечивает цвет страницы), а не
+  // рисовать поверх непрозрачный нативный виджет. Обработчик клика и
+  // обновления таймера — один общий, см. выше после escapeHtml.
+  function renderAudioWidget(src, wrapperClass) {
+    const audioId = 'audio-' + Math.random().toString(36).slice(2, 10);
+    return `<span class="${wrapperClass}">` +
+      `<button type="button" class="audio-toggle-btn" data-audio-target="${audioId}">▶</button>` +
+      `<span class="audio-time" data-audio-time="${audioId}">0:00 / 0:00</span>` +
+      `<audio id="${audioId}" preload="metadata" src="${escapeHtml(src)}"></audio>` +
+      `</span>`;
+  }
+
   function tokensToHtml(tokens, startIdx, endIdx, epigraphHtml) {
     let html = epigraphHtml || '';
     let currentPara = -1;
@@ -763,7 +860,7 @@ _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
         flush();
         // .chapter-audio-inline — та же логика, что у .chapter-illustration:
         // обтекание текстом сбоку (float), а не разрыв страницы.
-        html += `<audio class="chapter-audio-inline" controls src="${escapeHtml(t.src)}"></audio>`;
+        html += renderAudioWidget(t.src, 'chapter-audio-inline');
         currentPara = -1;
         continue;
       }
@@ -798,7 +895,7 @@ _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
       }
       if (t.type === 'poem-audio') {
         flush();
-        html += `<audio class="poem-audio" controls src="${escapeHtml(t.src)}"></audio>`;
+        html += renderAudioWidget(t.src, 'poem-audio');
         currentPara = -1;
         continue;
       }
