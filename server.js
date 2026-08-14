@@ -440,6 +440,51 @@ app.get('/sitemap.xml', async (req, res) => {
   }
 });
 
+// ---------------------------------------------------------------------------
+// blog.html — список постов подставляется прямо в HTML на сервере (не только
+// через JS-fetch на клиенте, как раньше). Без этого краулеры, заставшие
+// страницу до того, как отработал JS (или при медленном ответе БД), видели
+// пустую заглушку «Загрузка...» — Google Search Console помечал такую
+// страницу как soft-404 («ложная ошибка 404»). Клиентский JS в blog.html
+// после загрузки всё равно обновляет список сам — это не мешает, а просто
+// подстраховывает при добавлении новых постов без перезагрузки.
+// ---------------------------------------------------------------------------
+app.get('/blog.html', async (req, res, next) => {
+  try {
+    const file = path.join(__dirname, 'public', 'blog.html');
+    let html = fs.readFileSync(file, 'utf8');
+
+    const r = await pool.query(
+      `SELECT slug, title, excerpt, published_at FROM posts ORDER BY published_at DESC`
+    );
+
+    const listHtml = r.rows.length === 0
+      ? '<p class="empty-blog">Постов пока нет — загляните позже.</p>'
+      : r.rows.map(p => {
+          const dateStr = new Date(p.published_at).toLocaleDateString('ru-RU', {
+            day: 'numeric', month: 'long', year: 'numeric',
+          });
+          return `
+            <a class="post-card" href="./blog/${encodeURIComponent(p.slug)}">
+              <p class="post-card-date">${dateStr}</p>
+              <h2 class="post-card-title">${escAttr(p.title)}</h2>
+              ${p.excerpt ? `<p class="post-card-excerpt">${escAttr(p.excerpt)}</p>` : ''}
+            </a>
+          `;
+        }).join('');
+
+    html = html.replace(
+      '<div class="post-list" id="postList">\n      <p class="empty-blog">Загрузка...</p>\n    </div>',
+      `<div class="post-list" id="postList">${listHtml}</div>`
+    );
+
+    res.type('html').send(html);
+  } catch (err) {
+    console.error('Ошибка серверного рендера blog.html:', err);
+    return next(); // при ошибке — отдаём как обычный статический файл
+  }
+});
+
 app.use(express.static(path.join(__dirname, 'public'))); // Статические файлы
 
 // Явный маршрут для иллюстраций глав — на случай если основной static
