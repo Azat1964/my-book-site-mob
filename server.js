@@ -123,6 +123,13 @@ function injectMeta(html, meta) {
     html = html.replace(/(<meta charset="UTF-8">)/i,
       '$1\n    <link rel="canonical" href="' + escAttr(meta.url) + '">');
   }
+
+  // book.html/book_mob.html по умолчанию помечены noindex (это просто файл-
+  // шаблон, без ?book=&chapter= в нём нет содержимого — Google иначе находит
+  // пустой дубль без подсказки, какой вариант канонический). При валидных
+  // параметрах сюда доходит реальный контент — снимаем пометку.
+  html = html.replace(/\s*<meta name="robots" content="noindex">\n?/i, '\n');
+
   return html;
 }
 
