@@ -144,7 +144,14 @@ _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
     margin-bottom: 14px;
     overflow: hidden;
   }
-  .book-card .book-cover img { width: 60%; opacity: 0.9; }
+  .book-card .book-cover img.cover-placeholder-icon { width: 60%; opacity: 0.9; }
+  /* Настоящая загруженная обложка (не рыбка-заглушка) — заполняет блок
+     целиком, как и у карточек с photo-cover, а не ужимается до 60%. */
+  .book-card .book-cover img.cover-photo {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
 
   .book-card.photo-cover .book-cover {
     position: relative;
@@ -362,9 +369,18 @@ _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
           return;
         }
 
+        // Раньше здесь были отдельные записи для «Тёмного Восхода» и
+        // «Чистории» — особый режим со случайным фоном и текстом поверх
+        // картинки. Теперь все книги отображаются одинаково: обложка сверху,
+        // название и автор текстом под ней (см. блок ниже, ветка без cfg).
+        // Случайная картинка для «Тёмного Восхода» и «Чистории» — берётся
+        // из отдельной папки при каждой загрузке страницы (см. randomCovers
+        // ниже), но отображается в ТОМ ЖЕ единообразном шаблоне карточки,
+        // что и остальные книги (картинка сверху, текст под ней), а не в
+        // старом варианте с текстом поверх фото.
         const photoCoverConfig = {
           'Тёмный Восход': { folder: 'Tyumny_voshod_card' },
-          'Чистория': { folder: 'Chistoriya_card', themeClass: 'cover-cool' },
+          'Чистория': { folder: 'Chistoriya_card' },
         };
 
         const randomCovers = {};
@@ -387,27 +403,16 @@ _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
         grid.innerHTML = books.map((book, index) => {
           const cfg = photoCoverConfig[book.title];
           const randomFile = randomCovers[book.title];
+          const coverUrl = (cfg && randomFile) ? `./img/covers/${cfg.folder}/${randomFile}` : null;
 
-          if (cfg && randomFile) {
-            const coverUrl = `./img/covers/${cfg.folder}/${randomFile}`;
-            const themeClass = cfg.themeClass ? ` ${cfg.themeClass}` : '';
-            return `
-              <div class="book-card photo-cover${themeClass}" data-index="${index}">
-                <div class="book-cover" style="background-image:url('${coverUrl}')">
-                  <h3 class="cover-title">${escapeHtml(book.title)}</h3>
-                  <div class="cover-text">
-                    <p>${escapeHtml(book.author)}</p>
-                  </div>
-                </div>
-              </div>
-            `;
-          }
           return `
             <div class="book-card" data-index="${index}">
               <div class="book-cover">
-                ${book.cover_image
-                  ? `<img src="${book.cover_image}" alt="Обложка книги «${escapeHtml(book.title)}», автор ${escapeHtml(book.author)}">`
-                  : `<img src="./img/fugu1.svg" alt="" style="opacity:0.5">`}
+                ${coverUrl
+                  ? `<img class="cover-photo" src="${coverUrl}" alt="Обложка книги «${escapeHtml(book.title)}», автор ${escapeHtml(book.author)}">`
+                  : book.cover_image
+                    ? `<img class="cover-photo" src="${book.cover_image}" alt="Обложка книги «${escapeHtml(book.title)}», автор ${escapeHtml(book.author)}">`
+                    : `<img class="cover-placeholder-icon" src="./img/svg/fugu1.svg" alt="" style="opacity:0.5">`}
               </div>
               <h3>${escapeHtml(book.title)}</h3>
               <p>${escapeHtml(book.author)}</p>
