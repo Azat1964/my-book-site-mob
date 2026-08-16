@@ -2,6 +2,7 @@ require('dotenv').config();
 const fs = require('fs');
 const path = require('path');
 const express = require('express');
+const compression = require('compression'); // Gzip-сжатие ответов — HTML/CSS/JS
 const session = require('express-session'); // Импортируем express-session
 const pgSession = require('connect-pg-simple')(session); // Если вы хотите хранить сессии в PostgreSQL
 const bcrypt = require('bcryptjs');
@@ -53,6 +54,11 @@ const pool = new Pool({
 });
 
 const app = express();
+app.use(compression()); // Gzip/br-сжатие всех ответов — ставится максимально рано,
+                          // до любых маршрутов, чтобы сжимать вообще всё: HTML, CSS,
+                          // JS, JSON-ответы API. Обычно даёт 70-80% меньше трафика
+                          // на текстовых файлах — самое эффективное ускорение из
+                          // возможного без переделки самого сайта.
 app.use(express.json()); // Обработчик JSON-запросов
 app.use(express.urlencoded({ extended: true })); // Обработчик URL-encoded запросов
 // ---------------------------------------------------------------------------
@@ -485,11 +491,16 @@ app.get('/blog.html', async (req, res, next) => {
   }
 });
 
-app.use(express.static(path.join(__dirname, 'public'))); // Статические файлы
+app.use(express.static(path.join(__dirname, 'public'), {
+  maxAge: '1d', // Браузер переиспользует файл сутки без повторного запроса к серверу;
+                // после — присылает лёгкий запрос "не изменился ли файл?" (сервер
+                // ответит 304 без пересылки содержимого, если файл тот же).
+  etag: true,
+})); // Статические файлы
 
 // Явный маршрут для иллюстраций глав — на случай если основной static
 // по какой-то причине не подхватывает эту папку
-app.use('/img/illustrations', express.static(path.join(__dirname, 'public', 'img', 'illustrations')));
+app.use('/img/illustrations', express.static(path.join(__dirname, 'public', 'img', 'illustrations'), { maxAge: '1d', etag: true }));
 app.use(session({// Конфигурация сессий
   store: new pgSession({ // Используем connect-pg-simple для хранения сессий в PostgreSQL
     pool: pool,            // Ваш пул подключений к PostgreSQL
