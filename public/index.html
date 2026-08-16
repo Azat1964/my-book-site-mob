@@ -816,6 +816,11 @@ _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
     (async function setRandomHeroBackground() {
       const heroMain = document.querySelector('.hero-main');
 
+      // Сервер (см. app.get(['/', '/index.html']) в server.js) уже подобрал
+      // и вшил картинку прямо в HTML — если это так, здесь делать нечего,
+      // иначе получим "мигание" другой случайной картинкой поверх готовой.
+      if (heroMain.dataset.heroPreset) return;
+
       // Какой класс оформления текста ставить для конкретной картинки
       // (имя файла без расширения -> CSS-класс на .hero-main)
       const heroTextStyles = {

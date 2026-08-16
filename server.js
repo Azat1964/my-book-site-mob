@@ -491,6 +491,61 @@ app.get('/blog.html', async (req, res, next) => {
   }
 });
 
+// ---------------------------------------------------------------------------
+// Главная страница — случайная фоновая картинка hero-блока теперь выбирается
+// НА СЕРВЕРЕ и сразу вшивается в HTML (+ <link rel="preload">), а не через
+// JS-запрос к /api/covers/... уже после загрузки страницы. Раньше браузер
+// узнавал об этой картинке (самом крупном элементе на экране) только после
+// полной загрузки и выполнения JS — из-за этого PageSpeed показывал LCP
+// (Largest Contentful Paint) больше 5 секунд на мобильной сети. Теперь
+// картинка обнаруживается сразу при разборе HTML, параллельно со всем
+// остальным. Клиентский JS в index.html при наличии data-hero-preset
+// ничего не переделывает — просто использует то, что уже подставил сервер.
+// ---------------------------------------------------------------------------
+app.get(['/', '/index.html'], (req, res, next) => {
+  try {
+    const file = path.join(__dirname, 'public', 'index.html');
+    let html = fs.readFileSync(file, 'utf8');
+
+    const heroDir = path.join(__dirname, 'public', 'img', 'covers', 'Tyumny_voshod');
+    const files = fs.readdirSync(heroDir).filter(f => f.toLowerCase().endsWith('.webp'));
+
+    if (files.length) {
+      const random = files[Math.floor(Math.random() * files.length)];
+      const imgUrl = `/img/covers/Tyumny_voshod/${random}`;
+
+      // Та же логика подбора класса оформления текста, что раньше была
+      // только в клиентском JS (см. setRandomHeroBackground в index.html) —
+      // теперь она продублирована здесь же, на сервере.
+      const heroTextStyles = {
+        'blue-drops': 'style-white-text',
+        'book': 'style-white-text',
+        'drops': 'style-white-text',
+        'neon-drops': 'style-white-text',
+        'girl': 'style-white-text',
+        'face': 'style-white-text',
+        'hang': 'style-floating',
+      };
+      const baseName = random.replace(/\.[^/.]+$/, '');
+      const styleClass = heroTextStyles[baseName] || '';
+
+      html = html.replace(
+        '<div class="hero-main">',
+        `<div class="hero-main${styleClass ? ' ' + styleClass : ''}" data-hero-preset="1" style="background-image:url('${imgUrl}')">`
+      );
+      html = html.replace(
+        '</head>',
+        `  <link rel="preload" as="image" href="${escAttr(imgUrl)}">\n</head>`
+      );
+    }
+
+    res.type('html').send(html);
+  } catch (err) {
+    console.error('Ошибка серверного рендера index.html:', err);
+    return next(); // при ошибке — отдаём как обычный статический файл, JS сам подставит картинку
+  }
+});
+
 // Картинки (обложки, иллюстрации, svg-иконки) меняются гораздо реже, чем код,
 // поэтому кешируем их отдельно и намного дольше (30 дней вместо суток) — это
 // маршрут более специфичный, чем общий express.static ниже, Express matches
