@@ -180,6 +180,19 @@ _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
     margin: 18px 0 4px;
     text-indent: 0;
   }
+  /* Мелкая курсивная пометка автора ([note]...[/note]) — дата/время
+     написания, самооценка и т.п. Может быть в несколько строк —
+     white-space: pre-line сохраняет переносы строк из исходного текста. */
+  #pageContent .poem-note {
+    display: block;
+    font-style: italic;
+    font-size: 13px;
+    line-height: 1.4;
+    color: #8a7a64;
+    margin: 10px 0;
+    text-indent: 0;
+    white-space: pre-line;
+  }
   /* Строка стихотворения ([poem]...[/poem]). В отличие от обычного абзаца
      <p> (line-height 1.55, отступ 0.7em снизу — рассчитан на прозу с
      переносами внутри одного смыслового блока), здесь КАЖДАЯ строка — это
@@ -651,6 +664,9 @@ _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
   // самой структурой данных, без дополнительной защиты.
   const TITLE_BLOCK_RE = /\[title\]([\s\S]*?)\[\/title\]/gi;
   const POEM_BLOCK_RE = /\[poem\]([\s\S]*?)\[\/poem\]/gi;
+  // Мелкая курсивная пометка автора (дата/время написания, самооценка и т.п.) —
+  // [note]...[/note]. Может занимать несколько строк, в отличие от [title].
+  const NOTE_BLOCK_RE = /\[note\]([\s\S]*?)\[\/note\]/gi;
 
   function escapeHtml(str) {
     const div = document.createElement('div');
@@ -731,7 +747,7 @@ _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
     // Сканируем текст один раз слева направо, находя ближайший из двух видов
     // маркеров на каждом шаге — иначе (если сканировать [title] и [poem]
     // раздельно) куски могли бы перепутаться местами при смешении разметки.
-    const combinedRe = /\[title\]([\s\S]*?)\[\/title\]|\[poem\]([\s\S]*?)\[\/poem\]/gi;
+    const combinedRe = /\[title\]([\s\S]*?)\[\/title\]|\[poem\]([\s\S]*?)\[\/poem\]|\[note\]([\s\S]*?)\[\/note\]/gi;
     let match;
     while ((match = combinedRe.exec(rawText)) !== null) {
       if (match.index > lastIndex) {
@@ -739,8 +755,10 @@ _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
       }
       if (match[1] !== undefined) {
         segments.push({ kind: 'title', text: match[1].trim() });
-      } else {
+      } else if (match[2] !== undefined) {
         segments.push({ kind: 'poem', text: match[2] });
+      } else {
+        segments.push({ kind: 'note', text: match[3].trim() });
       }
       lastIndex = combinedRe.lastIndex;
     }
@@ -759,6 +777,13 @@ _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
         // Заголовок — один-единственный токен, независимо от того, сколько
         // слов в названии. Пагинация никогда не разрежет его пополам.
         tokens.push({ type: 'poem-title', text: segment.text, paraIndex: paraIndex++ });
+        return;
+      }
+
+      if (segment.kind === 'note') {
+        // Так же, как заголовок — один цельный токен (может быть в несколько
+        // строк, перенос строк сохраняется через CSS white-space: pre-line).
+        tokens.push({ type: 'poem-note', text: segment.text, paraIndex: paraIndex++ });
         return;
       }
 
@@ -886,6 +911,12 @@ _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
       if (t.type === 'poem-title') {
         flush();
         html += `<div class="poem-title">${escapeHtml(t.text)}</div>`;
+        currentPara = -1;
+        continue;
+      }
+      if (t.type === 'poem-note') {
+        flush();
+        html += `<div class="poem-note">${escapeHtml(t.text)}</div>`;
         currentPara = -1;
         continue;
       }

@@ -194,6 +194,17 @@
                              до текста стиха (структурного переноса строки
                              между ними больше нет, см. admin.js) */
   }
+  /* Мелкая курсивная пометка автора ([note]...[/note]) — дата/время
+     написания, самооценка и т.п. Может быть в несколько строк — переносы
+     сохраняются через <br> (см. addTextToSide в fish_no_sound.js). */
+  .poem-note {
+    display: block;
+    font-style: italic;
+    font-size: 85%;
+    line-height: 1.4;
+    color: #8a7a64;
+    margin: 10px 0;
+  }
 
   @media (max-height: 676px) {
     .base p {

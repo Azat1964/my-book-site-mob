@@ -91,6 +91,15 @@ function formatChapterText(rawText) {
     (_, t) => `§PTITLE§${encodeURIComponent(t.trim())}§`
   );
 
+  // Мелкая курсивная пометка автора ([note]...[/note]) — дата/время
+  // написания, самооценка и т.п. Та же логика атомного токена, что и у
+  // §PTITLE§ выше — может быть в несколько строк, пагинация не должна
+  // резать её посередине.
+  const withNotes = withTitles.replace(
+    /\[note\]([\s\S]*?)\[\/note\]/gi,
+    (_, t) => `§PNOTE§${encodeURIComponent(t.trim())}§`
+  );
+
   // Стихи форматируются иначе, чем проза: без красной строки на каждой
   // строке, с сохранением всех пробелов автора (ручные отступы — "лесенка")
   // и с сохранением пустых строк между строфами как визуального промежутка.
@@ -98,21 +107,21 @@ function formatChapterText(rawText) {
   // всё остальное (проза до и после) форматируется как обычно.
   const poemRe = /\[poem\]([\s\S]*?)\[\/poem\]/gi;
 
-  if (poemRe.test(withTitles)) {
+  if (poemRe.test(withNotes)) {
     poemRe.lastIndex = 0; // сбрасываем после test(), иначе следующий exec начнёт не с начала
     let result = '';
     let lastIndex = 0;
     let match;
-    while ((match = poemRe.exec(withTitles)) !== null) {
-      result += formatProseSegment(withTitles.slice(lastIndex, match.index));
+    while ((match = poemRe.exec(withNotes)) !== null) {
+      result += formatProseSegment(withNotes.slice(lastIndex, match.index));
       result += formatPoemSegment(match[1]);
       lastIndex = poemRe.lastIndex;
     }
-    result += formatProseSegment(withTitles.slice(lastIndex));
+    result += formatProseSegment(withNotes.slice(lastIndex));
     return result;
   }
 
-  return formatProseSegment(withTitles);
+  return formatProseSegment(withNotes);
 }
 
 // Обычная прозаическая разметка — то, что formatChapterText делала раньше
@@ -166,6 +175,7 @@ function formatPoemSegment(text) {
       // внутри упаковки", и распаковка картинок не найдёт токен.
       if (/^§IMG§.*§$/.test(trimmed)) return trimmed;
       if (/^§AUDIO§.*§$/.test(trimmed)) return trimmed;
+      if (/^§PNOTE§.*§$/.test(trimmed)) return trimmed;
       return `§PLINE§${encodeURIComponent(line)}§`;
     })
     .join(' ');
@@ -570,7 +580,16 @@ function buildPages(container, inputText, pageOffsetSides) {
                     .replace(/>/g, '&gt;');
                 return `<div class="poem-title">${escaped}</div>`;
             });
-            p.innerHTML = withPoemTitles.replace(/\n/g, '<br>');
+            // §PNOTE§ — мелкая курсивная пометка автора, та же логика
+            // распаковки, что и у §PTITLE§ выше.
+            const withPoemNotes = withPoemTitles.replace(/§PNOTE§(.*?)§/g, (_, encoded) => {
+                const escaped = decodeURIComponent(encoded)
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;');
+                return `<div class="poem-note">${escaped}</div>`;
+            });
+            p.innerHTML = withPoemNotes.replace(/\n/g, '<br>');
             return p.clientHeight <= maxHeight;
         }
 
