@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="240" height="140" viewBox="0 0 240 140" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <radialGradient id="puffGrad" cx="35%" cy="28%" r="80%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="70%" stop-color="#f2f2f2"/>
+      <stop offset="100%" stop-color="#cfcfcf"/>
+    </radialGradient>
+  </defs>
+  <g fill="url(#puffGrad)">
+    <ellipse cx="120" cy="95" rx="95" ry="35"/>
+    <circle cx="60" cy="75" r="35"/>
+    <circle cx="100" cy="55" r="42"/>
+    <circle cx="150" cy="50" r="40"/>
+    <circle cx="190" cy="70" r="32"/>
+  </g>
+</svg>

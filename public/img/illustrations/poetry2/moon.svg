@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="55" height="65" viewBox="0 0 220 260" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="moonGrad3" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#e8b95a"/>
+      <stop offset="100%" stop-color="#a5711f"/>
+    </linearGradient>
+    <mask id="crescentMask">
+      <rect width="220" height="260" fill="black"/>
+      <circle cx="110" cy="120" r="100" fill="white"/>
+      <circle cx="148" cy="110" r="100" fill="black"/>
+    </mask>
+  </defs>
+  <rect width="220" height="260" fill="url(#moonGrad3)" mask="url(#crescentMask)"/>
+  <g fill="#fff6d8">
+    <path d="M28,90 l4,10 10,4 -10,4 -4,10 -4,-10 -10,-4 10,-4 Z"/>
+    <path d="M30,150 l3,7 7,3 -7,3 -3,7 -3,-7 -7,-3 7,-3 Z"/>
+    <path d="M26,205 l2.5,6 6,2.5 -6,2.5 -2.5,6 -2.5,-6 -6,-2.5 6,-2.5 Z"/>
+  </g>
+</svg>

@@ -220,7 +220,23 @@ _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
     height: auto;
     margin: 6px auto 14px;
     border-radius: 8px;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+    /* drop-shadow (в отличие от box-shadow) повторяет силуэт непрозрачных
+       пикселей картинки, а не рисует тень по прямоугольной рамке — но для
+       этого сама картинка должна быть с прозрачным фоном (PNG/SVG с альфа-
+       каналом). Для обычных непрозрачных фото выглядит так же, как обычная
+       тень, поэтому безопасно использовать везде. */
+    filter: drop-shadow(0 4px 12px rgba(0,0,0,0.25));
+  }
+  /* Уменьшенная версия — [img-small:...] внутри стиха. Вдвое мельче обычной
+     .poem-illustration, для декоративных мелких иконок вроде луны/облака. */
+  #pageContent .poem-illustration-small {
+    display: block;
+    max-width: 35%;
+    max-height: 110px;
+    height: auto;
+    margin: 6px auto 14px;
+    border-radius: 8px;
+    filter: drop-shadow(0 4px 12px rgba(0,0,0,0.25));
   }
   /* Иллюстрация внутри текста главы — "оптимальный размер" означает:
      не на весь экран (текст вокруг неё всё равно должен читаться удобно),
@@ -234,7 +250,18 @@ _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
     height: auto;
     margin: 2px 0 10px 14px;
     border-radius: 6px;
-    box-shadow: 0 4px 14px rgba(0,0,0,0.35);
+    filter: drop-shadow(0 4px 10px rgba(0,0,0,0.35));
+  }
+  /* Уменьшенная версия — [img-small:...] в обычной прозе. Вдвое мельче
+     обычной .chapter-illustration. */
+  #pageContent img.chapter-illustration-small {
+    float: right;
+    width: 19%;
+    max-width: 95px;
+    height: auto;
+    margin: 2px 0 10px 14px;
+    border-radius: 6px;
+    filter: drop-shadow(0 4px 10px rgba(0,0,0,0.35));
   }
   /* Аудиоплеер внутри текста главы — та же логика обтекания, что и у
      иллюстрации (float). Своя кнопка play/pause вместо нативных браузерных
@@ -627,6 +654,10 @@ _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
   // вставки автоматически пересчитываются с учётом места, которое забрала
   // картинка, без какой-либо отдельной ручной логики сдвига.
   const IMG_MARKER_RE = /^\[img:(.+?)\]$/;
+  // Уменьшенная версия картинки — та же логика, что и у [img:...], но
+  // отображается вдвое мельче (см. CSS-классы .chapter-illustration-small /
+  // .poem-illustration-small ниже).
+  const IMG_SMALL_MARKER_RE = /^\[img-small:(.+?)\]$/;
   const AUDIO_MARKER_RE = /^\[audio:(.+?)\]$/;
 
   // Видео внутри текста главы — через маркер [video:ссылка], тем же
@@ -809,6 +840,11 @@ _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
               tokens.push({ type: 'poem-image', src: imgMatch[1].trim(), paraIndex: paraIndex++ });
               return;
             }
+            const imgSmallMatch = line.trim().match(IMG_SMALL_MARKER_RE);
+            if (imgSmallMatch) {
+              tokens.push({ type: 'poem-image-small', src: imgSmallMatch[1].trim(), paraIndex: paraIndex++ });
+              return;
+            }
             const audioMatch = line.trim().match(AUDIO_MARKER_RE);
             if (audioMatch) {
               tokens.push({ type: 'poem-audio', src: audioMatch[1].trim(), paraIndex: paraIndex++ });
@@ -825,6 +861,11 @@ _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
         const imgMatch = para.match(IMG_MARKER_RE);
         if (imgMatch) {
           tokens.push({ type: 'image', src: imgMatch[1].trim(), paraIndex: paraIndex++ });
+          return;
+        }
+        const imgSmallMatch = para.match(IMG_SMALL_MARKER_RE);
+        if (imgSmallMatch) {
+          tokens.push({ type: 'image-small', src: imgSmallMatch[1].trim(), paraIndex: paraIndex++ });
           return;
         }
         const audioMatch = para.match(AUDIO_MARKER_RE);
@@ -885,6 +926,12 @@ _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
         currentPara = -1; // следующий текст всё равно начнёт новый абзац
         continue;
       }
+      if (t.type === 'image-small') {
+        flush();
+        html += `<img class="chapter-illustration-small" src="${escapeHtml(t.src)}" alt="">`;
+        currentPara = -1;
+        continue;
+      }
       if (t.type === 'audio') {
         flush();
         // .chapter-audio-inline — та же логика, что у .chapter-illustration:
@@ -925,6 +972,12 @@ _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
         // .poem-illustration — НЕ обтекание текстом (в отличие от обычной
         // .chapter-illustration в прозе): отдельный блок над строками стиха.
         html += `<img class="poem-illustration" src="${escapeHtml(t.src)}" alt="">`;
+        currentPara = -1;
+        continue;
+      }
+      if (t.type === 'poem-image-small') {
+        flush();
+        html += `<img class="poem-illustration-small" src="${escapeHtml(t.src)}" alt="">`;
         currentPara = -1;
         continue;
       }
@@ -980,7 +1033,7 @@ _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
 
     const tokens = tokenizeByParagraphs(rawText);
 
-    const imageSrcs = tokens.filter(t => t.type === 'image' || t.type === 'poem-image').map(t => t.src);
+    const imageSrcs = tokens.filter(t => t.type === 'image' || t.type === 'poem-image' || t.type === 'image-small' || t.type === 'poem-image-small').map(t => t.src);
     if (imageSrcs.length) await preloadImages(imageSrcs);
 
     const epigraphHtml = epigraph ? `<p class="epigraph">${escapeHtml(epigraph)}</p>` : '';

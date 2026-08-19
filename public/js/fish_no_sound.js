@@ -58,10 +58,15 @@ function formatChapterText(rawText) {
   // настоящий размер картинки.
   const withImgTokens = rawText.replace(/\[img:(.+?)\]/g, (_, path) => `§IMG§${encodeURIComponent(path.trim())}§`);
 
+  // Уменьшенная версия картинки — [img-small:...], та же логика атомного
+  // токена, что и у §IMG§ выше, отображается вдвое мельче (см. класс
+  // .chapter-illustration-small в css/fish_no_sound.css).
+  const withImgSmallTokens = withImgTokens.replace(/\[img-small:(.+?)\]/g, (_, path) => `§IMGSMALL§${encodeURIComponent(path.trim())}§`);
+
   // Маркер [audio:путь] — аудиоплеер внутри текста главы, та же логика
   // атомного токена, что и у §IMG§ выше: пагинация режет текст на "слова"
   // по пробелу, а путь к аудиофайлу не должен быть разорван на середине.
-  const withAudioTokens = withImgTokens.replace(/\[audio:(.+?)\]/g, (_, path) => `§AUDIO§${encodeURIComponent(path.trim())}§`);
+  const withAudioTokens = withImgSmallTokens.replace(/\[audio:(.+?)\]/g, (_, path) => `§AUDIO§${encodeURIComponent(path.trim())}§`);
 
   // Главы приходят из разных источников (ручной ввод в admin.html, импорт
   // .docx через mammoth), и переносы строк в них бывают разного вида:
@@ -174,6 +179,7 @@ function formatPoemSegment(text) {
       // ВАЖНО: нельзя заново заворачивать в §PLINE§ — получится "упаковка
       // внутри упаковки", и распаковка картинок не найдёт токен.
       if (/^§IMG§.*§$/.test(trimmed)) return trimmed;
+      if (/^§IMGSMALL§.*§$/.test(trimmed)) return trimmed;
       if (/^§AUDIO§.*§$/.test(trimmed)) return trimmed;
       if (/^§PNOTE§.*§$/.test(trimmed)) return trimmed;
       return `§PLINE§${encodeURIComponent(line)}§`;
@@ -533,12 +539,17 @@ function buildPages(container, inputText, pageOffsetSides) {
             const withImgTags = sideText.replace(/§IMG§(.+?)§/g, (_, encoded) =>
                 `<img class="chapter-illustration" src="${decodeURIComponent(encoded)}" alt="">`
             );
+            // §IMGSMALL§ — уменьшенная версия картинки, та же логика
+            // распаковки, что и у §IMG§ выше.
+            const withImgSmallTags = withImgTags.replace(/§IMGSMALL§(.+?)§/g, (_, encoded) =>
+                `<img class="chapter-illustration-small" src="${decodeURIComponent(encoded)}" alt="">`
+            );
             // §AUDIO§ — аудиоплеер, обтекание текстом как у картинки, но со
             // своей кнопкой play/pause (см. подробный комментарий про 3D-баг
             // нативных controls в css/fish_no_sound.css). Каждому плееру —
             // свой уникальный id, чтобы обработчик клика (см. ниже, глобальный
             // делегированный слушатель) точно знал, каким <audio> управлять.
-            const withAudioTags = withImgTags.replace(/§AUDIO§(.+?)§/g, (_, encoded) => {
+            const withAudioTags = withImgSmallTags.replace(/§AUDIO§(.+?)§/g, (_, encoded) => {
                 const audioId = 'audio-' + Math.random().toString(36).slice(2, 10);
                 const src = decodeURIComponent(encoded);
                 return `<span class="chapter-audio-inline">` +
