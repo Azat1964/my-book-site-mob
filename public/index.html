@@ -38,6 +38,7 @@ _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
 <!-- /Top.Mail.Ru counter -->
 
 <meta charset="UTF-8">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
 <link rel="canonical" href="https://booklo.ru/">
   <meta name="description" content="Городское фэнтези с ковбоями, ангелами и котами-трансформерами — романы Азата Туктарова. Читать онлайн бесплатно и полностью.">
   <meta property="og:title" content="Отец Тук — городское фэнтези с характером">
@@ -105,6 +106,32 @@ _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
     display: flex;
     align-items: center;
     gap: 16px;
+  }
+
+  /* Анонс-бейдж в шапке (например, "Премьера: трейлер...") — центрируется
+     сам, между .brand-group и .nav-right, благодаря justify-content:
+     space-between на родителе .topnav. */
+  .nav-announce {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 14px;
+    border-radius: 999px;
+    background: rgba(201,162,39,0.12);
+    border: 1px solid rgba(201,162,39,0.35);
+    color: var(--gold) !important;
+    font-size: 13px;
+    white-space: nowrap;
+    transition: background 0.2s, transform 0.15s;
+  }
+  .nav-announce:hover {
+    background: rgba(201,162,39,0.22);
+    transform: translateY(-1px);
+  }
+  .nav-announce svg {
+    width: 13px;
+    height: 13px;
+    flex: 0 0 auto;
   }
 
   .topnav ul {
@@ -506,6 +533,7 @@ _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
   /* ===== Адаптив ===== */
   @media (max-width: 860px) {
     .topnav ul { display: none; }
+    .nav-announce { display: none; }
     .hamburger { display: flex; }
 
     .hero-card {
@@ -641,8 +669,15 @@ _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
         <a href="https://vk.com/club234913838" target="_blank" rel="noopener" aria-label="ВКонтакте">
           <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12.785 16.241s.288-.032.436-.194c.136-.148.132-.427.132-.427s-.02-1.304.576-1.496c.588-.19 1.343 1.26 2.145 1.818.607.422 1.069.33 1.069.33l2.155-.03s1.127-.07.593-.964c-.044-.073-.314-.661-1.618-1.87-1.364-1.27-1.182-1.064.462-3.264.999-1.333 1.4-2.147 1.276-2.493-.118-.33-.846-.243-.846-.243l-2.425.015s-.18-.025-.314.056c-.13.08-.214.265-.214.265s-.387 1.027-.903 1.901c-1.09 1.84-1.527 1.938-1.706 1.823-.415-.267-.31-1.075-.31-1.648 0-1.793.273-2.54-.53-2.733-.267-.064-.463-.106-1.144-.113-.873-.009-1.612.003-2.03.21-.279.138-.494.446-.363.464.162.022.528.099.722.362.25.34.241 1.105.241 1.105s.144 2.105-.336 2.366c-.33.179-.782-.187-1.752-1.862-.497-.85-.873-1.79-.873-1.79s-.072-.176-.2-.27c-.155-.115-.372-.151-.372-.151l-2.305.015s-.346.01-.473.16c-.113.134-.009.41-.009.41s1.804 4.224 3.847 6.353c1.875 1.954 4.003 1.825 4.003 1.825z"/></svg>
         </a>
+        <a href="https://www.youtube.com/channel/UCj_hlZ013tsUH1TvY1DM0QA" target="_blank" rel="noopener" aria-label="YouTube">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+        </a>
       </div>
     </div>
+    <a class="nav-announce" href="https://youtu.be/WS55PBvc0HE" target="_blank" rel="noopener">
+      <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10 8l6 4-6 4Z"/></svg>
+      <span>Премьера: трейлер «Чистория»</span>
+    </a>
     <div class="nav-right">
       <ul>
         <li><a href="./index.html" class="active">Главная</a></li>
