@@ -161,6 +161,66 @@ _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
     color: var(--tan);
   }
 
+  /* Отрывок из первой главы — стилизованная "вырезка" с плавным затемнением
+     внизу (обрыв, не полный текст) и призывом дочитать после релиза. */
+  .excerpt-block {
+    max-width: 640px;
+    margin: 0 auto 36px;
+    text-align: left;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(201,162,39,0.2);
+    border-radius: 16px;
+    padding: 32px 28px 0;
+    position: relative;
+    overflow: hidden;
+  }
+  .excerpt-eyebrow {
+    font-family: 'Archivo Black', Georgia, serif;
+    font-size: 13px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 18px;
+    text-align: center;
+  }
+  .excerpt-block p {
+    font-size: 16px;
+    line-height: 1.75;
+    color: #e8dcc8;
+    margin: 0 0 16px;
+    text-align: left;
+  }
+  .excerpt-block p:first-of-type::first-letter {
+    font-family: 'Archivo Black', Georgia, serif;
+    font-size: 46px;
+    float: left;
+    line-height: 0.8;
+    padding: 6px 8px 0 0;
+    color: var(--gold);
+  }
+  .excerpt-divider {
+    text-align: center;
+    color: var(--gold);
+    letter-spacing: 6px;
+    margin: 22px 0;
+    font-size: 14px;
+    opacity: 0.6;
+  }
+  .excerpt-fade {
+    position: relative;
+    height: 90px;
+    margin-top: -90px;
+    background: linear-gradient(to bottom, transparent, #1c1724 85%);
+    pointer-events: none;
+  }
+  .excerpt-continue {
+    text-align: center;
+    padding: 6px 0 26px;
+    font-style: italic;
+    color: var(--gold);
+    font-size: 15px;
+  }
+
   .cta-row {
     display: flex;
     gap: 16px;
@@ -245,6 +305,37 @@ _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
     <div class="video-wrap">
       <iframe src="https://www.youtube.com/embed/WS55PBvc0HE" title="Трейлер романа «Чистория»" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
     </div>
+
+    <div class="excerpt-block">
+      <p class="excerpt-eyebrow">Глава 1. Серый — отрывок</p>
+      <p>Резкость появилась не сразу. Но всё-таки быстро. Было темно, затем просветлело.
+      Комната. Метров двадцать. С потолка свисает на одном проводе небольшая люстра. Под ней стол — монумент вчерашнему веселью и разгильдяйству.</p>
+      <p>Здоровяк потёр лицо ладонями. Пальцы дрожали. Он это заметил. Зло сжал кулаки.
+      — Кто меня сюда привёл? — спросил Серый вслух.</p>
+      <p>В голове снова помехи. Миссия! Это слово всплыло как буй на воде. Утонуло. Всплыло опять.
+      — Я что-то... должен был сделать, — пробормотал он. — Точно должен.</p>
+
+      <div class="excerpt-divider">• • •</div>
+
+      <p>Серый наклонился ближе. Прочитал: «СТО». Выцарапаны как будто гвоздём.
+      И всё. Три буквы. То ли не успел дописать. То ли сил не хватило.</p>
+      <p>Только мёртвый Вован. И три буквы на полу.</p>
+
+      <div class="excerpt-divider">• • •</div>
+
+      <p>В кармане глухо зазвонил телефон. Номер незнакомый. Длинный. Не местный.
+      — Ты нашёл его? — спросил голос. Спокойный. Без эмоций.</p>
+      <p>— Как твоя миссия, Серый? Продвигаешься? Помни: ты сам согласился.
+      Связь оборвалась.</p>
+
+      <div class="excerpt-divider">• • •</div>
+
+      <p>На обороте фотографии — надпись от руки: «Его зовут Андрей Александрович.
+      <strong>Ты согласился.</strong>»</p>
+      <p>Парень нервно сглотнул. На что он согласился? Когда? Где? Почему он не помнит?</p>
+      <div class="excerpt-fade"></div>
+    </div>
+    <p class="excerpt-continue">Продолжение — 10 сентября.</p>
 
     <p class="teaser">
       Смотрите официальный трейлер — и подпишитесь в Telegram или ВКонтакте, чтобы не пропустить момент,
