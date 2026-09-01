@@ -530,8 +530,8 @@ app.get(['/', '/index.html'], (req, res, next) => {
       const styleClass = heroTextStyles[baseName] || '';
 
       html = html.replace(
-        '<div class="hero-main">',
-        `<div class="hero-main${styleClass ? ' ' + styleClass : ''}" data-hero-preset="1" style="background-image:url('${imgUrl}')">`
+        '<div class="hero-main" role="link" tabindex="0" aria-label="Перейти к каталогу книг">',
+        `<div class="hero-main${styleClass ? ' ' + styleClass : ''}" role="link" tabindex="0" aria-label="Перейти к каталогу книг" data-hero-preset="1" style="background-image:url('${imgUrl}')">`
       );
       html = html.replace(
         '</head>',

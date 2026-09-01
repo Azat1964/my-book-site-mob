@@ -136,6 +136,52 @@ _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
     font-size: 15px;
   }
 
+  /* ===== Обратный отсчёт до премьеры ===== */
+  .countdown {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 14px;
+    margin: 0 0 32px;
+    padding: 16px 24px;
+    border: 1px solid rgba(201,162,39,0.3);
+    border-radius: 14px;
+    background: rgba(255,255,255,0.03);
+  }
+  .countdown-unit {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 48px;
+  }
+  .countdown-value {
+    font-family: 'Archivo Black', Georgia, serif;
+    font-size: 30px;
+    color: var(--gold);
+    line-height: 1;
+  }
+  .countdown-unit-label {
+    font-size: 11px;
+    color: var(--tan);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-top: 4px;
+    opacity: 0.75;
+  }
+  .countdown-sep {
+    font-family: 'Archivo Black', Georgia, serif;
+    font-size: 26px;
+    color: rgba(201,162,39,0.4);
+  }
+  .countdown-done {
+    color: var(--gold);
+    font-size: 16px;
+  }
+  @media (max-width: 600px) {
+    .countdown { gap: 10px; padding: 12px 16px; }
+    .countdown-value { font-size: 22px; }
+    .countdown-unit { min-width: 38px; }
+  }
+
   .video-wrap {
     position: relative;
     width: 100%;
@@ -302,6 +348,23 @@ _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
     <p class="subtitle">Городское фэнтези с характером</p>
     <span class="release-date">Премьера — 10 сентября</span>
 
+    <div class="countdown" id="countdownTimer">
+      <div class="countdown-unit">
+        <span class="countdown-value" id="cdDays">00</span>
+        <span class="countdown-unit-label">дней</span>
+      </div>
+      <div class="countdown-sep">:</div>
+      <div class="countdown-unit">
+        <span class="countdown-value" id="cdHours">00</span>
+        <span class="countdown-unit-label">часов</span>
+      </div>
+      <div class="countdown-sep">:</div>
+      <div class="countdown-unit">
+        <span class="countdown-value" id="cdMinutes">00</span>
+        <span class="countdown-unit-label">минут</span>
+      </div>
+    </div>
+
     <div class="video-wrap">
       <iframe src="https://www.youtube.com/embed/WS55PBvc0HE" title="Трейлер романа «Чистория»" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
     </div>
@@ -355,6 +418,42 @@ _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
 
     <a class="back-link" href="./annotations.html">← Смотреть другие книги</a>
   </main>
+
+  <script>
+    // Обратный отсчёт до премьеры "Чистория" — 10 сентября, 19:00 (МСК)
+    (function initCountdown() {
+      const target = new Date('2026-09-10T19:00:00+03:00').getTime();
+      const daysEl = document.getElementById('cdDays');
+      const hoursEl = document.getElementById('cdHours');
+      const minutesEl = document.getElementById('cdMinutes');
+      const timerEl = document.getElementById('countdownTimer');
+      if (!daysEl || !hoursEl || !minutesEl) return;
+
+      function pad(n) { return String(n).padStart(2, '0'); }
+
+      function tick() {
+        const diff = target - Date.now();
+
+        if (diff <= 0) {
+          timerEl.innerHTML = '<span class="countdown-done">Премьера «Чистория» уже началась!</span>';
+          clearInterval(intervalId);
+          return;
+        }
+
+        const totalMinutes = Math.floor(diff / 60000);
+        const days = Math.floor(totalMinutes / (60 * 24));
+        const hours = Math.floor((totalMinutes % (60 * 24)) / 60);
+        const minutes = totalMinutes % 60;
+
+        daysEl.textContent = pad(days);
+        hoursEl.textContent = pad(hours);
+        minutesEl.textContent = pad(minutes);
+      }
+
+      tick();
+      const intervalId = setInterval(tick, 1000 * 30); // обновление раз в 30 сек — достаточно для минут
+    })();
+  </script>
 
 </body>
 </html>

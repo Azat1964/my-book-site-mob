@@ -269,6 +269,16 @@ _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
     justify-content: space-between;
     min-height: 460px;
     padding: 28px 32px;
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s;
+  }
+  .hero-main:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 24px rgba(0,0,0,0.3);
+  }
+  .hero-main:focus-visible {
+    outline: 2px solid var(--gold);
+    outline-offset: 3px;
   }
 
   .hero-main::after {
@@ -508,6 +518,102 @@ _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
   }
   .book-card.photo-cover { padding: 0; overflow: hidden; }
 
+  /* ===== Обратный отсчёт до премьеры "Чистория" ===== */
+  .countdown-wrap {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 0 32px;
+  }
+
+  .countdown-card {
+    background: #1f1b29;
+    border-radius: 14px;
+    padding: 26px 28px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+    box-shadow: 0 10px 24px rgba(74,42,22,0.18);
+    border: 1px solid rgba(201,162,39,0.25);
+  }
+
+  .countdown-label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #f1e9d8;
+    font-size: 16px;
+    letter-spacing: 0.3px;
+  }
+
+  .countdown-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--amber);
+    box-shadow: 0 0 0 4px rgba(217,118,58,0.25);
+    flex: 0 0 auto;
+  }
+
+  .countdown-timer {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+  }
+
+  .countdown-unit {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 56px;
+  }
+
+  .countdown-value {
+    font-family: 'Archivo Black', Arial, sans-serif;
+    font-size: 28px;
+    color: var(--gold);
+    line-height: 1;
+  }
+
+  .countdown-unit-label {
+    font-size: 11px;
+    color: #9a8fae;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-top: 4px;
+  }
+
+  .countdown-sep {
+    font-family: 'Archivo Black', Arial, sans-serif;
+    font-size: 24px;
+    color: rgba(201,162,39,0.4);
+    align-self: flex-start;
+    margin-top: 2px;
+  }
+
+  .countdown-cta {
+    color: var(--gold);
+    text-decoration: none;
+    font-size: 14px;
+    border: 1px solid rgba(201,162,39,0.4);
+    padding: 9px 18px;
+    border-radius: 999px;
+    white-space: nowrap;
+    transition: background 0.2s, transform 0.15s;
+  }
+  .countdown-cta:hover {
+    background: rgba(201,162,39,0.14);
+    transform: translateY(-1px);
+  }
+
+  @media (max-width: 600px) {
+    .countdown-wrap { padding: 0 16px; }
+    .countdown-card { padding: 20px; }
+    .countdown-value { font-size: 22px; }
+    .countdown-unit { min-width: 46px; }
+  }
+
   /* Тема "cover-cool" — слегка другой оттенок заголовка, для отличия от
      стандартной белой обложки (используется для "Чистория"). Цвет автора
      не переопределяем — у него теперь универсальная обводка для любого фона. */
@@ -699,7 +805,7 @@ _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
   <div class="hero-wrap">
     <div class="hero-card">
 
-      <div class="hero-main">
+      <div class="hero-main" role="link" tabindex="0" aria-label="Перейти к каталогу книг">
         <h1 class="sr-only">Городское фэнтези читать онлайн бесплатно — романы Азата Туктарова: «Тёмный Восход» и другие истории</h1>
         <div class="author-label">
           <span>Автор</span>
@@ -720,6 +826,33 @@ _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
         </a>
       </div>
 
+    </div>
+  </div>
+
+  <!-- ===== Обратный отсчёт до премьеры "Чистория" ===== -->
+  <div class="countdown-wrap">
+    <div class="countdown-card">
+      <p class="countdown-label">
+        <span class="countdown-dot"></span>
+        Премьера романа «Чистория»
+      </p>
+      <div class="countdown-timer" id="countdownTimer">
+        <div class="countdown-unit">
+          <span class="countdown-value" id="cdDays">00</span>
+          <span class="countdown-unit-label">дней</span>
+        </div>
+        <div class="countdown-sep">:</div>
+        <div class="countdown-unit">
+          <span class="countdown-value" id="cdHours">00</span>
+          <span class="countdown-unit-label">часов</span>
+        </div>
+        <div class="countdown-sep">:</div>
+        <div class="countdown-unit">
+          <span class="countdown-value" id="cdMinutes">00</span>
+          <span class="countdown-unit-label">минут</span>
+        </div>
+      </div>
+      <a class="countdown-cta" href="./chistoriya.html">Подробнее →</a>
     </div>
   </div>
 
@@ -847,6 +980,25 @@ _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
       }
     })();
 
+    // Клик по большой панели "КНИГИ" — переход к каталогу книг ниже на странице
+    (function initHeroLink() {
+      const heroMain = document.querySelector('.hero-main');
+      const catalog = document.getElementById('catalog');
+      if (!heroMain || !catalog) return;
+
+      function goToCatalog() {
+        catalog.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+
+      heroMain.addEventListener('click', goToCatalog);
+      heroMain.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          goToCatalog();
+        }
+      });
+    })();
+
     // Случайная обложка-фон для hero-main из папки covers/Tyumny_voshod
     (async function setRandomHeroBackground() {
       const heroMain = document.querySelector('.hero-main');
@@ -889,6 +1041,42 @@ _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
         console.error('Не удалось загрузить случайную картинку фона:', err);
         // в случае ошибки остаётся фоллбэк-картинка, заданная в CSS
       }
+    })();
+
+    // Обратный отсчёт до премьеры "Чистория" — 10 сентября, 19:00 (МСК)
+    (function initCountdown() {
+      const target = new Date('2026-09-10T19:00:00+03:00').getTime();
+      const daysEl = document.getElementById('cdDays');
+      const hoursEl = document.getElementById('cdHours');
+      const minutesEl = document.getElementById('cdMinutes');
+      const timerEl = document.getElementById('countdownTimer');
+      const labelEl = document.querySelector('.countdown-label');
+      if (!daysEl || !hoursEl || !minutesEl) return;
+
+      function pad(n) { return String(n).padStart(2, '0'); }
+
+      function tick() {
+        const diff = target - Date.now();
+
+        if (diff <= 0) {
+          labelEl.innerHTML = '<span class="countdown-dot"></span> Премьера «Чистория» уже началась!';
+          timerEl.style.display = 'none';
+          clearInterval(intervalId);
+          return;
+        }
+
+        const totalMinutes = Math.floor(diff / 60000);
+        const days = Math.floor(totalMinutes / (60 * 24));
+        const hours = Math.floor((totalMinutes % (60 * 24)) / 60);
+        const minutes = totalMinutes % 60;
+
+        daysEl.textContent = pad(days);
+        hoursEl.textContent = pad(hours);
+        minutesEl.textContent = pad(minutes);
+      }
+
+      tick();
+      const intervalId = setInterval(tick, 1000 * 30); // обновление раз в 30 сек — достаточно для минут
     })();
 
     function escapeHtml(str) {
