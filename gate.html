@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Чистория — конец главы 1</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --asphalt: #17181a;
+    --asphalt-deep: #0f1011;
+    --fog: #8b9199;
+    --fog-dim: #565b60;
+    --paper: #e9e6e0;
+    --tape: #d9a544;
+    --tape-deep: #a97c2c;
+    --tg-blue: #3aa8e0;
+    --line: rgba(233,230,224,0.10);
+  }
+
+  *{ box-sizing:border-box; margin:0; padding:0; }
+
+  html,body{ height:100%; background: var(--asphalt); font-family:'IBM Plex Sans', sans-serif; color: var(--paper); -webkit-font-smoothing:antialiased; }
+
+  @media (prefers-reduced-motion: reduce){
+    *{ animation-duration:0.001ms !important; transition-duration:0.001ms !important; }
+  }
+
+  /* ---- simulated page behind the gate: end of chapter 1 ---- */
+  .page{
+    min-height:100vh; min-height:100dvh;
+    padding: 6vh 6vw 10vh;
+    max-width: 640px;
+    margin: 0 auto;
+  }
+  .page .kicker{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:0.72rem;
+    letter-spacing:0.04em;
+    color: var(--fog-dim);
+  }
+  .page h1{
+    font-family:'Bebas Neue', sans-serif;
+    font-size: clamp(2.1rem, 7vw, 3.2rem);
+    letter-spacing:0.01em;
+    margin: 0.3em 0 0.6em;
+    color: var(--paper);
+  }
+  .page p{
+    font-size: 1.02rem;
+    line-height:1.75;
+    color: #c4c0ba;
+    margin-bottom: 1.1em;
+  }
+  .page p:last-of-type{
+    -webkit-mask-image: linear-gradient(to bottom, black 20%, transparent 95%);
+            mask-image: linear-gradient(to bottom, black 20%, transparent 95%);
+  }
+
+  /* ---- overlay ---- */
+  .overlay{
+    position:fixed; inset:0;
+    background: linear-gradient(180deg, rgba(15,16,17,0) 0%, rgba(15,16,17,0.75) 30%, rgba(15,16,17,0.97) 55%);
+    display:flex; align-items:flex-end; justify-content:center;
+    padding: 0;
+  }
+
+  .gate{
+    width:100%;
+    max-width: 560px;
+    background: linear-gradient(175deg, #1e1f22, var(--asphalt-deep));
+    border-top: 1px solid var(--line);
+    border-radius: 20px 20px 0 0;
+    padding: 2.2rem 1.8rem calc(1.8rem + env(safe-area-inset-bottom));
+    text-align:center;
+    position:relative;
+    animation: slideup 0.5s cubic-bezier(0.22,1,0.36,1) 0.15s both;
+  }
+
+  @keyframes slideup{
+    from{ transform: translateY(100%); }
+    to{ transform: translateY(0); }
+  }
+
+  .close{
+    position:absolute; top:0.9rem; right:1rem;
+    width:32px; height:32px;
+    border:none; background:transparent;
+    color: var(--fog-dim);
+    font-size:1.3rem;
+    cursor:pointer;
+    line-height:1;
+  }
+  .close:hover{ color: var(--fog); }
+
+  .tag{
+    display:inline-block;
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.03em;
+    color: var(--tape);
+    border: 1px solid var(--tape-deep);
+    border-radius: 4px;
+    padding: 0.28em 0.6em;
+    margin-bottom: 1.1rem;
+  }
+
+  .gate h2{
+    font-family:'Bebas Neue', sans-serif;
+    font-size: clamp(1.9rem, 6.5vw, 2.5rem);
+    letter-spacing: 0.01em;
+    line-height:1.08;
+    max-width: 20ch;
+    margin: 0 auto 0.6rem;
+  }
+
+  .gate .sub{
+    font-size: 0.95rem;
+    color: var(--fog);
+    max-width: 34ch;
+    margin: 0 auto 1.8rem;
+    line-height:1.5;
+  }
+
+  .actions{
+    display:flex;
+    flex-direction:column;
+    gap: 0.7rem;
+    max-width: 380px;
+    margin: 0 auto;
+  }
+
+  .btn{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap: 0.55rem;
+    width:100%;
+    padding: 0.95rem 1.1rem;
+    border-radius: 12px;
+    font-family:'IBM Plex Sans', sans-serif;
+    font-size: 0.98rem;
+    font-weight:500;
+    text-decoration:none;
+    cursor:pointer;
+    border: 1px solid transparent;
+    transition: transform 0.15s ease, filter 0.2s ease;
+  }
+  .btn:active{ transform: scale(0.98); }
+
+  .btn-tg{
+    background: var(--tg-blue);
+    color: #0f1011;
+  }
+  .btn-tg:hover{ filter: brightness(1.08); }
+
+  .btn-site{
+    background: transparent;
+    border-color: var(--fog-dim);
+    color: var(--paper);
+  }
+  .btn-site:hover{ border-color: var(--fog); background: rgba(233,230,224,0.04); }
+
+  .btn small{
+    font-weight:400;
+    opacity:0.75;
+  }
+
+  .icon{ width:18px; height:18px; flex-shrink:0; }
+
+  .perks{
+    margin-top: 1.3rem;
+    display:flex;
+    justify-content:center;
+    gap: 1.4rem;
+    font-size: 0.76rem;
+    color: var(--fog-dim);
+    flex-wrap:wrap;
+  }
+  .perks span{ display:flex; align-items:center; gap:0.35em; }
+
+  .skip{
+    display:block;
+    margin: 1.5rem auto 0;
+    background:none; border:none;
+    font-family:'IBM Plex Sans', sans-serif;
+    font-size: 0.82rem;
+    color: var(--fog-dim);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    cursor:pointer;
+  }
+  .skip:hover{ color: var(--fog); }
+</style>
+</head>
+<body>
+
+  <article class="page">
+    <p class="kicker">ЧИСТОРИЯ · ГЛАВА 1 · СЕРЫЙ</p>
+    <h1>Ты согласился</h1>
+    <p>На обороте фотографии — надпись от руки: «Его зовут Андрей Александрович. Ты согласился».</p>
+    <p>Парень нервно сглотнул. На что он согласился? Когда? Где? Почему он не помнит?</p>
+    <p>В кармане снова завибрировал телефон. На этот раз — незнакомый номер с кодом города, которого Серый никогда не слышал. Он поднял трубку, и голос на том конце сказал что-то, отчего у него похолодели пальцы...</p>
+  </article>
+
+  <div class="overlay" role="dialog" aria-modal="true" aria-labelledby="gateTitle">
+    <div class="gate">
+      <button class="close" aria-label="Закрыть" id="closeBtn">×</button>
+
+      <span class="tag">ГЛАВА 1 // КОНЕЦ</span>
+
+      <h2 id="gateTitle">Глава 2 выходит только там, где её не пропустят</h2>
+      <p class="sub">Подпишитесь, чтобы продолжить «Чисторию» — и получить сцену, которой нет на сайте.</p>
+
+      <div class="actions">
+        <a class="btn btn-tg" href="https://t.me/otec_tuk" target="_blank" rel="noopener">
+          <svg class="icon" viewBox="0 0 24 24" fill="currentColor"><path d="M21.05 3.45 2.9 10.9c-1.2.5-1.19 1.19-.22 1.49l4.66 1.45 1.8 5.5c.22.6.37.85.75.85.3 0 .43-.14.6-.3l2.63-2.5 4.7 3.47c.87.48 1.5.23 1.72-.8l3.1-14.6c.32-1.28-.48-1.85-1.59-1.36Z"/></svg>
+          Продолжить в Telegram
+        </a>
+        <a class="btn btn-site" href="/register.html">
+          Зарегистрироваться на сайте
+        </a>
+      </div>
+
+      <div class="perks">
+        <span>📖 Бонусная сцена</span>
+        <span>🔔 Новые главы первыми</span>
+        <span>💾 Прогресс чтения</span>
+      </div>
+
+      <button class="skip" id="skipBtn">Читать дальше без подписки</button>
+    </div>
+  </div>
+
+<script>
+  // Demo behaviour only — in production these should route to the real
+  // next-chapter view once the reader dismisses the gate.
+  document.getElementById('closeBtn').addEventListener('click', () => {
+    document.querySelector('.overlay').style.display = 'none';
+  });
+  document.getElementById('skipBtn').addEventListener('click', () => {
+    document.querySelector('.overlay').style.display = 'none';
+  });
+</script>
+
+</body>
+</html>

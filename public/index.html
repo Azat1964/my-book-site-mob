@@ -627,11 +627,48 @@ _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
     transform: translateY(-1px);
   }
 
+  /* Крупная контрастная кнопка Telegram — основной CTA блока с таймером,
+     в отличие от мелкой иконки в общем ряду соцсетей шапки. */
+  .countdown-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .countdown-cta-telegram {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    background: #29a9eb;
+    color: #fff;
+    text-decoration: none;
+    font-size: 15px;
+    font-weight: 600;
+    padding: 12px 22px;
+    border-radius: 999px;
+    white-space: nowrap;
+    box-shadow: 0 6px 18px rgba(41,169,235,0.35);
+    transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
+  }
+  .countdown-cta-telegram svg {
+    width: 18px;
+    height: 18px;
+    flex: 0 0 auto;
+  }
+  .countdown-cta-telegram:hover {
+    background: #1e94d2;
+    transform: translateY(-1px);
+    box-shadow: 0 8px 22px rgba(41,169,235,0.45);
+  }
+
   @media (max-width: 600px) {
     .countdown-wrap { padding: 0 16px; }
     .countdown-card { padding: 20px; }
     .countdown-value { font-size: 22px; }
     .countdown-unit { min-width: 46px; }
+    .countdown-actions { width: 100%; }
+    .countdown-cta-telegram { flex: 1 1 auto; justify-content: center; }
   }
 
   /* Тема "cover-cool" — слегка другой оттенок заголовка, для отличия от
@@ -822,6 +859,42 @@ _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
     <a href="./about.html">Об авторе</a>
   </div>
 
+  <!-- ===== Обратный отсчёт до премьеры "Чистория" ===== -->
+  <!-- Поднят на первый экран, сразу под шапкой, чтобы таймер был виден
+       без скролла. Добавлена крупная контрастная кнопка Telegram —
+       основной канал подписки, а не мелкая иконка в общем ряду. -->
+  <div class="countdown-wrap">
+    <div class="countdown-card">
+      <p class="countdown-label">
+        <span class="countdown-dot"></span>
+        Премьера романа «Чистория»
+      </p>
+      <div class="countdown-timer" id="countdownTimer">
+        <div class="countdown-unit">
+          <span class="countdown-value" id="cdDays">00</span>
+          <span class="countdown-unit-label">дней</span>
+        </div>
+        <div class="countdown-sep">:</div>
+        <div class="countdown-unit">
+          <span class="countdown-value" id="cdHours">00</span>
+          <span class="countdown-unit-label">часов</span>
+        </div>
+        <div class="countdown-sep">:</div>
+        <div class="countdown-unit">
+          <span class="countdown-value" id="cdMinutes">00</span>
+          <span class="countdown-unit-label">минут</span>
+        </div>
+      </div>
+      <div class="countdown-actions">
+        <a class="countdown-cta-telegram" href="https://t.me/otets_tuk" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M21.9 3.6 2.7 11.2c-1.2.5-1.2 1.3-.2 1.6l4.9 1.5 1.9 5.8c.2.6.4.8.8.8.4 0 .6-.2.9-.5l2.1-2 4.4 3.2c.8.4 1.4.2 1.6-.7l2.9-13.6c.3-1.2-.4-1.7-1.1-1.7Z"/></svg>
+          Подписаться в Telegram
+        </a>
+        <a class="countdown-cta" href="./chistoriya.html">Подробнее →</a>
+      </div>
+    </div>
+  </div>
+
   <!-- ===== Hero ===== -->
   <div class="hero-wrap">
     <div class="hero-card">
@@ -849,33 +922,6 @@ _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
         </a>
       </div>
 
-    </div>
-  </div>
-
-  <!-- ===== Обратный отсчёт до премьеры "Чистория" ===== -->
-  <div class="countdown-wrap">
-    <div class="countdown-card">
-      <p class="countdown-label">
-        <span class="countdown-dot"></span>
-        Премьера романа «Чистория»
-      </p>
-      <div class="countdown-timer" id="countdownTimer">
-        <div class="countdown-unit">
-          <span class="countdown-value" id="cdDays">00</span>
-          <span class="countdown-unit-label">дней</span>
-        </div>
-        <div class="countdown-sep">:</div>
-        <div class="countdown-unit">
-          <span class="countdown-value" id="cdHours">00</span>
-          <span class="countdown-unit-label">часов</span>
-        </div>
-        <div class="countdown-sep">:</div>
-        <div class="countdown-unit">
-          <span class="countdown-value" id="cdMinutes">00</span>
-          <span class="countdown-unit-label">минут</span>
-        </div>
-      </div>
-      <a class="countdown-cta" href="./chistoriya.html">Подробнее →</a>
     </div>
   </div>
 
@@ -1009,7 +1055,7 @@ _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
       if (!heroMain) return;
 
       function goToBook() {
-        window.location.href = './contents.html?book=temny-voschod';
+        window.location.href = './contents.html?book=temny-voskhod';
       }
 
       heroMain.addEventListener('click', goToBook);

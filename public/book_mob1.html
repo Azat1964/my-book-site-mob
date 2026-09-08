@@ -433,76 +433,6 @@ _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
     transition: bottom 0.3s ease;
   }
   #registerPrompt.show { bottom: 70px; }
-  #chapterEndPrompt {
-    position: fixed;
-    left: 14px;
-    right: 14px;
-    bottom: -320px;
-    z-index: 60;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    padding: 14px;
-    background: rgba(14,10,6,0.96);
-    border: 1px solid rgba(58,168,224,0.35);
-    border-radius: 10px;
-    box-shadow: 0 8px 24px rgba(0,0,0,0.4);
-    font-size: 13px;
-    color: #cfc7d6;
-    transition: bottom 0.3s ease;
-  }
-  #chapterEndPrompt.show { bottom: 70px; }
-  #chapterEndPrompt .row-top {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 10px;
-  }
-  #chapterEndPrompt .row-top .msg { flex: 1; min-width: 160px; }
-  #chapterEndPrompt .feedback-block {
-    border-top: 1px solid rgba(255,255,255,0.08);
-    padding-top: 12px;
-  }
-  #chapterEndPrompt .feedback-label {
-    color: #e8cfa0;
-    font-size: 13px;
-    margin-bottom: 8px;
-  }
-  #chapterEndPrompt .feedback-row {
-    display: flex;
-    gap: 8px;
-  }
-  #chapterEndPrompt .feedback-row input {
-    flex: 1;
-    min-width: 0;
-    background: rgba(255,255,255,0.06);
-    border: 1px solid rgba(201,162,39,0.3);
-    border-radius: 6px;
-    color: #f0dca0;
-    font-family: inherit;
-    font-size: 13px;
-    padding: 8px 10px;
-  }
-  #chapterEndPrompt .feedback-row input::placeholder { color: #8a8094; }
-  #chapterEndPrompt .feedback-row button {
-    flex-shrink: 0;
-    background: rgba(201,162,39,0.22);
-    color: #f0dca0;
-    border: 1px solid #c9a227;
-    border-radius: 6px;
-    padding: 8px 14px;
-    font-family: inherit;
-    font-size: 13px;
-    cursor: pointer;
-  }
-  #chapterEndPrompt .feedback-row button:disabled { opacity: 0.5; }
-  #chapterEndPrompt .feedback-status {
-    font-size: 12px;
-    color: #97c459;
-    margin-top: 6px;
-    display: none;
-  }
-  #chapterEndPrompt .feedback-status.show { display: block; }
   #registerPrompt a.register-link {
     background: rgba(201,162,39,0.22);
     color: #f0dca0;
@@ -520,24 +450,6 @@ _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
     font-size: 17px;
     cursor: pointer;
     margin-left: auto;
-  }
-  #registerPrompt .prompt-actions {
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-  }
-  a.tg-link {
-    background: rgba(58,168,224,0.16);
-    color: #bfe4f7;
-    border: 1px solid #3aa8e0;
-    padding: 7px 12px;
-    border-radius: 6px;
-    text-decoration: none;
-    font-size: 12px;
-    white-space: nowrap;
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
   }
 
   /* ===== Жёсткая стена регистрации ===== */
@@ -557,11 +469,6 @@ _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
   #chapterRegisterWall .wall-icon { font-size: 30px; margin-bottom: 12px; }
   #chapterRegisterWall h3 { color: #e8cfa0; font-size: 19px; margin: 0 0 10px; font-weight: normal; }
   #chapterRegisterWall p { color: #cfc7d6; font-size: 13px; line-height: 1.5; margin: 0 0 20px; }
-  #chapterRegisterWall .wall-actions {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-  }
   #chapterRegisterWall a.register-link-main {
     display: inline-block;
     background: rgba(201,162,39,0.22);
@@ -571,25 +478,6 @@ _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
     border-radius: 8px;
     text-decoration: none;
     font-size: 14px;
-  }
-  #chapterRegisterWall a.tg-link-main {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-    background: #3aa8e0;
-    color: #0e0a06;
-    border: 1px solid #3aa8e0;
-    padding: 10px 22px;
-    border-radius: 8px;
-    text-decoration: none;
-    font-size: 14px;
-    font-weight: 500;
-  }
-  #chapterRegisterWall .wall-perk {
-    color: #8a8094;
-    font-size: 11px;
-    margin: -12px 0 16px;
   }
   #chapterRegisterWall .wall-back {
     display: block;
@@ -644,27 +532,8 @@ _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
 
   <div id="registerPrompt">
     <span class="msg">Дальше — по регистрации. Зарегистрируйтесь — 10 секунд</span>
-    <div class="prompt-actions">
-      <a id="registerPromptTgLink" class="tg-link" href="https://t.me/otets_tuk" target="_blank" rel="noopener">Telegram</a>
-      <a id="registerPromptLink" class="register-link" href="#">Зарегистрироваться</a>
-    </div>
+    <a id="registerPromptLink" class="register-link" href="#">Зарегистрироваться</a>
     <button id="registerPromptDismiss" class="dismiss-btn" aria-label="Закрыть">✕</button>
-  </div>
-
-  <div id="chapterEndPrompt">
-    <div class="row-top">
-      <span class="msg">Дочитали? Новые книги выходят в Telegram первыми</span>
-      <a id="chapterEndTgLink" class="tg-link" href="https://t.me/otets_tuk" target="_blank" rel="noopener">Подписаться</a>
-      <button id="chapterEndDismiss" class="dismiss-btn" aria-label="Закрыть">✕</button>
-    </div>
-    <div class="feedback-block">
-      <div class="feedback-label">Как Вам прочитанная глава?</div>
-      <div class="feedback-row">
-        <input id="chapterFeedbackInput" type="text" maxlength="500" placeholder="Пара слов о главе…">
-        <button id="chapterFeedbackSubmit">Отправить</button>
-      </div>
-      <div class="feedback-status" id="chapterFeedbackStatus">Спасибо! Отзыв отправлен.</div>
-    </div>
   </div>
 
   <div id="chapterRegisterWall">
@@ -672,11 +541,7 @@ _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
       <div class="wall-icon">🔒</div>
       <h3>Дальше — по регистрации</h3>
       <p id="chapterRegisterWallText"></p>
-      <div class="wall-actions">
-        <a id="chapterRegisterWallTgLink" class="tg-link-main" href="https://t.me/otets_tuk" target="_blank" rel="noopener">Продолжить в Telegram</a>
-        <a id="chapterRegisterWallLink" class="register-link-main" href="#">Зарегистрироваться на сайте</a>
-      </div>
-      <p class="wall-perk">В Telegram — новые главы первыми и закрытые отрывки</p>
+      <a id="chapterRegisterWallLink" class="register-link-main" href="#">Зарегистрироваться</a>
       <a id="chapterRegisterWallBack" class="wall-back" href="#">← Вернуться к содержанию</a>
     </div>
   </div>
@@ -723,29 +588,11 @@ _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
   const registerPrompt = document.getElementById('registerPrompt');
   const registerPromptMsg = registerPrompt.querySelector('.msg');
   const registerPromptLink = document.getElementById('registerPromptLink');
-  const registerPromptTgLink = document.getElementById('registerPromptTgLink');
   const registerPromptDismiss = document.getElementById('registerPromptDismiss');
   const chapterRegisterWall = document.getElementById('chapterRegisterWall');
   const chapterRegisterWallText = document.getElementById('chapterRegisterWallText');
   const chapterRegisterWallLink = document.getElementById('chapterRegisterWallLink');
-  const chapterRegisterWallTgLink = document.getElementById('chapterRegisterWallTgLink');
   const chapterRegisterWallBack = document.getElementById('chapterRegisterWallBack');
-  const chapterEndPrompt = document.getElementById('chapterEndPrompt');
-  const chapterEndTgLink = document.getElementById('chapterEndTgLink');
-  const chapterEndDismiss = document.getElementById('chapterEndDismiss');
-  const chapterFeedbackInput = document.getElementById('chapterFeedbackInput');
-  const chapterFeedbackSubmit = document.getElementById('chapterFeedbackSubmit');
-  const chapterFeedbackStatus = document.getElementById('chapterFeedbackStatus');
-
-  // ---- Откуда именно пришла подписка: с мягкого баннера или с жёсткой стены ----
-  function trackGateClick(target, source) {
-    try { if (typeof ym === 'function') ym(110915454, 'reachGoal', `gate_${target}_${source}`); } catch (err) {}
-    try { if (typeof gtag === 'function') gtag('event', `gate_${target}_click`, { source, book_slug: slug }); } catch (err) {}
-  }
-  registerPromptLink.addEventListener('click', () => trackGateClick('register', 'soft'));
-  registerPromptTgLink.addEventListener('click', () => trackGateClick('telegram', 'soft'));
-  chapterRegisterWallLink.addEventListener('click', () => trackGateClick('register', 'wall'));
-  chapterRegisterWallTgLink.addEventListener('click', () => trackGateClick('telegram', 'wall'));
 
   contentsLink.href = `./contents.html?book=${slug}`;
   chapterRegisterWallBack.href = `./contents.html?book=${slug}`;
@@ -759,7 +606,6 @@ _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
   let pages = [];              // [{ text, startWord }] для текущей главы
   let currentPageIndex = 0;
   let softPromptShownForChapter = false;
-  let chapterEndShownThisLoad = false;
   const DISMISS_KEY = 'registerPromptDismissedMob';
 
   function ruChapterWord(n) {
@@ -1239,7 +1085,6 @@ _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
     pageIndicator.textContent = `${currentPageIndex + 1} / ${pages.length}`;
     history.replaceState({}, '', `./book_mob.html?book=${slug}&chapter=${currentChapterNum}&word=${page.startWord}`);
     checkSoftPrompt();
-    checkChapterEnd();
   }
 
   function updateChapterNavButtons() {
@@ -1255,9 +1100,6 @@ _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
     hideChapterRegisterWall();
     softPromptShownForChapter = false;
     hideRegisterPrompt();
-    chapterEndShownThisLoad = false;
-    hideChapterEndPrompt();
-    resetChapterFeedbackForm();
 
     try {
       const res = await fetch(`/api/books/${slug}/chapters/${num}`);
@@ -1338,60 +1180,6 @@ _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
   registerPromptDismiss.addEventListener('click', () => {
     hideRegisterPrompt();
     try { localStorage.setItem(DISMISS_KEY, '1'); } catch (err) {}
-  });
-
-  // ---- Плашка в конце КАЖДОЙ главы: Telegram + отзыв на главу.
-  // Не зависит от free_chapters_limit — работает и у безлимитных книг. ----
-  function hideChapterEndPrompt() {
-    chapterEndPrompt.classList.remove('show');
-  }
-  function resetChapterFeedbackForm() {
-    chapterFeedbackInput.value = '';
-    chapterFeedbackInput.disabled = false;
-    chapterFeedbackSubmit.disabled = false;
-    chapterFeedbackStatus.classList.remove('show');
-  }
-  function checkChapterEnd() {
-    if (chapterEndShownThisLoad) return;
-    if (registerPrompt.classList.contains('show')) return;
-    if (currentPageIndex !== pages.length - 1) return;
-
-    chapterEndShownThisLoad = true;
-    chapterEndPrompt.classList.add('show');
-  }
-  chapterEndDismiss.addEventListener('click', hideChapterEndPrompt);
-  chapterEndTgLink.addEventListener('click', () => trackGateClick('telegram', 'chapter_end'));
-
-  chapterFeedbackSubmit.addEventListener('click', async () => {
-    const content = chapterFeedbackInput.value.trim();
-    if (!content) {
-      chapterFeedbackInput.focus();
-      return;
-    }
-    chapterFeedbackSubmit.disabled = true;
-    chapterFeedbackInput.disabled = true;
-    try {
-      const res = await fetch(`/api/books/${slug}/chapters/${currentChapterNum}/feedback`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content }),
-      });
-      if (res.ok) {
-        chapterFeedbackStatus.classList.add('show');
-        trackGateClick('feedback', 'chapter_end');
-      } else {
-        chapterFeedbackSubmit.disabled = false;
-        chapterFeedbackInput.disabled = false;
-        const data = await res.json().catch(() => ({}));
-        chapterFeedbackStatus.textContent = data.message || 'Не удалось отправить отзыв';
-        chapterFeedbackStatus.classList.add('show');
-      }
-    } catch (err) {
-      chapterFeedbackSubmit.disabled = false;
-      chapterFeedbackInput.disabled = false;
-      chapterFeedbackStatus.textContent = 'Ошибка сети';
-      chapterFeedbackStatus.classList.add('show');
-    }
   });
 
   // ---- Навигация по страницам/главам ----

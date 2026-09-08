@@ -182,6 +182,47 @@ _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
     .countdown-unit { min-width: 38px; }
   }
 
+  /* ===== Крупная кнопка Telegram вверху страницы, тот же стиль,
+     что и на главной (booklo.ru/index.html) ===== */
+  .telegram-appeal {
+    font-size: 16px;
+    color: var(--tan);
+    margin: 0 0 16px;
+  }
+  .telegram-appeal b {
+    color: #fdf6e3;
+  }
+  .telegram-cta-big {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    background: #29a9eb;
+    color: #fff;
+    text-decoration: none;
+    font-family: 'Gabriela', Georgia, serif;
+    font-size: 17px;
+    font-weight: 700;
+    padding: 14px 28px;
+    border-radius: 999px;
+    white-space: nowrap;
+    box-shadow: 0 8px 22px rgba(41,169,235,0.4);
+    transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
+    margin-bottom: 40px;
+  }
+  .telegram-cta-big svg {
+    width: 20px;
+    height: 20px;
+    flex: 0 0 auto;
+  }
+  .telegram-cta-big:hover {
+    background: #1e94d2;
+    transform: translateY(-1px);
+    box-shadow: 0 10px 26px rgba(41,169,235,0.5);
+  }
+  @media (max-width: 600px) {
+    .telegram-cta-big { width: 100%; justify-content: center; }
+  }
+
   .video-wrap {
     position: relative;
     width: 100%;
@@ -321,7 +362,7 @@ _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
     <div class="brand-group">
       <a href="./index.html" class="brand"><b>Отец Тук</b></a>
       <div class="social-icons">
-        <a href="https://t.me/otec_tuk" target="_blank" rel="noopener" aria-label="Telegram">
+        <a href="https://t.me/otets_tuk" target="_blank" rel="noopener" aria-label="Telegram">
           <svg viewBox="0 0 24 24" fill="currentColor"><path d="M21.9 3.6 2.7 11.2c-1.2.5-1.2 1.3-.2 1.6l4.9 1.5 1.9 5.8c.2.6.4.8.8.8.4 0 .6-.2.9-.5l2.1-2 4.4 3.2c.8.4 1.4.2 1.6-.7l2.9-13.6c.3-1.2-.4-1.7-1.1-1.7Z"/></svg>
         </a>
         <a href="https://vk.com/club234913838" target="_blank" rel="noopener" aria-label="ВКонтакте">
@@ -365,6 +406,12 @@ _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
       </div>
     </div>
 
+    <p class="telegram-appeal">Продолжение выходит <b>10 сентября</b> — первыми узнают подписчики Telegram</p>
+    <a class="telegram-cta-big" href="https://t.me/otets_tuk" target="_blank" rel="noopener">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M21.9 3.6 2.7 11.2c-1.2.5-1.2 1.3-.2 1.6l4.9 1.5 1.9 5.8c.2.6.4.8.8.8.4 0 .6-.2.9-.5l2.1-2 4.4 3.2c.8.4 1.4.2 1.6-.7l2.9-13.6c.3-1.2-.4-1.7-1.1-1.7Z"/></svg>
+      Подписаться в Telegram
+    </a>
+
     <div class="video-wrap">
       <iframe src="https://www.youtube.com/embed/WS55PBvc0HE" title="Трейлер романа «Чистория»" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
     </div>
@@ -406,7 +453,7 @@ _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
     </p>
 
     <div class="cta-row">
-      <a class="cta primary" href="https://t.me/otec_tuk" target="_blank" rel="noopener">
+      <a class="cta primary" href="https://t.me/otets_tuk" target="_blank" rel="noopener">
         <svg viewBox="0 0 24 24" fill="currentColor"><path d="M21.9 3.6 2.7 11.2c-1.2.5-1.2 1.3-.2 1.6l4.9 1.5 1.9 5.8c.2.6.4.8.8.8.4 0 .6-.2.9-.5l2.1-2 4.4 3.2c.8.4 1.4.2 1.6-.7l2.9-13.6c.3-1.2-.4-1.7-1.1-1.7Z"/></svg>
         Подписаться в Telegram
       </a>

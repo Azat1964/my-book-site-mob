@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Отзывы на главы — Отец Тук</title>
+<link rel="stylesheet" href="./css/admin.css">
+<style>
+  .back-link { display:inline-block; margin-bottom:20px; color:#c9a227; text-decoration:none; font-size:14px; }
+  .back-link:hover { text-decoration:underline; }
+  #fb-wrap { display:none; }
+  .fb-card { background:#1f1b29; border:1px solid rgba(201,162,39,0.2); border-radius:12px; padding:16px 18px; margin-bottom:12px; }
+  .fb-meta { font-size:12px; color:#9a8fae; margin-bottom:8px; display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+  .fb-book { color:#c9a227; font-weight:bold; }
+  .fb-ch { background:rgba(201,162,39,0.15); color:#c9a227; padding:2px 8px; border-radius:6px; }
+  .fb-nick { color:#4da8cc; }
+  .fb-anon { color:#8a7a64; font-style:italic; }
+  .fb-date { margin-left:auto; }
+  .fb-content { font-size:14px; line-height:1.6; color:#e8e0f0; }
+  .fb-empty, .fb-err { color:#8a7a64; font-size:15px; padding:20px 0; }
+  .fb-count { font-size:13px; color:#9a8fae; margin-bottom:16px; }
+  .fb-filter { margin-bottom:16px; }
+  .fb-filter input { width:100%; max-width:400px; padding:9px 14px; background:#221e30; border:1px solid rgba(201,162,39,0.2); border-radius:8px; color:#e8e0f0; font-size:14px; outline:none; }
+</style>
+</head>
+<body>
+
+<div id="fb-login" class="admin-screen" style="display:flex;">
+  <div class="admin-box">
+    <h1>Отзывы на главы</h1>
+    <input type="password" id="fb-token" placeholder="Введите токен администратора">
+    <button id="fb-login-btn">Войти</button>
+    <p id="fb-login-err" class="status-text err" style="display:none;"></p>
+  </div>
+</div>
+
+<div id="fb-wrap" class="admin-container">
+  <div class="admin-panel-inner">
+    <a href="./admin.html" class="back-link">← Вернуться в админку</a>
+    <h1 style="margin-bottom:6px;">Отзывы читателей на главы</h1>
+    <p class="fb-count" id="fb-count">Загрузка…</p>
+    <div class="fb-filter">
+      <input type="text" id="fb-search" placeholder="🔍 Фильтр по книге, главе или тексту…">
+    </div>
+    <div id="fb-list"></div>
+  </div>
+</div>
+
+<script>
+let TOKEN = sessionStorage.getItem('adminToken') || '';
+let allFeedback = [];
+
+const loginScreen = document.getElementById('fb-login');
+const wrap = document.getElementById('fb-wrap');
+const tokenInput = document.getElementById('fb-token');
+const loginBtn = document.getElementById('fb-login-btn');
+const loginErr = document.getElementById('fb-login-err');
+
+function show() { loginScreen.style.display='none'; wrap.style.display='block'; load(); }
+
+if (TOKEN) {
+  fetch('/api/admin/chapter-feedback', { headers:{'x-admin-token':TOKEN} })
+    .then(r => { if (r.ok) show(); else { TOKEN=''; sessionStorage.removeItem('adminToken'); } });
+}
+
+loginBtn.addEventListener('click', async () => {
+  const v = tokenInput.value.trim();
+  if (!v) return;
+  const r = await fetch('/api/admin/chapter-feedback', { headers:{'x-admin-token':v} });
+  if (r.ok) { TOKEN=v; sessionStorage.setItem('adminToken',v); show(); }
+  else { loginErr.textContent='Неверный токен'; loginErr.style.display='block'; }
+});
+tokenInput.addEventListener('keydown', e => { if (e.key==='Enter') loginBtn.click(); });
+
+function esc(s){ if(!s) return ''; const d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
+function fmtDate(s){ try { return new Date(s).toLocaleString('ru'); } catch(e){ return s; } }
+
+function render(list) {
+  const el = document.getElementById('fb-list');
+  if (!list.length) { el.innerHTML = '<p class="fb-empty">Отзывов пока нет.</p>'; return; }
+  el.innerHTML = list.map(f => `
+    <div class="fb-card">
+      <div class="fb-meta">
+        <span class="fb-book">${esc(f.book)}</span>
+        <span class="fb-ch">Гл. ${f.chapter_number}${f.chapter ? ' · '+esc(f.chapter) : ''}</span>
+        ${f.nickname ? '<span class="fb-nick">👤 '+esc(f.nickname)+'</span>' : '<span class="fb-anon">аноним</span>'}
+        <span class="fb-date">${fmtDate(f.created_at)}</span>
+      </div>
+      <div class="fb-content">${esc(f.content)}</div>
+    </div>
+  `).join('');
+}
+
+async function load() {
+  const el = document.getElementById('fb-list');
+  const cnt = document.getElementById('fb-count');
+  try {
+    const r = await fetch('/api/admin/chapter-feedback', { headers:{'x-admin-token':TOKEN} });
+    allFeedback = await r.json();
+    cnt.textContent = 'Всего отзывов: ' + allFeedback.length;
+    render(allFeedback);
+  } catch(e) {
+    el.innerHTML = '<p class="fb-err">Ошибка загрузки: ' + e.message + '</p>';
+  }
+}
+
+document.getElementById('fb-search').addEventListener('input', e => {
+  const q = e.target.value.toLowerCase().trim();
+  if (!q) { render(allFeedback); return; }
+  const filtered = allFeedback.filter(f =>
+    (f.book||'').toLowerCase().includes(q) ||
+    (f.chapter||'').toLowerCase().includes(q) ||
+    (f.content||'').toLowerCase().includes(q) ||
+    ('гл. '+f.chapter_number).includes(q) ||
+    (f.nickname||'').toLowerCase().includes(q)
+  );
+  render(filtered);
+});
+</script>
+</body>
+</html>

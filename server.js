@@ -1097,6 +1097,51 @@ app.get('/api/books/:slug/chapters/:num', async (req, res) => {
   }
 });
 
+// Отзыв на главу — "Как вам прочитанная глава?". Публичный эндпоинт,
+// доступен и незалогиненным читателям (это лёгкий фидбек-виджет в
+// конце главы, не полноценные комментарии с барьером входа).
+app.post('/api/books/:slug/chapters/:num/feedback', async (req, res) => {
+  const { slug, num } = req.params;
+  const content = (req.body.content || '').trim();
+
+  if (!content) {
+    return res.status(400).json({ message: 'Напишите пару слов перед отправкой' });
+  }
+  if (content.length > 500) {
+    return res.status(400).json({ message: 'Слишком длинный отзыв (максимум 500 символов)' });
+  }
+
+  try {
+    const chapterResult = await pool.query(
+      `SELECT c.id AS chapter_id, b.id AS book_id
+         FROM chapters c JOIN books b ON b.id = c.book_id
+        WHERE b.slug = $1 AND c.chapter_number = $2`,
+      [slug, num]
+    );
+    if (chapterResult.rows.length === 0) {
+      return res.status(404).json({ message: 'Глава не найдена' });
+    }
+    const { chapter_id, book_id } = chapterResult.rows[0];
+
+    const crypto = require('crypto');
+    const rawIp = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.socket.remoteAddress || '';
+    const ipHash = crypto.createHash('sha256').update(rawIp).digest('hex');
+    const userId = req.session?.userId || null;
+
+    const result = await pool.query(
+      `INSERT INTO chapter_feedback (chapter_id, book_id, user_id, content, ip_hash)
+       VALUES ($1, $2, $3, $4, $5)
+       RETURNING id, created_at`,
+      [chapter_id, book_id, userId, content, ipHash]
+    );
+
+    res.status(201).json(result.rows[0]);
+  } catch (err) {
+    console.error('Ошибка сохранения отзыва на главу:', err);
+    res.status(500).json({ message: 'Ошибка сервера' });
+  }
+});
+
 // =====================================================================
 // АНАЛИТИКА — только для администратора
 // =====================================================================
@@ -1132,6 +1177,25 @@ app.get('/api/admin/analytics/views-by-day', requireAdmin, async (req, res) => {
        WHERE viewed_at >= NOW() - INTERVAL '${days} days'
        GROUP BY DATE(viewed_at)
        ORDER BY day`
+    );
+    res.json(result.rows);
+  } catch (err) {
+    res.status(500).json({ message: 'Ошибка сервера' });
+  }
+});
+
+// Отзывы читателей на главы — последние сначала
+app.get('/api/admin/chapter-feedback', requireAdmin, async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT cf.id, cf.content, cf.created_at, b.title AS book, c.chapter_number,
+              c.title AS chapter, u.nickname
+         FROM chapter_feedback cf
+         JOIN books b ON b.id = cf.book_id
+         JOIN chapters c ON c.id = cf.chapter_id
+         LEFT JOIN users u ON u.id = cf.user_id
+        ORDER BY cf.created_at DESC
+        LIMIT 200`
     );
     res.json(result.rows);
   } catch (err) {

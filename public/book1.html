@@ -82,132 +82,6 @@ _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
           /* Два слоя тени: дальняя мягкая (эффект "парения" над страницей) + ближняя резкая (контактная тень) */
         }
 
-        #chapterEndPrompt {
-          position: fixed;
-          left: 75%;
-          bottom: 4vh;
-          transform: translate(-50%, 20px);
-          z-index: 998;
-          display: flex;
-          flex-direction: column;
-          gap: 10px;
-          width: 320px;
-          max-width: 40vw;
-          padding: 14px 18px;
-          background: #f7efe0;
-          border: 1px solid rgba(138, 74, 30, 0.35);
-          border-radius: 12px;
-          box-shadow: 0 10px 30px rgba(74, 42, 22, 0.35);
-          font-family: 'Gabriela', Georgia, serif;
-          font-size: 14px;
-          color: #3a2a1a;
-          opacity: 0;
-          transition: opacity 0.35s ease, transform 0.35s ease;
-          pointer-events: none;
-        }
-        #chapterEndPrompt.show {
-          transform: translate(-50%, 0);
-          opacity: 1;
-          pointer-events: auto;
-        }
-        /* Свёрнутое состояние — узкая полоска-кнопка внизу */
-        #chapterEndPrompt.collapsed {
-          width: auto;
-          max-width: 40vw;
-          padding: 0;
-          background: transparent;
-          border: none;
-          box-shadow: none;
-          cursor: pointer;
-        }
-        #chapterEndPrompt.collapsed > .row-top,
-        #chapterEndPrompt.collapsed > .feedback-block {
-          display: none;
-        }
-        #chapterEndPrompt .collapsed-bar {
-          display: none;
-          align-items: center;
-          gap: 8px;
-          background: #f7efe0;
-          color: #8a4a1e;
-          border: 1px solid rgba(138, 74, 30, 0.35);
-          border-radius: 999px;
-          box-shadow: 0 6px 18px rgba(74, 42, 22, 0.3);
-          padding: 9px 18px;
-          font-family: 'Gabriela', Georgia, serif;
-          font-size: 13px;
-          white-space: nowrap;
-        }
-        #chapterEndPrompt.collapsed .collapsed-bar {
-          display: inline-flex;
-        }
-        #chapterEndPrompt .row-top {
-          display: flex;
-          flex-wrap: wrap;
-          align-items: center;
-          gap: 10px;
-        }
-        #chapterEndPrompt .row-top .msg { flex: 1; min-width: 160px; }
-        #chapterEndPrompt .feedback-block {
-          border-top: 1px solid rgba(138,74,30,0.2);
-          padding-top: 12px;
-        }
-        #chapterEndPrompt .feedback-label {
-          color: #8a4a1e;
-          font-size: 13px;
-          margin-bottom: 8px;
-          font-family: 'Gabriela', Georgia, serif;
-        }
-        #chapterEndPrompt .feedback-row {
-          display: flex;
-          gap: 8px;
-        }
-        #chapterEndPrompt .feedback-row input {
-          flex: 1;
-          min-width: 0;
-          background: #fffdf8;
-          border: 1px solid rgba(138,74,30,0.35);
-          border-radius: 6px;
-          color: #3a2a1a;
-          font-family: 'Gabriela', Georgia, serif;
-          font-size: 13px;
-          padding: 8px 10px;
-        }
-        #chapterEndPrompt .feedback-row input::placeholder { color: #a08a70; }
-        #chapterEndPrompt .feedback-row button {
-          flex-shrink: 0;
-          background: #8a4a1e;
-          color: #fff8ec;
-          border: 1px solid #8a4a1e;
-          border-radius: 6px;
-          padding: 8px 14px;
-          font-family: inherit;
-          font-size: 13px;
-          cursor: pointer;
-        }
-        #chapterEndPrompt .feedback-row button:hover { background: #6f3a17; }
-        #chapterEndPrompt .feedback-row button:disabled { opacity: 0.5; cursor: default; }
-        #chapterEndPrompt .feedback-status {
-          font-size: 12px;
-          color: #97c459;
-          margin-top: 6px;
-          display: none;
-        }
-        #chapterEndPrompt .feedback-status.show { display: block; }
-        @media (max-width: 900px) {
-          #chapterEndPrompt {
-            left: 50%;
-            top: auto;
-            bottom: 18px;
-            transform: translate(-50%, 120%);
-            max-width: 92vw;
-            width: 360px;
-          }
-          #chapterEndPrompt.show {
-            transform: translate(-50%, 0);
-          }
-        }
-
         /* Мягкий неблокирующий баннер с предложением зарегистрироваться —
            появляется только когда читатель долистал до конца главы и не залогинен.
            Не перекрывает текст, легко закрывается, не мешает чтению. */
@@ -265,34 +139,6 @@ _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
         }
         #registerPrompt button.dismiss-btn:hover {
           color: #e8cfa0;
-        }
-        #registerPrompt .prompt-actions {
-          display: flex;
-          gap: 8px;
-          flex-shrink: 0;
-        }
-        a.tg-link {
-          flex-shrink: 0;
-          background: rgba(58, 168, 224, 0.16);
-          color: #bfe4f7;
-          border: 1px solid #3aa8e0;
-          padding: 7px 14px;
-          border-radius: 6px;
-          text-decoration: none;
-          font-size: 13px;
-          white-space: nowrap;
-        }
-        a.tg-link:hover {
-          background: rgba(58, 168, 224, 0.30);
-        }
-        /* Тёмно-синяя кнопка "Подписаться" в плашке отзыва в конце главы */
-        #chapterEndPrompt a.tg-link {
-          background: #1e3a5f;
-          color: #ffffff;
-          border: 1px solid #1e3a5f;
-        }
-        #chapterEndPrompt a.tg-link:hover {
-          background: #16304f;
         }
         @media (max-width: 600px) {
           #registerPrompt {
@@ -352,33 +198,6 @@ _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
         #chapterRegisterWall a.register-link-main:hover {
           background: rgba(201, 162, 39, 0.36);
         }
-        #chapterRegisterWall .wall-actions {
-          display: flex;
-          flex-direction: column;
-          gap: 12px;
-        }
-        #chapterRegisterWall a.tg-link-main {
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          gap: 6px;
-          background: #3aa8e0;
-          color: #0e0a06;
-          border: 1px solid #3aa8e0;
-          padding: 11px 26px;
-          border-radius: 8px;
-          text-decoration: none;
-          font-size: 15px;
-          font-weight: 500;
-        }
-        #chapterRegisterWall a.tg-link-main:hover {
-          filter: brightness(1.08);
-        }
-        #chapterRegisterWall .wall-perk {
-          color: #8a8094;
-          font-size: 12px;
-          margin: -14px 0 18px;
-        }
         #chapterRegisterWall .wall-back {
           display: block;
           margin-top: 16px;
@@ -413,29 +232,8 @@ _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
     <!-- Мягкий промпт регистрации — появляется только в конце главы, не блокирует чтение -->
     <div id="registerPrompt">
       <span class="msg">Дальше — по регистрации. Зарегистрируйтесь — 10 секунд</span>
-      <div class="prompt-actions">
-        <a id="registerPromptTgLink" class="tg-link" href="https://t.me/otets_tuk" target="_blank" rel="noopener">Telegram</a>
-        <a id="registerPromptLink" class="register-link" href="#">Зарегистрироваться</a>
-      </div>
+      <a id="registerPromptLink" class="register-link" href="#">Зарегистрироваться</a>
       <button id="registerPromptDismiss" class="dismiss-btn" aria-label="Закрыть">✕</button>
-    </div>
-
-    <!-- Плашка в конце КАЖДОЙ главы: Telegram + отзыв на главу -->
-    <div id="chapterEndPrompt">
-      <div class="collapsed-bar">💬 Как Вам глава?</div>
-      <div class="row-top">
-        <span class="msg">Дочитали? Новые книги выходят в Telegram первыми</span>
-        <a id="chapterEndTgLink" class="tg-link" href="https://t.me/otets_tuk" target="_blank" rel="noopener">Подписаться</a>
-        <button id="chapterEndDismiss" class="dismiss-btn" aria-label="Закрыть">✕</button>
-      </div>
-      <div class="feedback-block">
-        <div class="feedback-label">Как Вам прочитанная глава?</div>
-        <div class="feedback-row">
-          <input id="chapterFeedbackInput" type="text" maxlength="500" placeholder="Пара слов о главе…">
-          <button id="chapterFeedbackSubmit">Отправить</button>
-        </div>
-        <div class="feedback-status" id="chapterFeedbackStatus">Спасибо! Отзыв отправлен.</div>
-      </div>
     </div>
 
     <!-- Жёсткая стена регистрации — для глав за пределами бесплатного лимита -->
@@ -444,11 +242,7 @@ _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
         <div class="wall-icon">🔒</div>
         <h3>Дальше — по регистрации</h3>
         <p id="chapterRegisterWallText">Первая глава бесплатна для всех. Чтобы читать дальше, зарегистрируйтесь — это займёт 10 секунд.</p>
-        <div class="wall-actions">
-          <a id="chapterRegisterWallTgLink" class="tg-link-main" href="https://t.me/otets_tuk" target="_blank" rel="noopener">Продолжить в Telegram</a>
-          <a id="chapterRegisterWallLink" class="register-link-main" href="#">Зарегистрироваться на сайте</a>
-        </div>
-        <p class="wall-perk">В Telegram — новые главы первыми и закрытые отрывки</p>
+        <a id="chapterRegisterWallLink" class="register-link-main" href="#">Зарегистрироваться</a>
         <a id="chapterRegisterWallBack" class="wall-back" href="#">← Вернуться к содержанию</a>
       </div>
     </div>
@@ -598,17 +392,8 @@ _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
         const registerPrompt = document.getElementById('registerPrompt');
         const registerPromptMsg = registerPrompt.querySelector('.msg');
         const registerPromptLink = document.getElementById('registerPromptLink');
-        const registerPromptTgLink = document.getElementById('registerPromptTgLink');
         const registerPromptDismiss = document.getElementById('registerPromptDismiss');
         const DISMISS_KEY = 'registerPromptDismissed';
-
-        // ---- Откуда именно пришла подписка: с мягкого баннера или с жёсткой стены ----
-        function trackGateClick(target, source) {
-          try { if (typeof ym === 'function') ym(110915454, 'reachGoal', `gate_${target}_${source}`); } catch (err) {}
-          try { if (typeof gtag === 'function') gtag('event', `gate_${target}_click`, { source, book_slug: slug }); } catch (err) {}
-        }
-        registerPromptLink.addEventListener('click', () => trackGateClick('register', 'soft'));
-        registerPromptTgLink.addEventListener('click', () => trackGateClick('telegram', 'soft'));
         let softPromptShownForChapter = false;
         // Флаг «событие о дочитывании этой главы в GA4 уже отправлено» — как
         // и softPromptShownForChapter, сбрасывается при переходе на другую
@@ -651,84 +436,6 @@ _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
           });
         }
 
-        // ---- Плашка в конце КАЖДОЙ главы: Telegram + отзыв на главу.
-        // Не зависит от free_chapters_limit — работает и у безлимитных книг. ----
-        const chapterEndPrompt = document.getElementById('chapterEndPrompt');
-        const chapterEndTgLink = document.getElementById('chapterEndTgLink');
-        const chapterEndDismiss = document.getElementById('chapterEndDismiss');
-        const chapterFeedbackInput = document.getElementById('chapterFeedbackInput');
-        const chapterFeedbackSubmit = document.getElementById('chapterFeedbackSubmit');
-        const chapterFeedbackStatus = document.getElementById('chapterFeedbackStatus');
-        let chapterEndShown = false;
-
-        function hideChapterEndPrompt(e) {
-          if (e) { e.stopPropagation(); }
-          // Не прячем полностью, а сворачиваем в узкую полоску,
-          // чтобы плашка не загораживала текст, но оставалась доступной.
-          chapterEndPrompt.classList.add('collapsed');
-        }
-        // Разворачивание — только по клику на саму свёрнутую полоску.
-        var chapterEndCollapsedBar = chapterEndPrompt.querySelector('.collapsed-bar');
-        if (chapterEndCollapsedBar) {
-          chapterEndCollapsedBar.addEventListener('click', function (e) {
-            e.stopPropagation();
-            chapterEndPrompt.classList.remove('collapsed');
-          });
-        }
-        function resetChapterFeedbackForm() {
-          chapterFeedbackInput.value = '';
-          chapterFeedbackInput.disabled = false;
-          chapterFeedbackSubmit.disabled = false;
-          chapterFeedbackStatus.classList.remove('show');
-        }
-        chapterEndDismiss.addEventListener('click', hideChapterEndPrompt);
-        chapterEndTgLink.addEventListener('click', () => trackGateClick('telegram', 'chapter_end'));
-
-        chapterFeedbackSubmit.addEventListener('click', async () => {
-          const content = chapterFeedbackInput.value.trim();
-          if (!content) {
-            chapterFeedbackInput.focus();
-            return;
-          }
-          chapterFeedbackSubmit.disabled = true;
-          chapterFeedbackInput.disabled = true;
-          try {
-            const res = await fetch(`/api/books/${slug}/chapters/${currentChapterNum}/feedback`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ content }),
-            });
-            if (res.ok) {
-              chapterFeedbackStatus.textContent = 'Спасибо! Отзыв отправлен.';
-              chapterFeedbackStatus.classList.add('show');
-              trackGateClick('feedback', 'chapter_end');
-            } else {
-              chapterFeedbackSubmit.disabled = false;
-              chapterFeedbackInput.disabled = false;
-              const data = await res.json().catch(() => ({}));
-              chapterFeedbackStatus.textContent = data.message || 'Не удалось отправить отзыв';
-              chapterFeedbackStatus.classList.add('show');
-            }
-          } catch (err) {
-            chapterFeedbackSubmit.disabled = false;
-            chapterFeedbackInput.disabled = false;
-            chapterFeedbackStatus.textContent = 'Ошибка сети';
-            chapterFeedbackStatus.classList.add('show');
-          }
-        });
-
-        document.addEventListener('currentSpreadChanged', (e) => {
-          if (chapterEndShown) return;
-          if (registerPrompt.classList.contains('show')) return;
-
-          const totalPages = document.querySelectorAll('#outputContainer .page').length;
-          const pageIndex = e.detail ? e.detail.pageIndex : 0;
-          if (totalPages > 0 && pageIndex >= totalPages) {
-            chapterEndShown = true;
-            chapterEndPrompt.classList.add('show');
-          }
-        });
-
         // ---- Событие "дочитал главу" для Google Analytics (GA4) ----
         // Срабатывает для ВСЕХ читателей (в отличие от баннера регистрации
         // выше, который показывается только неавторизованным) — как только
@@ -763,12 +470,9 @@ _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
         const chapterRegisterWall = document.getElementById('chapterRegisterWall');
         const chapterRegisterWallText = document.getElementById('chapterRegisterWallText');
         const chapterRegisterWallLink = document.getElementById('chapterRegisterWallLink');
-        const chapterRegisterWallTgLink = document.getElementById('chapterRegisterWallTgLink');
         const chapterRegisterWallBack = document.getElementById('chapterRegisterWallBack');
 
         chapterRegisterWallBack.href = `./contents.html?book=${slug}`;
-        chapterRegisterWallLink.addEventListener('click', () => trackGateClick('register', 'wall'));
-        chapterRegisterWallTgLink.addEventListener('click', () => trackGateClick('telegram', 'wall'));
 
         window.showChapterRegisterWall = function (chapterNum, freeLimitFromServer) {
           hideRegisterPrompt(); // мягкий баннер больше не нужен, если уже стена
@@ -877,11 +581,8 @@ _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
           currentChapterNum = String(chapterNum); // переменная объявлена в fish_no_sound.js
           softPromptShownForChapter = false;
           chapterCompleteEventSent = false;
-          chapterEndShown = false;
           hideRegisterPrompt();
           hideChapterRegisterWall();
-          hideChapterEndPrompt();
-          resetChapterFeedbackForm();
           history.pushState({}, '', `./book.html?book=${slug}&chapter=${chapterNum}`);
           loadAndRenderChapter().then(() => renderHeaderForChapter(chapterNum)); // функция из fish_no_sound.js
         }
@@ -901,11 +602,8 @@ _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
           currentChapterNum = String(num);
           softPromptShownForChapter = false;
           chapterCompleteEventSent = false;
-          chapterEndShown = false;
           hideRegisterPrompt();
           hideChapterRegisterWall();
-          hideChapterEndPrompt();
-          resetChapterFeedbackForm();
           loadAndRenderChapter().then(() => renderHeaderForChapter(num));
         });
 

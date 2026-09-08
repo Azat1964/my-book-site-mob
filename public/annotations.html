@@ -354,7 +354,7 @@ _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
       annDesc.textContent = book.description || 'Аннотация пока не добавлена.';
       annLink.href = `./contents.html?book=${encodeURIComponent(book.slug)}`;
       const annVideo = document.getElementById('annVideo');
-      if (book.slug === 'temny-voschod') { annVideo.classList.add('show'); } else { annVideo.classList.remove('show'); }
+      if (book.slug === 'temny-voskhod') { annVideo.classList.add('show'); } else { annVideo.classList.remove('show'); }
       annPanel.classList.add('show');
       annPanel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }

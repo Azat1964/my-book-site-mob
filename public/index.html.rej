@@ -1,0 +1,86 @@
+***************
+*** 321,327 ****
+      position: relative;
+      z-index: 2;
+      font-family: 'Archivo Black', Arial, sans-serif;
+-     font-size: clamp(54px, 9vw, 110px);
+      line-height: 0.92;
+      color: #fff8ec;
+      letter-spacing: -1px;
+--- 321,327 ----
+      position: relative;
+      z-index: 2;
+      font-family: 'Archivo Black', Arial, sans-serif;
++     font-size: clamp(30px, 5vw, 56px);
+      line-height: 0.92;
+      color: #fff8ec;
+      letter-spacing: -1px;
+***************
+*** 333,338 ****
+        0 10px 20px rgba(0,0,0,0.4);      /* мягкая тень под буквой */
+    }
+  
+    /* ===== Варианты оформления текста для разных фоновых фото =====
+       Класс ставится из JS (setRandomHeroBackground) в зависимости от того,
+       какая картинка подгрузилась случайным образом. */
+--- 333,357 ----
+        0 10px 20px rgba(0,0,0,0.4);      /* мягкая тень под буквой */
+    }
+  
++   /* Заголовок посередине панели — анонс книги "Тёмный Восход",
++      тот же шрифт и объёмная тень, что у .hero-big-word, но по центру. */
++   .hero-mid-word {
++     position: relative;
++     z-index: 2;
++     font-family: 'Archivo Black', Arial, sans-serif;
++     font-size: clamp(32px, 6.5vw, 68px);
++     line-height: 1.05;
++     color: #fff8ec;
++     letter-spacing: -1px;
++     text-align: center;
++     text-shadow:
++       0 -2px 0 rgba(255,255,255,0.35),
++       0 2px 0 rgba(20,14,8,0.35),
++       0 4px 0 rgba(20,14,8,0.3),
++       0 6px 2px rgba(20,14,8,0.28),
++       0 10px 20px rgba(0,0,0,0.4);
++   }
++ 
+    /* ===== Варианты оформления текста для разных фоновых фото =====
+       Класс ставится из JS (setRandomHeroBackground) в зависимости от того,
+       какая картинка подгрузилась случайным образом. */
+***************
+*** 352,358 ****
+       (hang — рука с буквой "А"). Выпуклость уже базовая, здесь только
+       добавляем тень подальше, поверх базовой. */
+    .hero-main.style-floating .author-label,
+-   .hero-main.style-floating .hero-big-word {
+      text-shadow:
+        0 -1px 0 rgba(255,255,255,0.55),
+        0 1px 0 rgba(20,14,8,0.5),
+--- 371,378 ----
+       (hang — рука с буквой "А"). Выпуклость уже базовая, здесь только
+       добавляем тень подальше, поверх базовой. */
+    .hero-main.style-floating .author-label,
++   .hero-main.style-floating .hero-big-word,
++   .hero-main.style-floating .hero-mid-word {
+      text-shadow:
+        0 -1px 0 rgba(255,255,255,0.55),
+        0 1px 0 rgba(20,14,8,0.5),
+***************
+*** 812,817 ****
+            Азат Туктаров
+          </div>
+  
+          <div class="hero-big-word">КНИГИ</div>
+        </div>
+  
+--- 832,839 ----
+            Азат Туктаров
+          </div>
+  
++         <div class="hero-mid-word">Тёмный Восход</div>
++ 
+          <div class="hero-big-word">КНИГИ</div>
+        </div>
+  

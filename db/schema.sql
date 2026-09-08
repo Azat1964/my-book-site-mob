@@ -124,6 +124,24 @@ CREATE TABLE IF NOT EXISTS post_comments (
 CREATE INDEX IF NOT EXISTS idx_post_comments_post_id ON post_comments(post_id);
 
 -- ============================================================
+-- Отзывы читателей на конкретную главу — "Как вам прочитанная
+-- глава?". В отличие от post_comments, доступно ВСЕМ читателям,
+-- не только зарегистрированным (user_id может быть NULL) — это
+-- лёгкий фидбек-виджет в конце главы, а не полноценный тред
+-- комментариев, поэтому не хотим создавать барьер входа.
+-- ============================================================
+CREATE TABLE IF NOT EXISTS chapter_feedback (
+  id SERIAL PRIMARY KEY,
+  chapter_id INTEGER NOT NULL REFERENCES chapters(id) ON DELETE CASCADE,
+  book_id INTEGER NOT NULL REFERENCES books(id) ON DELETE CASCADE,
+  user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  content TEXT NOT NULL,
+  ip_hash VARCHAR(64),
+  created_at TIMESTAMP DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_chapter_feedback_chapter_id ON chapter_feedback(chapter_id);
+
+-- ============================================================
 -- Пример: добавление первой книги (замените на свои данные)
 -- ============================================================
 -- INSERT INTO books (slug, title, author, description, genre, status)
