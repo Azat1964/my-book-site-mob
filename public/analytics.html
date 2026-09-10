@@ -53,6 +53,8 @@
         <div class="stat-card"><div class="stat-value" id="stat-users">—</div><div class="stat-label">Читателей зарег.</div></div>
         <div class="stat-card"><div class="stat-value" id="stat-tg">—</div><div class="stat-label">Переходов из Telegram</div></div>
         <div class="stat-card"><div class="stat-value" id="stat-bookmarks">—</div><div class="stat-label">Сохранено закладок</div></div>
+        <div class="stat-card"><div class="stat-value" id="stat-vote-yes">—</div><div class="stat-label">Нравится: Да</div></div>
+        <div class="stat-card"><div class="stat-value" id="stat-vote-no">—</div><div class="stat-label">Нравится: Нет</div></div>
       </div>
 
       <!-- Графики -->
@@ -81,6 +83,12 @@
       <div class="chart-box" style="margin-bottom:18px;">
         <p class="chart-title">Топ глав по просмотрам</p>
         <div id="tableTopChapters" style="overflow-x:auto;"></div>
+      </div>
+
+      <!-- Голосование "Нравится?" по главам -->
+      <div class="chart-box" style="margin-bottom:18px;">
+        <p class="chart-title">Оценки глав — «Нравится?»</p>
+        <div id="tableChapterVotes" style="overflow-x:auto;"></div>
       </div>
 
       <!-- До какой главы дочитывают -->
@@ -249,6 +257,12 @@
       } catch (e) { console.error('devices', e); }
 
       try {
+        const voteSummary = await fetch('/api/admin/analytics/chapter-votes-summary', { headers }).then(r => r.json());
+        document.getElementById('stat-vote-yes').textContent = voteSummary.yes?.toLocaleString() ?? '—';
+        document.getElementById('stat-vote-no').textContent = voteSummary.no?.toLocaleString() ?? '—';
+      } catch (e) { console.error('vote summary', e); }
+
+      try {
         const chapData = await fetch('/api/admin/analytics/top-chapters', { headers }).then(r => r.json());
         const tableEl = document.getElementById('tableTopChapters');
         if (!chapData.length) {
@@ -266,6 +280,25 @@
           </table>`;
         }
       } catch (e) { console.error('chapters', e); }
+
+      try {
+        const votesData = await fetch('/api/admin/analytics/chapter-votes', { headers }).then(r => r.json());
+        const votesTableEl = document.getElementById('tableChapterVotes');
+        if (!votesData.length) {
+          votesTableEl.innerHTML = '<p style="color:#9a8fae;font-size:13px;">Данных пока нет</p>';
+        } else {
+          votesTableEl.innerHTML = `<table class="analytics-table">
+            <thead><tr><th>Книга</th><th>Гл.</th><th>Название</th><th>👍 Да</th><th>👎 Нет</th></tr></thead>
+            <tbody>${votesData.map(r => `<tr>
+              <td>${escapeHtml(r.book)}</td>
+              <td>${r.chapter_number}</td>
+              <td>${escapeHtml(r.chapter || '—')}</td>
+              <td>${r.yes}</td>
+              <td>${r.no}</td>
+            </tr>`).join('')}</tbody>
+          </table>`;
+        }
+      } catch (e) { console.error('votes', e); }
 
       try {
         const dropData = await fetch('/api/admin/analytics/dropoff', { headers }).then(r => r.json());

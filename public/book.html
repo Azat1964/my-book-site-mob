@@ -148,6 +148,31 @@ _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
           gap: 10px;
         }
         #chapterEndPrompt .row-top .msg { flex: 1; min-width: 160px; }
+        #chapterEndPrompt .vote-block {
+          border-top: 1px solid rgba(138,74,30,0.2);
+          padding-top: 12px;
+          margin-bottom: 12px;
+        }
+        #chapterEndPrompt .vote-row {
+          display: flex;
+          gap: 16px;
+        }
+        #chapterEndPrompt .vote-option {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          font-family: 'Gabriela', Georgia, serif;
+          font-size: 13px;
+          color: #3a2a1a;
+          cursor: pointer;
+          user-select: none;
+        }
+        #chapterEndPrompt .vote-option input[type="checkbox"] {
+          width: 15px;
+          height: 15px;
+          accent-color: #8a4a1e;
+          cursor: pointer;
+        }
         #chapterEndPrompt .feedback-block {
           border-top: 1px solid rgba(138,74,30,0.2);
           padding-top: 12px;
@@ -428,6 +453,14 @@ _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
         <a id="chapterEndTgLink" class="tg-link" href="https://t.me/otets_tuk" target="_blank" rel="noopener">Подписаться</a>
         <button id="chapterEndDismiss" class="dismiss-btn" aria-label="Закрыть">✕</button>
       </div>
+      <div class="vote-block">
+        <div class="feedback-label">Нравится?</div>
+        <div class="vote-row">
+          <label class="vote-option"><input type="checkbox" id="chapterVoteYes"> Да</label>
+          <label class="vote-option"><input type="checkbox" id="chapterVoteNo"> Нет</label>
+        </div>
+        <div class="feedback-status" id="chapterVoteStatus">Спасибо за оценку!</div>
+      </div>
       <div class="feedback-block">
         <div class="feedback-label">Как Вам прочитанная глава?</div>
         <div class="feedback-row">
@@ -680,9 +713,60 @@ _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
           chapterFeedbackInput.disabled = false;
           chapterFeedbackSubmit.disabled = false;
           chapterFeedbackStatus.classList.remove('show');
+          chapterVoteYes.checked = false;
+          chapterVoteNo.checked = false;
+          chapterVoteYes.disabled = false;
+          chapterVoteNo.disabled = false;
+          chapterVoteStatus.classList.remove('show');
         }
         chapterEndDismiss.addEventListener('click', hideChapterEndPrompt);
         chapterEndTgLink.addEventListener('click', () => trackGateClick('telegram', 'chapter_end'));
+
+        // ---- Голосование "Нравится?" Да/Нет — сразу отправляется по
+        // клику на чекбокс, без отдельной кнопки. Чекбоксы взаимоисключающие. ----
+        const chapterVoteYes = document.getElementById('chapterVoteYes');
+        const chapterVoteNo = document.getElementById('chapterVoteNo');
+        const chapterVoteStatus = document.getElementById('chapterVoteStatus');
+
+        async function submitChapterVote(liked) {
+          chapterVoteYes.disabled = true;
+          chapterVoteNo.disabled = true;
+          try {
+            const res = await fetch(`/api/books/${slug}/chapters/${currentChapterNum}/vote`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ liked }),
+            });
+            if (res.ok) {
+              chapterVoteStatus.textContent = 'Спасибо за оценку!';
+              chapterVoteStatus.classList.add('show');
+              trackGateClick(liked ? 'vote_yes' : 'vote_no', 'chapter_end');
+            } else {
+              chapterVoteYes.disabled = false;
+              chapterVoteNo.disabled = false;
+              chapterVoteStatus.textContent = 'Не удалось сохранить оценку';
+              chapterVoteStatus.classList.add('show');
+            }
+          } catch (err) {
+            chapterVoteYes.disabled = false;
+            chapterVoteNo.disabled = false;
+            chapterVoteStatus.textContent = 'Ошибка сети';
+            chapterVoteStatus.classList.add('show');
+          }
+        }
+
+        chapterVoteYes.addEventListener('change', () => {
+          if (chapterVoteYes.checked) {
+            chapterVoteNo.checked = false;
+            submitChapterVote(true);
+          }
+        });
+        chapterVoteNo.addEventListener('change', () => {
+          if (chapterVoteNo.checked) {
+            chapterVoteYes.checked = false;
+            submitChapterVote(false);
+          }
+        });
 
         chapterFeedbackSubmit.addEventListener('click', async () => {
           const content = chapterFeedbackInput.value.trim();

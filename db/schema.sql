@@ -142,6 +142,23 @@ CREATE TABLE IF NOT EXISTS chapter_feedback (
 CREATE INDEX IF NOT EXISTS idx_chapter_feedback_chapter_id ON chapter_feedback(chapter_id);
 
 -- ============================================================
+-- Голосование "Нравится?" Да/Нет в конце главы. Один голос на
+-- посетителя на главу (UNIQUE по chapter_id+ip_hash) — повторное
+-- голосование просто обновляет предыдущий выбор, а не плодит записи.
+-- ============================================================
+CREATE TABLE IF NOT EXISTS chapter_votes (
+  id SERIAL PRIMARY KEY,
+  chapter_id INTEGER NOT NULL REFERENCES chapters(id) ON DELETE CASCADE,
+  book_id INTEGER NOT NULL REFERENCES books(id) ON DELETE CASCADE,
+  user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  liked BOOLEAN NOT NULL,
+  ip_hash VARCHAR(64),
+  created_at TIMESTAMP DEFAULT NOW(),
+  UNIQUE (chapter_id, ip_hash)
+);
+CREATE INDEX IF NOT EXISTS idx_chapter_votes_chapter_id ON chapter_votes(chapter_id);
+
+-- ============================================================
 -- Пример: добавление первой книги (замените на свои данные)
 -- ============================================================
 -- INSERT INTO books (slug, title, author, description, genre, status)

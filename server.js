@@ -1142,6 +1142,48 @@ app.post('/api/books/:slug/chapters/:num/feedback', async (req, res) => {
   }
 });
 
+// Голосование "Нравится?" Да/Нет в конце главы. Один голос на
+// посетителя на главу — повторный клик обновляет прежний выбор (UPSERT).
+app.post('/api/books/:slug/chapters/:num/vote', async (req, res) => {
+  const { slug, num } = req.params;
+  const liked = req.body.liked;
+
+  if (typeof liked !== 'boolean') {
+    return res.status(400).json({ message: 'Некорректное значение' });
+  }
+
+  try {
+    const chapterResult = await pool.query(
+      `SELECT c.id AS chapter_id, b.id AS book_id
+         FROM chapters c JOIN books b ON b.id = c.book_id
+        WHERE b.slug = $1 AND c.chapter_number = $2`,
+      [slug, num]
+    );
+    if (chapterResult.rows.length === 0) {
+      return res.status(404).json({ message: 'Глава не найдена' });
+    }
+    const { chapter_id, book_id } = chapterResult.rows[0];
+
+    const crypto = require('crypto');
+    const rawIp = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.socket.remoteAddress || '';
+    const ipHash = crypto.createHash('sha256').update(rawIp).digest('hex');
+    const userId = req.session?.userId || null;
+
+    await pool.query(
+      `INSERT INTO chapter_votes (chapter_id, book_id, user_id, liked, ip_hash)
+       VALUES ($1, $2, $3, $4, $5)
+       ON CONFLICT (chapter_id, ip_hash)
+       DO UPDATE SET liked = EXCLUDED.liked, created_at = NOW()`,
+      [chapter_id, book_id, userId, liked, ipHash]
+    );
+
+    res.status(201).json({ ok: true });
+  } catch (err) {
+    console.error('Ошибка сохранения голоса за главу:', err);
+    res.status(500).json({ message: 'Ошибка сервера' });
+  }
+});
+
 // =====================================================================
 // АНАЛИТИКА — только для администратора
 // =====================================================================
@@ -1196,6 +1238,41 @@ app.get('/api/admin/chapter-feedback', requireAdmin, async (req, res) => {
          LEFT JOIN users u ON u.id = cf.user_id
         ORDER BY cf.created_at DESC
         LIMIT 200`
+    );
+    res.json(result.rows);
+  } catch (err) {
+    res.status(500).json({ message: 'Ошибка сервера' });
+  }
+});
+
+// Голосование "Нравится?" — общий итог по всем главам (Да / Нет)
+app.get('/api/admin/analytics/chapter-votes-summary', requireAdmin, async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT
+         COUNT(*) FILTER (WHERE liked = true)  AS yes,
+         COUNT(*) FILTER (WHERE liked = false) AS no
+       FROM chapter_votes`
+    );
+    const row = result.rows[0] || { yes: 0, no: 0 };
+    res.json({ yes: Number(row.yes) || 0, no: Number(row.no) || 0 });
+  } catch (err) {
+    res.status(500).json({ message: 'Ошибка сервера' });
+  }
+});
+
+// Голосование "Нравится?" — разбивка по главам
+app.get('/api/admin/analytics/chapter-votes', requireAdmin, async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT b.title AS book, c.chapter_number, c.title AS chapter,
+              COUNT(*) FILTER (WHERE cv.liked = true)  AS yes,
+              COUNT(*) FILTER (WHERE cv.liked = false) AS no
+         FROM chapter_votes cv
+         JOIN books b ON b.id = cv.book_id
+         JOIN chapters c ON c.id = cv.chapter_id
+        GROUP BY b.title, c.chapter_number, c.title
+        ORDER BY b.title, c.chapter_number`
     );
     res.json(result.rows);
   } catch (err) {

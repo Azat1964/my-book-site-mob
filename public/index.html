@@ -352,6 +352,28 @@ _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
       0 10px 20px rgba(0,0,0,0.4);
   }
 
+  /* Маленькая подпись над центральным словом — тот же размер шрифта,
+     что у "Азат Туктаров" (.author-label), но по центру панели. */
+  .hero-mid-label {
+    position: relative;
+    z-index: 2;
+    color: #4a2a16;
+    font-size: 17px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    text-align: center;
+    margin-bottom: 6px;
+    text-shadow:
+      0 -1px 0 rgba(255,255,255,0.5),
+      0 1px 0 rgba(20,14,8,0.45),
+      0 2px 0 rgba(20,14,8,0.4),
+      0 3px 1px rgba(20,14,8,0.35),
+      0 5px 10px rgba(20,14,8,0.3);
+  }
+  .hero-main.style-white-text .hero-mid-label {
+    color: #fff8ec;
+  }
+
   /* ===== Варианты оформления текста для разных фоновых фото =====
      Класс ставится из JS (setRandomHeroBackground) в зависимости от того,
      какая картинка подгрузилась случайным образом. */
@@ -546,85 +568,12 @@ _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
   }
 
   .countdown-card {
-    background: #1f1b29;
-    border-radius: 14px;
     padding: 26px 28px;
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    justify-content: space-between;
+    justify-content: center;
     gap: 18px;
-    box-shadow: 0 10px 24px rgba(74,42,22,0.18);
-    border: 1px solid rgba(201,162,39,0.25);
-  }
-
-  .countdown-label {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    color: #f1e9d8;
-    font-size: 16px;
-    letter-spacing: 0.3px;
-  }
-
-  .countdown-dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: var(--amber);
-    box-shadow: 0 0 0 4px rgba(217,118,58,0.25);
-    flex: 0 0 auto;
-  }
-
-  .countdown-timer {
-    display: flex;
-    align-items: baseline;
-    gap: 10px;
-  }
-
-  .countdown-unit {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    min-width: 56px;
-  }
-
-  .countdown-value {
-    font-family: 'Archivo Black', Arial, sans-serif;
-    font-size: 28px;
-    color: var(--gold);
-    line-height: 1;
-  }
-
-  .countdown-unit-label {
-    font-size: 11px;
-    color: #9a8fae;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    margin-top: 4px;
-  }
-
-  .countdown-sep {
-    font-family: 'Archivo Black', Arial, sans-serif;
-    font-size: 24px;
-    color: rgba(201,162,39,0.4);
-    align-self: flex-start;
-    margin-top: 2px;
-  }
-
-  .countdown-cta {
-    color: var(--gold);
-    text-decoration: none;
-    font-size: 14px;
-    border: 1px solid rgba(201,162,39,0.4);
-    padding: 9px 18px;
-    border-radius: 999px;
-    white-space: nowrap;
-    transition: background 0.2s, transform 0.15s;
-  }
-  .countdown-cta:hover {
-    background: rgba(201,162,39,0.14);
-    transform: translateY(-1px);
   }
 
   /* Крупная контрастная кнопка Telegram — основной CTA блока с таймером,
@@ -665,8 +614,6 @@ _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
   @media (max-width: 600px) {
     .countdown-wrap { padding: 0 16px; }
     .countdown-card { padding: 20px; }
-    .countdown-value { font-size: 22px; }
-    .countdown-unit { min-width: 46px; }
     .countdown-actions { width: 100%; }
     .countdown-cta-telegram { flex: 1 1 auto; justify-content: center; }
   }
@@ -838,9 +785,9 @@ _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
         </a>
       </div>
     </div>
-    <a class="nav-announce" href="./chistoriya.html">
+    <a class="nav-announce" id="navAnnounce" href="./chistoriya.html">
       <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10 8l6 4-6 4Z"/></svg>
-      <span>Премьера: трейлер «Чистория»</span>
+      <span id="navAnnounceText">Премьера: трейлер «Чистория»</span>
     </a>
     <div class="nav-right">
       <ul>
@@ -865,32 +812,11 @@ _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
        основной канал подписки, а не мелкая иконка в общем ряду. -->
   <div class="countdown-wrap">
     <div class="countdown-card">
-      <p class="countdown-label">
-        <span class="countdown-dot"></span>
-        Премьера романа «Чистория»
-      </p>
-      <div class="countdown-timer" id="countdownTimer">
-        <div class="countdown-unit">
-          <span class="countdown-value" id="cdDays">00</span>
-          <span class="countdown-unit-label">дней</span>
-        </div>
-        <div class="countdown-sep">:</div>
-        <div class="countdown-unit">
-          <span class="countdown-value" id="cdHours">00</span>
-          <span class="countdown-unit-label">часов</span>
-        </div>
-        <div class="countdown-sep">:</div>
-        <div class="countdown-unit">
-          <span class="countdown-value" id="cdMinutes">00</span>
-          <span class="countdown-unit-label">минут</span>
-        </div>
-      </div>
       <div class="countdown-actions">
         <a class="countdown-cta-telegram" href="https://t.me/otets_tuk" target="_blank" rel="noopener">
           <svg viewBox="0 0 24 24" fill="currentColor"><path d="M21.9 3.6 2.7 11.2c-1.2.5-1.2 1.3-.2 1.6l4.9 1.5 1.9 5.8c.2.6.4.8.8.8.4 0 .6-.2.9-.5l2.1-2 4.4 3.2c.8.4 1.4.2 1.6-.7l2.9-13.6c.3-1.2-.4-1.7-1.1-1.7Z"/></svg>
           Подписаться в Telegram
         </a>
-        <a class="countdown-cta" href="./chistoriya.html">Подробнее →</a>
       </div>
     </div>
   </div>
@@ -899,14 +825,15 @@ _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
   <div class="hero-wrap">
     <div class="hero-card">
 
-      <div class="hero-main" role="link" tabindex="0" aria-label="Перейти к оглавлению книги «Тёмный Восход»">
-        <h1 class="sr-only">Городское фэнтези читать онлайн бесплатно — романы Азата Туктарова: «Тёмный Восход» и другие истории</h1>
+      <div class="hero-main" role="link" tabindex="0" aria-label="Перейти к роману «Чистория»">
+        <h1 class="sr-only">Городское фэнтези читать онлайн бесплатно — романы Азата Туктарова: «Тёмный Восход», «Чистория» и другие истории</h1>
         <div class="author-label">
           <span>Автор</span>
           Азат Туктаров
         </div>
 
-        <div class="hero-mid-word">Тёмный Восход</div>
+        <div class="hero-mid-label">Премьера романа</div>
+        <div class="hero-mid-word">Чистория</div>
 
         <div class="hero-big-word">КНИГИ</div>
       </div>
@@ -1055,7 +982,7 @@ _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
       if (!heroMain) return;
 
       function goToBook() {
-        window.location.href = './contents.html?book=temny-voskhod';
+        window.location.href = './contents.html?book=chistoriya';
       }
 
       heroMain.addEventListener('click', goToBook);
@@ -1067,7 +994,7 @@ _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
       });
     })();
 
-    // Случайная обложка-фон для hero-main из папки covers/Tyumny_voshod
+    // Случайная обложка-фон для hero-main из папки covers/Chistoriya_card
     (async function setRandomHeroBackground() {
       const heroMain = document.querySelector('.hero-main');
 
@@ -1077,24 +1004,21 @@ _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
       if (heroMain.dataset.heroPreset) return;
 
       // Какой класс оформления текста ставить для конкретной картинки
-      // (имя файла без расширения -> CSS-класс на .hero-main)
+      // (имя файла без расширения -> CSS-класс на .hero-main). Подобрано
+      // вручную по каждой из 6 фотографий в Chistoriya_card: светлые/туманные
+      // кадры — тёмный текст по умолчанию, тёмные/контрастные — белый.
       const heroTextStyles = {
-        'blue-drops': 'style-white-text',
-        'book': 'style-white-text',
-        'drops': 'style-white-text',
-        'neon-drops': 'style-white-text',
-        'girl': 'style-white-text',
-        'face': 'style-white-text',
-        'hang': 'style-floating'
+        'walking-light': 'style-white-text',
+        'hand-frost-pink': 'style-white-text',
       };
 
       try {
-        const res = await fetch('/api/covers/Tyumny_voshod');
+        const res = await fetch('/api/covers/Chistoriya_card');
         if (!res.ok) throw new Error('Сервер вернул ошибку: ' + res.status);
         const files = await res.json();
         if (files.length) {
           const random = files[Math.floor(Math.random() * files.length)];
-          heroMain.style.backgroundImage = `url('./img/covers/Tyumny_voshod/${random}')`;
+          heroMain.style.backgroundImage = `url('./img/covers/Chistoriya_card/${random}')`;
 
           // Сбрасываем класс оформления текста от предыдущего фона
           heroMain.classList.remove('style-white-text', 'style-floating');
@@ -1111,40 +1035,28 @@ _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
       }
     })();
 
-    // Обратный отсчёт до премьеры "Чистория" — 10 сентября, 19:00 (МСК)
-    (function initCountdown() {
+    // Переключение баннера "Премьера: трейлер «Чистория»" в шапке на
+    // "Читать «Чистория» →" в момент премьеры — 10 сентября, 19:00 (МСК).
+    // Раньше это было частью визуального таймера, но сам таймер убрали с
+    // этой страницы — здесь отдельная лёгкая проверка времени, чтобы
+    // переключение баннера продолжало работать само, без вашего участия.
+    (function initNavAnnounceSwitch() {
       const target = new Date('2026-09-10T19:00:00+03:00').getTime();
-      const daysEl = document.getElementById('cdDays');
-      const hoursEl = document.getElementById('cdHours');
-      const minutesEl = document.getElementById('cdMinutes');
-      const timerEl = document.getElementById('countdownTimer');
-      const labelEl = document.querySelector('.countdown-label');
-      if (!daysEl || !hoursEl || !minutesEl) return;
+      const navAnnounce = document.getElementById('navAnnounce');
+      const navAnnounceText = document.getElementById('navAnnounceText');
+      if (!navAnnounce || !navAnnounceText) return;
 
-      function pad(n) { return String(n).padStart(2, '0'); }
-
-      function tick() {
-        const diff = target - Date.now();
-
-        if (diff <= 0) {
-          labelEl.innerHTML = '<span class="countdown-dot"></span> Премьера «Чистория» уже началась!';
-          timerEl.style.display = 'none';
-          clearInterval(intervalId);
-          return;
-        }
-
-        const totalMinutes = Math.floor(diff / 60000);
-        const days = Math.floor(totalMinutes / (60 * 24));
-        const hours = Math.floor((totalMinutes % (60 * 24)) / 60);
-        const minutes = totalMinutes % 60;
-
-        daysEl.textContent = pad(days);
-        hoursEl.textContent = pad(hours);
-        minutesEl.textContent = pad(minutes);
+      function apply() {
+        if (Date.now() < target) return false;
+        navAnnounce.href = './contents.html?book=chistoriya';
+        navAnnounceText.textContent = 'Читать «Чистория» →';
+        return true;
       }
 
-      tick();
-      const intervalId = setInterval(tick, 1000 * 30); // обновление раз в 30 сек — достаточно для минут
+      if (apply()) return;
+      const intervalId = setInterval(() => {
+        if (apply()) clearInterval(intervalId);
+      }, 1000 * 30);
     })();
 
     function escapeHtml(str) {
