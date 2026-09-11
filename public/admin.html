@@ -198,6 +198,35 @@
         <p id="post-status-msg" class="status-text"></p>
       </section>
 
+      <!-- Короткие ссылки для рекламы — booklo.ru/код вместо длинного адреса -->
+      <section>
+        <h2>Короткие ссылки</h2>
+        <p style="font-size:12px; color:#8a7a64; margin:-6px 0 8px;">
+          Код — то, что будет после booklo.ru/ (только латиница, цифры, дефис). Целевая ссылка —
+          куда вести: можно относительный путь (например <code>book.html?book=chistoriya&amp;chapter=1</code>)
+          или полный адрес на другой сайт.
+        </p>
+        <form id="short-link-form">
+          <input type="text" id="short-link-code" placeholder="Код (например: ser)" required>
+          <input type="text" id="short-link-target" placeholder="Целевая ссылка (например: book.html?book=chistoriya&chapter=1)" required>
+          <button type="submit">Создать / обновить ссылку</button>
+        </form>
+        <p id="short-link-status-msg" class="status-text"></p>
+        <table id="short-links-table" style="width:100%; margin-top:14px; border-collapse:collapse; font-size:13px;">
+          <thead>
+            <tr style="text-align:left; color:#8a7a64; border-bottom:1px solid rgba(255,255,255,0.1);">
+              <th style="padding:6px 8px;">Ссылка</th>
+              <th style="padding:6px 8px;">Ведёт на</th>
+              <th style="padding:6px 8px;">Переходов</th>
+              <th style="padding:6px 8px;"></th>
+            </tr>
+          </thead>
+          <tbody id="short-links-tbody">
+            <tr><td colspan="4" style="padding:8px; color:#8a7a64;">Загрузка…</td></tr>
+          </tbody>
+        </table>
+      </section>
+
       <!-- Публикация в Telegram-канал -->
       <section>
         <h2>Опубликовать пост в Telegram</h2>

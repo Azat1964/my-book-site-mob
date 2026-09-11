@@ -1504,6 +1504,80 @@ app.delete('/api/admin/posts/:slug', requireAdmin, async (req, res) => {
   }
 });
 
+// ---------------------------------------------------------------------------
+// Короткие ссылки для рекламы: booklo.ru/код → редирект на любой длинный
+// адрес (например booklo.ru/ser → book.html?book=chistoriya&chapter=1).
+// Сам редирект — публичный маршрут в самом низу файла, рядом с app.listen
+// (важно, чтобы он проверялся ПОСЛЕ статики и всех остальных маршрутов —
+// иначе короткий код мог бы случайно перехватить настоящую страницу сайта).
+// Здесь — только управление ссылками из admin.html.
+// ---------------------------------------------------------------------------
+
+// Список всех коротких ссылок — для таблицы в admin.html
+app.get('/api/admin/short-links', requireAdmin, async (req, res) => {
+  try {
+    const r = await pool.query('SELECT * FROM short_links ORDER BY created_at DESC');
+    res.json(r.rows);
+  } catch (error) {
+    console.error('Ошибка получения списка коротких ссылок:', error);
+    res.status(500).json({ message: 'Ошибка сервера' });
+  }
+});
+
+// Слова, которые нельзя занимать под короткую ссылку — иначе она перехватит
+// настоящую страницу или служебный путь сайта (хотя сам маршрут-редирект и
+// стоит ПОСЛЕ статики, лучше не создавать путаницу заранее).
+const RESERVED_SHORT_CODES = new Set([
+  'admin', 'api', 'blog', 'book', 'contents', 'index', 'about', 'annotations',
+  'privacy', 'registration', 'agent', 'analytics', 'robots.txt', 'sitemap.xml',
+  'rss.xml', 'img', 'css', 'js', 'fonts',
+]);
+
+// Создание новой короткой ссылки (только администратор)
+app.post('/api/admin/short-links', requireAdmin, async (req, res) => {
+  const rawCode = req.body.code;
+  const targetUrl = (req.body.target_url || '').trim();
+
+  if (!rawCode || !targetUrl) {
+    return res.status(400).json({ message: 'Заполните код и целевую ссылку' });
+  }
+  const code = rawCode.trim().toLowerCase();
+  if (!/^[a-z0-9-]+$/.test(code)) {
+    return res.status(400).json({ message: 'Код может содержать только латинские буквы, цифры и дефис' });
+  }
+  if (RESERVED_SHORT_CODES.has(code)) {
+    return res.status(400).json({ message: `Код "${code}" зарезервирован — выберите другой` });
+  }
+
+  try {
+    const result = await pool.query(
+      `INSERT INTO short_links (code, target_url) VALUES ($1, $2)
+       ON CONFLICT (code) DO UPDATE SET target_url = EXCLUDED.target_url
+       RETURNING *`,
+      [code, targetUrl]
+    );
+    res.status(201).json(result.rows[0]);
+  } catch (error) {
+    console.error('Ошибка создания короткой ссылки:', error);
+    res.status(500).json({ message: 'Ошибка сервера' });
+  }
+});
+
+// Удаление короткой ссылки (только администратор)
+app.delete('/api/admin/short-links/:code', requireAdmin, async (req, res) => {
+  const code = (req.params.code || '').trim().toLowerCase();
+  try {
+    const result = await pool.query('DELETE FROM short_links WHERE code = $1 RETURNING code', [code]);
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: 'Ссылка не найдена' });
+    }
+    res.json({ message: `Короткая ссылка booklo.ru/${code} удалена` });
+  } catch (error) {
+    console.error('Ошибка удаления короткой ссылки:', error);
+    res.status(500).json({ message: 'Ошибка сервера' });
+  }
+});
+
 // Добавление/обновление главы (только администратор, через admin.html)
 // Если глава с таким номером уже есть — текст обновляется (удобно для правок).
 app.post('/api/books/:slug/chapters', requireAdmin, async (req, res) => {
@@ -1658,6 +1732,40 @@ app.post('/api/books/:slug/import', requireAdmin, upload.fields([
   } catch (error) {
     console.error('Ошибка массовой загрузки книги:', error);
     res.status(500).json({ message: 'Ошибка сервера при обработке файла' });
+  }
+});
+
+// Редирект по короткой ссылке — booklo.ru/код → длинный адрес из базы.
+// Стоит здесь, в самом конце файла, НАМЕРЕННО: Express проверяет маршруты
+// в порядке их объявления, а этот — самый общий из всех (ловит буквально
+// любой одиночный сегмент пути без "/" внутри). Если бы он стоял раньше
+// статики или других маршрутов, то мог бы случайно перехватить настоящую
+// страницу сайта. Здесь же он реально проверяется, только когда ничего
+// более специфичное (ни статический файл, ни другой маршрут) не подошло —
+// а если код не найден в базе, next() передаёт запрос дальше, к обычной
+// 404, ничего не ломая.
+app.get('/:code', async (req, res, next) => {
+  const code = req.params.code.trim().toLowerCase();
+  try {
+    const result = await pool.query('SELECT target_url FROM short_links WHERE code = $1', [code]);
+    if (result.rows.length === 0) {
+      return next(); // не короткая ссылка — обычная 404
+    }
+    // Счётчик кликов обновляем не дожидаясь ответа — редирект не должен
+    // тормозить из-за лишнего запроса к базе
+    pool.query('UPDATE short_links SET clicks = clicks + 1 WHERE code = $1', [code]).catch(() => {});
+    let target = result.rows[0].target_url;
+    // Если ссылка сохранена как относительный путь без ведущего "/"
+    // (например "book.html?book=..."), явно приводим её к пути от корня
+    // сайта — не полагаемся на то, как именно браузер разрешит относительный
+    // Location для однословного адреса вида booklo.ru/код.
+    if (!/^https?:\/\//i.test(target) && !target.startsWith('/')) {
+      target = '/' + target;
+    }
+    res.redirect(302, target);
+  } catch (err) {
+    console.error('Ошибка редиректа по короткой ссылке:', err);
+    next();
   }
 });
 

@@ -159,6 +159,20 @@ CREATE TABLE IF NOT EXISTS chapter_votes (
 CREATE INDEX IF NOT EXISTS idx_chapter_votes_chapter_id ON chapter_votes(chapter_id);
 
 -- ============================================================
+-- Короткие ссылки для рекламы — booklo.ru/код вместо длинного адреса
+-- с параметрами (например, для ссылок в объявлениях/постах вовне).
+-- clicks считает переходы, отдельно от Яндекс.Метрики/GA — на случай,
+-- если по короткой ссылке кто-то перейдёт с заблокированной аналитикой.
+-- ============================================================
+CREATE TABLE IF NOT EXISTS short_links (
+  id SERIAL PRIMARY KEY,
+  code VARCHAR(50) UNIQUE NOT NULL,
+  target_url TEXT NOT NULL,
+  clicks INTEGER DEFAULT 0,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- ============================================================
 -- Пример: добавление первой книги (замените на свои данные)
 -- ============================================================
 -- INSERT INTO books (slug, title, author, description, genre, status)
