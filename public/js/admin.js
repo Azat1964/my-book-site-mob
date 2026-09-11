@@ -919,3 +919,108 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 });
+
+// ── Короткие ссылки для рекламы ──
+
+async function loadShortLinks() {
+  const tbody = document.getElementById('short-links-tbody');
+  if (!tbody) return;
+  try {
+    const res = await fetch('/api/admin/short-links', {
+      headers: { 'x-admin-token': ADMIN_TOKEN },
+    });
+    const links = await res.json();
+
+    if (!Array.isArray(links) || links.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="4" style="padding:8px; color:#8a7a64;">Пока нет ни одной короткой ссылки.</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = links.map(link => `
+      <tr style="border-bottom:1px solid rgba(255,255,255,0.06);">
+        <td style="padding:6px 8px;">
+          <a href="${window.location.origin}/${escapeHtml(link.code)}" target="_blank" style="color:#c9a227;">
+            ${window.location.host}/${escapeHtml(link.code)}
+          </a>
+        </td>
+        <td style="padding:6px 8px; color:#cfc7d6; word-break:break-all;">${escapeHtml(link.target_url)}</td>
+        <td style="padding:6px 8px; color:#cfc7d6;">${link.clicks}</td>
+        <td style="padding:6px 8px;">
+          <button type="button" class="short-link-delete-btn" data-code="${escapeHtml(link.code)}"
+                  style="width:auto; padding:4px 10px; font-size:12px; background:transparent; border:1px solid #c94a4a; color:#c94a4a;">
+            Удалить
+          </button>
+        </td>
+      </tr>
+    `).join('');
+  } catch (err) {
+    tbody.innerHTML = '<tr><td colspan="4" style="padding:8px; color:#c94a4a;">Не удалось загрузить список.</td></tr>';
+    console.error(err);
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const form = document.getElementById('short-link-form');
+  const statusMsg = document.getElementById('short-link-status-msg');
+  if (!form) return;
+
+  loadShortLinks();
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const code = document.getElementById('short-link-code').value.trim();
+    const target_url = document.getElementById('short-link-target').value.trim();
+
+    try {
+      const res = await fetch('/api/admin/short-links', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-admin-token': ADMIN_TOKEN },
+        body: JSON.stringify({ code, target_url }),
+      });
+      const data = await res.json();
+
+      if (res.ok) {
+        statusMsg.textContent = `Готово: ${window.location.host}/${data.code} → ${data.target_url}`;
+        statusMsg.className = 'status-text ok';
+        form.reset();
+        loadShortLinks();
+      } else {
+        statusMsg.textContent = data.message || 'Не удалось создать ссылку';
+        statusMsg.className = 'status-text err';
+      }
+    } catch (err) {
+      statusMsg.textContent = 'Ошибка сети: ' + err.message;
+      statusMsg.className = 'status-text err';
+    }
+  });
+
+  // Делегирование клика по кнопкам удаления — сами кнопки создаются заново
+  // при каждой перерисовке таблицы, вешать обработчик напрямую на них смысла нет
+  document.getElementById('short-links-tbody').addEventListener('click', async (e) => {
+    const btn = e.target.closest('.short-link-delete-btn');
+    if (!btn) return;
+    const code = btn.dataset.code;
+
+    if (!window.confirm(`Удалить короткую ссылку ${window.location.host}/${code}?`)) return;
+
+    try {
+      const res = await fetch(`/api/admin/short-links/${code}`, {
+        method: 'DELETE',
+        headers: { 'x-admin-token': ADMIN_TOKEN },
+      });
+      const data = await res.json();
+
+      if (res.ok) {
+        statusMsg.textContent = data.message;
+        statusMsg.className = 'status-text ok';
+        loadShortLinks();
+      } else {
+        statusMsg.textContent = data.message || 'Не удалось удалить ссылку';
+        statusMsg.className = 'status-text err';
+      }
+    } catch (err) {
+      statusMsg.textContent = 'Ошибка сети: ' + err.message;
+      statusMsg.className = 'status-text err';
+    }
+  });
+});
