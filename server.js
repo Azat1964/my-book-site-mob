@@ -1,6 +1,43 @@
 require('dotenv').config();
 const fs = require('fs');
 const path = require('path');
+
+// ---------------------------------------------------------------------------
+// Кэш HTML-шаблонов, которые сервер подставляет метатегами "на лету"
+// (book.html, contents.html, blog.html, blog-post.html, index.html).
+// Без кэша КАЖДЫЙ просмотр одной из этих страниц означал чтение файла
+// с диска заново — а его содержимое меняется только тогда, когда вы сами
+// правите файл. stat() (проверка времени изменения) намного дешевле
+// полного чтения файла, поэтому мы делаем её на каждый запрос, но
+// перечитываем содержимое только если файл реально изменился с прошлого
+// раза. Перезапуск сервера для правок HTML по-прежнему НЕ требуется —
+// свежая версия подхватится автоматически при следующем запросе.
+const templateCache = new Map();
+function readTemplateCached(filePath) {
+  const stat = fs.statSync(filePath);
+  const cached = templateCache.get(filePath);
+  if (cached && cached.mtimeMs === stat.mtimeMs) {
+    return cached.content;
+  }
+  const content = fs.readFileSync(filePath, 'utf8');
+  templateCache.set(filePath, { mtimeMs: stat.mtimeMs, content });
+  return content;
+}
+
+// Кэш списка картинок для случайного фона на главной странице — раньше
+// папка пересканивалась (readdirSync) на КАЖДЫЙ визит на сайт. Обновляем
+// список не чаще раза в минуту — для набора картинок для фона такая
+// задержка незаметна, а нагрузка на диск снимается почти полностью.
+let heroFilesCache = { files: null, cachedAt: 0 };
+function readHeroFilesCached(dirPath) {
+  const now = Date.now();
+  if (heroFilesCache.files && now - heroFilesCache.cachedAt < 60_000) {
+    return heroFilesCache.files;
+  }
+  const files = fs.readdirSync(dirPath).filter(f => f.toLowerCase().endsWith('.webp'));
+  heroFilesCache = { files, cachedAt: now };
+  return files;
+}
 const express = require('express');
 const compression = require('compression'); // Gzip-сжатие ответов — HTML/CSS/JS
 const session = require('express-session'); // Импортируем express-session
@@ -148,7 +185,7 @@ app.get(['/book.html', '/book_mob.html', '/contents.html'], async (req, res, nex
   if (!slug) return next();
 
   try {
-    let html = fs.readFileSync(file, 'utf8');
+    let html = readTemplateCached(file);
 
     if (isContents) {
       const r = await pool.query(
@@ -306,7 +343,7 @@ app.get('/blog/:slug', async (req, res) => {
       return res.status(404).send('Пост не найден');
     }
     const post = r.rows[0];
-    const template = fs.readFileSync(path.join(__dirname, 'public', 'blog-post.html'), 'utf8');
+    const template = readTemplateCached(path.join(__dirname, 'public', 'blog-post.html'));
 
     const dateStr = new Date(post.published_at).toLocaleDateString('ru-RU', {
       day: 'numeric', month: 'long', year: 'numeric',
@@ -458,7 +495,7 @@ app.get('/sitemap.xml', async (req, res) => {
 app.get('/blog.html', async (req, res, next) => {
   try {
     const file = path.join(__dirname, 'public', 'blog.html');
-    let html = fs.readFileSync(file, 'utf8');
+    let html = readTemplateCached(file);
 
     const r = await pool.query(
       `SELECT slug, title, excerpt, published_at FROM posts ORDER BY published_at DESC`
@@ -505,10 +542,10 @@ app.get('/blog.html', async (req, res, next) => {
 app.get(['/', '/index.html'], (req, res, next) => {
   try {
     const file = path.join(__dirname, 'public', 'index.html');
-    let html = fs.readFileSync(file, 'utf8');
+    let html = readTemplateCached(file);
 
     const heroDir = path.join(__dirname, 'public', 'img', 'covers', 'Tyumny_voshod');
-    const files = fs.readdirSync(heroDir).filter(f => f.toLowerCase().endsWith('.webp'));
+    const files = readHeroFilesCached(heroDir);
 
     if (files.length) {
       const random = files[Math.floor(Math.random() * files.length)];

@@ -69,6 +69,14 @@ _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
       </script>
       <link rel="preconnect" href="https://fonts.googleapis.com">
       <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+      <!-- Заранее устанавливаем соединение со сторонними доменами (аналитика,
+           CDN) — их скрипты встречаются ниже по странице, но DNS/TLS
+           можно начать параллельно с разбором остального HTML, не дожидаясь
+           момента, когда браузер дойдёт до самого тега script. -->
+      <link rel="preconnect" href="https://www.googletagmanager.com">
+      <link rel="preconnect" href="https://mc.yandex.ru">
+      <link rel="preconnect" href="https://top-fwz1.mail.ru">
+      <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
       <link rel="preload" href='https://fonts.googleapis.com/css?family=Gabriela&display=swap' as="style" onload="this.onload=null;this.rel='stylesheet'">
       <noscript><link href='https://fonts.googleapis.com/css?family=Gabriela&display=swap' rel='stylesheet' type='text/css'></noscript>
       <link rel="stylesheet" href="./css/fish_no_sound_style.css">
@@ -90,17 +98,8 @@ _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
           z-index: 998;
           display: flex;
           flex-direction: column;
-          gap: 10px;
-          width: 320px;
-          max-width: 40vw;
-          padding: 14px 18px;
-          background: #f7efe0;
-          border: 1px solid rgba(138, 74, 30, 0.35);
-          border-radius: 12px;
-          box-shadow: 0 10px 30px rgba(74, 42, 22, 0.35);
-          font-family: 'Gabriela', Georgia, serif;
-          font-size: 14px;
-          color: #3a2a1a;
+          align-items: flex-end;
+          gap: 8px;
           opacity: 0;
           transition: opacity 0.35s ease, transform 0.35s ease;
           pointer-events: none;
@@ -110,24 +109,16 @@ _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
           opacity: 1;
           pointer-events: auto;
         }
-        /* Свёрнутое состояние — узкая полоска-кнопка внизу */
-        #chapterEndPrompt.collapsed {
-          width: auto;
-          max-width: 40vw;
-          padding: 0;
-          background: transparent;
-          border: none;
-          box-shadow: none;
-          cursor: pointer;
-        }
-        #chapterEndPrompt.collapsed > .row-top,
-        #chapterEndPrompt.collapsed > .feedback-block {
-          display: none;
-        }
+        /* Слим-полоска "Как Вам глава? / Нравится? Да Нет" — ОДНА строка,
+           видна всегда, пока плашка вообще показана (не зависит от того,
+           развёрнута ли карточка с Telegram и текстовым отзывом ниже).
+           Раньше голосование "Нравится?" было отдельным блоком внутри
+           большой карточки и оставалось видимым даже в свёрнутом
+           состоянии — из-за этого оно наслаивалось на текст главы. */
         #chapterEndPrompt .collapsed-bar {
-          display: none;
+          display: flex;
           align-items: center;
-          gap: 8px;
+          gap: 14px;
           background: #f7efe0;
           color: #8a4a1e;
           border: 1px solid rgba(138, 74, 30, 0.35);
@@ -138,29 +129,21 @@ _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
           font-size: 13px;
           white-space: nowrap;
         }
-        #chapterEndPrompt.collapsed .collapsed-bar {
-          display: inline-flex;
+        #chapterEndPrompt .collapsed-bar-text {
+          cursor: pointer;
         }
-        #chapterEndPrompt .row-top {
+        #chapterEndPrompt .collapsed-bar-vote {
           display: flex;
-          flex-wrap: wrap;
           align-items: center;
-          gap: 10px;
-        }
-        #chapterEndPrompt .row-top .msg { flex: 1; min-width: 160px; }
-        #chapterEndPrompt .vote-block {
-          border-top: 1px solid rgba(138,74,30,0.2);
-          padding-top: 12px;
-          margin-bottom: 12px;
-        }
-        #chapterEndPrompt .vote-row {
-          display: flex;
-          gap: 16px;
+          gap: 8px;
+          padding-left: 14px;
+          border-left: 1px solid rgba(138, 74, 30, 0.25);
+          color: #3a2a1a;
         }
         #chapterEndPrompt .vote-option {
           display: flex;
           align-items: center;
-          gap: 6px;
+          gap: 4px;
           font-family: 'Gabriela', Georgia, serif;
           font-size: 13px;
           color: #3a2a1a;
@@ -173,6 +156,42 @@ _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
           accent-color: #8a4a1e;
           cursor: pointer;
         }
+        #chapterEndPrompt .feedback-status {
+          font-size: 12px;
+          color: #97c459;
+          margin-top: 0;
+          display: none;
+          text-align: right;
+        }
+        #chapterEndPrompt .feedback-status.show { display: block; }
+        /* Развёрнутая карточка (Telegram + текстовый отзыв) — отдельным
+           блоком НАД слим-полоской, появляется только по клику на
+           "Как Вам глава?" и скрывается в свёрнутом состоянии. */
+        #chapterEndPrompt .expanded-card {
+          display: flex;
+          flex-direction: column;
+          gap: 10px;
+          width: 320px;
+          max-width: 40vw;
+          padding: 14px 18px;
+          background: #f7efe0;
+          border: 1px solid rgba(138, 74, 30, 0.35);
+          border-radius: 12px;
+          box-shadow: 0 10px 30px rgba(74, 42, 22, 0.35);
+          font-family: 'Gabriela', Georgia, serif;
+          font-size: 14px;
+          color: #3a2a1a;
+        }
+        #chapterEndPrompt.collapsed .expanded-card {
+          display: none;
+        }
+        #chapterEndPrompt .row-top {
+          display: flex;
+          flex-wrap: wrap;
+          align-items: center;
+          gap: 10px;
+        }
+        #chapterEndPrompt .row-top .msg { flex: 1; min-width: 160px; }
         #chapterEndPrompt .feedback-block {
           border-top: 1px solid rgba(138,74,30,0.2);
           padding-top: 12px;
@@ -212,25 +231,31 @@ _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
         }
         #chapterEndPrompt .feedback-row button:hover { background: #6f3a17; }
         #chapterEndPrompt .feedback-row button:disabled { opacity: 0.5; cursor: default; }
-        #chapterEndPrompt .feedback-status {
-          font-size: 12px;
-          color: #97c459;
+        #chapterEndPrompt .expanded-card .feedback-status {
           margin-top: 6px;
-          display: none;
+          text-align: left;
         }
-        #chapterEndPrompt .feedback-status.show { display: block; }
         @media (max-width: 900px) {
           #chapterEndPrompt {
             left: 50%;
             top: auto;
             bottom: 18px;
             transform: translate(-50%, 120%);
-            max-width: 92vw;
-            width: 360px;
+            align-items: center;
           }
           #chapterEndPrompt.show {
             transform: translate(-50%, 0);
           }
+          #chapterEndPrompt .collapsed-bar {
+            flex-wrap: wrap;
+            justify-content: center;
+            max-width: 92vw;
+          }
+          #chapterEndPrompt .expanded-card {
+            max-width: 92vw;
+            width: 360px;
+          }
+        }
         }
 
         /* Мягкий неблокирующий баннер с предложением зарегистрироваться —
@@ -445,31 +470,35 @@ _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
       <button id="registerPromptDismiss" class="dismiss-btn" aria-label="Закрыть">✕</button>
     </div>
 
-    <!-- Плашка в конце КАЖДОЙ главы: Telegram + отзыв на главу -->
+<!-- Плашка в конце КАЖДОЙ главы: Telegram + отзыв на главу -->
     <div id="chapterEndPrompt">
-      <div class="collapsed-bar">💬 Как Вам глава?</div>
-      <div class="row-top">
-        <span class="msg">Дочитали? Новые книги выходят в Telegram первыми</span>
-        <a id="chapterEndTgLink" class="tg-link" href="https://t.me/otets_tuk" target="_blank" rel="noopener">Подписаться</a>
-        <button id="chapterEndDismiss" class="dismiss-btn" aria-label="Закрыть">✕</button>
-      </div>
-      <div class="vote-block">
-        <div class="feedback-label">Нравится?</div>
-        <div class="vote-row">
+      <div class="collapsed-bar">
+        <span class="collapsed-bar-text">💬 Как Вам глава?</span>
+        <span class="collapsed-bar-vote">
+          Нравится?
           <label class="vote-option"><input type="checkbox" id="chapterVoteYes"> Да</label>
           <label class="vote-option"><input type="checkbox" id="chapterVoteNo"> Нет</label>
-        </div>
-        <div class="feedback-status" id="chapterVoteStatus">Спасибо за оценку!</div>
+        </span>
       </div>
-      <div class="feedback-block">
-        <div class="feedback-label">Как Вам прочитанная глава?</div>
-        <div class="feedback-row">
-          <input id="chapterFeedbackInput" type="text" maxlength="500" placeholder="Пара слов о главе…">
-          <button id="chapterFeedbackSubmit">Отправить</button>
+      <div class="feedback-status" id="chapterVoteStatus">Спасибо за оценку!</div>
+      <div class="expanded-card">
+        <div class="row-top">
+          <span class="msg">Дочитали? Новые книги выходят в Telegram первыми</span>
+          <a id="chapterEndTgLink" class="tg-link" href="https://t.me/otets_tuk" target="_blank" rel="noopener">Подписаться</a>
+          <button id="chapterEndDismiss" class="dismiss-btn" aria-label="Закрыть">✕</button>
         </div>
-        <div class="feedback-status" id="chapterFeedbackStatus">Спасибо! Отзыв отправлен.</div>
+        <div class="feedback-block">
+          <div class="feedback-label">Как Вам прочитанная глава?</div>
+          <div class="feedback-row">
+            <input id="chapterFeedbackInput" type="text" maxlength="500" placeholder="Пара слов о главе…">
+            <button id="chapterFeedbackSubmit">Отправить</button>
+          </div>
+          <div class="feedback-status" id="chapterFeedbackStatus">Спасибо! Отзыв отправлен.</div>
+        </div>
       </div>
     </div>
+
+    
 
     <!-- Жёсткая стена регистрации — для глав за пределами бесплатного лимита -->
     <div id="chapterRegisterWall">
@@ -700,14 +729,17 @@ _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
           // чтобы плашка не загораживала текст, но оставалась доступной.
           chapterEndPrompt.classList.add('collapsed');
         }
-        // Разворачивание — только по клику на саму свёрнутую полоску.
-        var chapterEndCollapsedBar = chapterEndPrompt.querySelector('.collapsed-bar');
-        if (chapterEndCollapsedBar) {
-          chapterEndCollapsedBar.addEventListener('click', function (e) {
+        // Разворачивание — только по клику на текст "Как Вам глава?",
+        // а не на весь виджет целиком: иначе клик по чекбоксам "Да/Нет"
+        // в той же строке заодно разворачивал бы карточку с Telegram.
+        var chapterEndCollapsedBarText = chapterEndPrompt.querySelector('.collapsed-bar-text');
+        if (chapterEndCollapsedBarText) {
+          chapterEndCollapsedBarText.addEventListener('click', function (e) {
             e.stopPropagation();
             chapterEndPrompt.classList.remove('collapsed');
           });
         }
+        
         function resetChapterFeedbackForm() {
           chapterFeedbackInput.value = '';
           chapterFeedbackInput.disabled = false;
@@ -809,7 +841,7 @@ _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
           const pageIndex = e.detail ? e.detail.pageIndex : 0;
           if (totalPages > 0 && pageIndex >= totalPages) {
             chapterEndShown = true;
-            chapterEndPrompt.classList.add('show');
+            chapterEndPrompt.classList.add('show', 'collapsed');
           }
         });
 
