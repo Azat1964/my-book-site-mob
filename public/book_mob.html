@@ -61,6 +61,19 @@ _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html, body { height: 100%; overflow: hidden; }
+  /* Мобильные браузеры меняют реальную высоту вьюпорта на лету, когда
+     адресная строка/панель инструментов скрывается или появляется при
+     скролле/свайпе — а свайп здесь и есть жест перелистывания страницы.
+     Разбивка текста на страницы считается ОДИН РАЗ под текущую высоту
+     #pageBox; если высота потом уменьшается, хвост уже посчитанной
+     страницы обрезается overflow:hidden — читателю кажется, что слова
+     "пропали" при переходе на следующую страницу. 100svh — высота под
+     САМЫЙ маленький возможный вьюпорт (как будто панель инструментов
+     всегда показана) и не меняется при её появлении/скрытии, поэтому
+     бокс никогда не "сжимается" ниже уже учтённого при разбивке.
+     Первое объявление — запасной вариант для браузеров без поддержки
+     svh. */
+  html { height: 100vh; height: 100svh; }
 
   body {
     background:
@@ -767,6 +780,12 @@ _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
   let softPromptShownForChapter = false;
   let chapterEndShownThisLoad = false;
   const DISMISS_KEY = 'registerPromptDismissedMob';
+  // Сырой текст/эпиграф текущей главы — нужны, чтобы пересчитать разбивку
+  // на страницы при реальном изменении высоты #pageBox, не делая лишний
+  // fetch (см. repaginateIfNeeded).
+  let currentChapterRawContent = '';
+  let currentChapterEpigraph = null;
+  let lastPageBoxHeight = null; // высота #pageBox на момент последней разбивки
 
   function ruChapterWord(n) {
     const abs = Math.abs(n) % 100;
@@ -1216,7 +1235,17 @@ _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
 
   function fitsInBox(html) {
     pageContent.innerHTML = html;
-    return pageContent.scrollHeight <= pageBox.clientHeight;
+    // pageBox.clientHeight включает его собственный padding (padding-top/
+    // padding-bottom у #pageBox заданы в % — по спецификации CSS они
+    // считаются от ШИРИНЫ контейнера, а не от высоты, и реально "съедают"
+    // видимое место сверху и снизу). Сравнивать нужно с высотой БЕЗ
+    // padding — иначе часть текста, которая якобы "влезла", на самом деле
+    // обрезается overflow:hidden самого бокса.
+    const boxStyle = getComputedStyle(pageBox);
+    const paddingTop = parseFloat(boxStyle.paddingTop) || 0;
+    const paddingBottom = parseFloat(boxStyle.paddingBottom) || 0;
+    const availableHeight = pageBox.clientHeight - paddingTop - paddingBottom;
+    return pageContent.scrollHeight <= availableHeight;
   }
 
   async function buildMobilePages(rawText, epigraph) {
@@ -1325,7 +1354,10 @@ _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
       chapterTitleHeader.textContent = currentChapterTitle;
       updateChapterNavButtons();
 
-      pages = await buildMobilePages(data.content || '', data.epigraph);
+      currentChapterRawContent = data.content || '';
+      currentChapterEpigraph = data.epigraph;
+      pages = await buildMobilePages(currentChapterRawContent, currentChapterEpigraph);
+      lastPageBoxHeight = pageBox.clientHeight;
 
       if (jumpToWord) {
         let targetIdx = 0;
@@ -1344,6 +1376,35 @@ _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
       loadingMsg.textContent = 'Ошибка загрузки главы.';
     }
   }
+
+  // ---- Пересчёт разбивки на страницы при реальном изменении высоты
+  // #pageBox (поворот экрана, открытие/закрытие клавиатуры, старые
+  // браузеры без поддержки svh). Без этого уже готовая разбивка "не
+  // знает" о новой высоте — при уменьшении высоты хвост текущей страницы
+  // просто обрезается overflow:hidden и выглядит как "пропавшие" слова
+  // при переходе на следующую страницу. Порог 4px — не пересчитывать на
+  // дребезг измерений, которые ничего реально не меняют. ----
+  let resizeRepaginateTimer = null;
+  async function repaginateIfNeeded() {
+    if (!currentChapterNum || !pages.length) return;
+    const newHeight = pageBox.clientHeight;
+    if (lastPageBoxHeight !== null && Math.abs(newHeight - lastPageBoxHeight) < 4) return;
+
+    const wordOffset = pages[currentPageIndex] ? pages[currentPageIndex].startWord : 0;
+    pages = await buildMobilePages(currentChapterRawContent, currentChapterEpigraph);
+    lastPageBoxHeight = pageBox.clientHeight;
+
+    let targetIdx = 0;
+    for (let i = 0; i < pages.length; i++) {
+      if (pages[i].startWord <= wordOffset) targetIdx = i; else break;
+    }
+    currentPageIndex = targetIdx;
+    renderCurrentPage();
+  }
+  window.addEventListener('resize', () => {
+    clearTimeout(resizeRepaginateTimer);
+    resizeRepaginateTimer = setTimeout(repaginateIfNeeded, 200);
+  });
 
   // ---- Жёсткая стена регистрации ----
   window.showChapterRegisterWall = function (chapterNum, freeLimitFromServer) {
