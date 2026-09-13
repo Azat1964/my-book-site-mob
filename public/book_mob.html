@@ -1039,6 +1039,7 @@ _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
       // сырой текст "[img:...]" (баг воспроизводился на мобильной версии, при
       // этом на десктопе — fish_no_sound.js — всё было нормально, потому что
       // там маркер ищется по всему тексту главы, а не по целому абзацу).
+      const paragraphs = segment.text.split('\n').map(p => p.trim()).filter(p => p.length > 0);
       paragraphs.forEach(para => {
         MEDIA_MARKER_RE.lastIndex = 0;
         if (!MEDIA_MARKER_RE.test(para)) {
