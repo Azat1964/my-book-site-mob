@@ -281,6 +281,27 @@ _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
     outline-offset: 3px;
   }
 
+  /* Подсказка "Жми, чтобы читать" в правом нижнем углу квадрата —
+     единственная видимая текстовая подсказка о том, что квадрат кликабелен
+     и ведёт читать книгу (раньше это было понятно только по aria-label,
+     невидимому обычным посетителям). Затемнение снизу уже задано в
+     .hero-main::after — светлый текст читается поверх любой обложки без
+     отдельной настройки под каждую картинку. */
+  .hero-read-hint {
+    position: absolute;
+    z-index: 2;
+    right: 16px;
+    bottom: 14px;
+    font-size: 11px;
+    letter-spacing: 0.4px;
+    color: rgba(255,248,236,0.92);
+    text-shadow:
+      0 1px 2px rgba(0,0,0,0.55),
+      0 1px 5px rgba(0,0,0,0.4);
+    pointer-events: none;
+    white-space: nowrap;
+  }
+
   .hero-main::after {
     /* затемнение снизу — чтобы белое "КНИГИ" уверенно читалось на цветной картинке */
     content: "";
@@ -654,6 +675,7 @@ _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
     }
     .hero-main { min-height: 380px; padding: 22px; }
     .hero-big-word { font-size: 17px; }
+    .hero-read-hint { right: 12px; bottom: 10px; font-size: 10px; }
     .hero-wrap { padding: 18px 16px 40px; }
     .catalog { padding: 10px 16px 60px; }
   }
@@ -836,6 +858,8 @@ _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
         <div class="hero-mid-word">Чистория</div>
 
         <div class="hero-big-word">КНИГИ</div>
+
+        <span class="hero-read-hint">Жми, чтобы читать</span>
       </div>
 
       <div class="hero-side">
