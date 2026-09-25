@@ -51,21 +51,30 @@ _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
       <script>
         // Узкий экран — у нас для него отдельная страница (book_mob.html)
         // с однострочным чтением и свайпом, а не разворотом на две страницы.
-        if (window.innerWidth <= 768) {
+        // ВАЖНО: поисковых роботов (Googlebot для смартфонов и т.п.) сюда
+        // не пускаем — они тоже симулируют узкий экран, и редирект уводил
+        // их на book_mob.html, которого нет в sitemap.xml. Google расценивал
+        // это как увод с заявленного адреса и помечал book.html как
+        // "Ложная ошибка 404", хотя книга прекрасно читается и на book.html —
+        // для ботов редирект просто не нужен, страница и так рабочая.
+        var isCrawlerBot = /bot|crawl|spider|slurp|mediapartners/i.test(navigator.userAgent);
+        if (!isCrawlerBot && window.innerWidth <= 768) {
           window.location.replace('./book_mob.html' + window.location.search);
         }
         // При изменении размера окна — переключаем версию если пересекли порог 768px
-        window.addEventListener('resize', (function() {
-          let wasMobile = window.innerWidth <= 768;
-          return function() {
-            const isMobile = window.innerWidth <= 768;
-            if (isMobile && !wasMobile) {
-              // Окно сузили — уходим на мобильную версию
-              window.location.replace('./book_mob.html' + window.location.search);
-            }
-            wasMobile = isMobile;
-          };
-        })());
+        if (!isCrawlerBot) {
+          window.addEventListener('resize', (function() {
+            let wasMobile = window.innerWidth <= 768;
+            return function() {
+              const isMobile = window.innerWidth <= 768;
+              if (isMobile && !wasMobile) {
+                // Окно сузили — уходим на мобильную версию
+                window.location.replace('./book_mob.html' + window.location.search);
+              }
+              wasMobile = isMobile;
+            };
+          })());
+        }
       </script>
       <link rel="preconnect" href="https://fonts.googleapis.com">
       <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
