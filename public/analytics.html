@@ -270,7 +270,7 @@
         makeChart('chartChapterDetail', {
           type: 'line',
           data: {
-            labels: data.map(r => r.day?.slice(5)),
+            labels: data.map(r => r.day?.slice(5, 10)),
             datasets: [
               { label: 'Просмотры', data: data.map(r => r.views), borderColor: CHART_COLORS.primaryBorder, backgroundColor: 'rgba(201,162,39,0.15)', tension: 0.35, fill: true },
               { label: 'Уникальные', data: data.map(r => r.unique_readers), borderColor: CHART_COLORS.unique, backgroundColor: 'rgba(100,180,220,0.1)', tension: 0.35, fill: true },
@@ -298,7 +298,7 @@
         makeChart('chartViewsByDay', {
           type: 'line',
           data: {
-            labels: viewsData.map(r => r.day?.slice(5)),
+            labels: viewsData.map(r => r.day?.slice(5, 10)),
             datasets: [
               { label: 'Просмотры', data: viewsData.map(r => r.views), borderColor: CHART_COLORS.primaryBorder, backgroundColor: 'rgba(201,162,39,0.15)', tension: 0.35, fill: true },
               { label: 'Уникальные', data: viewsData.map(r => r.unique_readers), borderColor: CHART_COLORS.unique, backgroundColor: 'rgba(100,180,220,0.1)', tension: 0.35, fill: true },
@@ -313,7 +313,7 @@
         makeChart('chartRegistrations', {
           type: 'bar',
           data: {
-            labels: regData.map(r => r.day?.slice(5)),
+            labels: regData.map(r => r.day?.slice(5, 10)),
             datasets: [{ label: 'Регистрации', data: regData.map(r => r.registrations), backgroundColor: CHART_COLORS.secondary, borderColor: CHART_COLORS.secondaryBorder, borderWidth: 1 }],
           },
           options: { ...CHART_DEFAULTS },
