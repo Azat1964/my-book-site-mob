@@ -16,6 +16,42 @@
     }
     .back-link:hover { text-decoration: underline; }
     #analytics-wrap { display: none; }
+
+    .chart-modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.65);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .chart-modal-overlay.show { display: flex; }
+    .chart-modal-box {
+      position: relative;
+      background: #1f1b29;
+      border-radius: 10px;
+      padding: 24px;
+      width: 100%;
+      max-width: 720px;
+      max-height: 85vh;
+      overflow-y: auto;
+    }
+    .chart-modal-close {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: transparent;
+      color: #e8e8ec;
+      border: none;
+      font-size: 18px;
+      line-height: 1;
+      padding: 6px 10px;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    .chart-modal-close:hover { background: rgba(255,255,255,0.08); opacity: 1; }
   </style>
 </head>
 <body>
@@ -85,6 +121,14 @@
         <div id="tableTopChapters" style="overflow-x:auto;"></div>
       </div>
 
+      <!-- Кнопки: график по книге целиком — сам график открывается
+           всплывающим окном (см. #chartModalOverlay в конце файла), не
+           требует прокрутки вниз. -->
+      <div class="chart-box" style="margin-bottom:18px;">
+        <p class="chart-title">График по книге целиком</p>
+        <div id="bookChartButtons" style="display:flex;flex-wrap:wrap;gap:8px;"></div>
+      </div>
+
       <!-- Голосование "Нравится?" по главам -->
       <div class="chart-box" style="margin-bottom:18px;">
         <p class="chart-title">Оценки глав — «Нравится?»</p>
@@ -97,6 +141,17 @@
         <canvas id="chartDropoff"></canvas>
       </div>
 
+    </div>
+  </div>
+
+  <!-- Всплывающее окно с графиком по конкретной главе/книге. Открывается
+       кнопками из таблицы "Топ глав" и кнопками по книгам. Закрывается
+       крестиком, кликом вне окна или Esc (см. JS ниже). -->
+  <div id="chartModalOverlay" class="chart-modal-overlay">
+    <div class="chart-modal-box">
+      <button id="chartModalClose" class="chart-modal-close" aria-label="Закрыть">✕</button>
+      <p class="chart-title" id="chapterChartTitle">Просмотры по дням</p>
+      <canvas id="chartChapterDetail"></canvas>
     </div>
   </div>
 
@@ -189,6 +244,43 @@
       return div.innerHTML;
     }
 
+    // График "Просмотры и уникальные по дням" для одной главы (chapter_id)
+    // или одной книги целиком (book_id) — вызывается кнопками из таблицы
+    // "Топ глав по просмотрам" и кнопками по книгам ниже неё.
+    const chartModalOverlay = document.getElementById('chartModalOverlay');
+    function openChartModal() { chartModalOverlay?.classList.add('show'); }
+    function closeChartModal() { chartModalOverlay?.classList.remove('show'); }
+    document.getElementById('chartModalClose')?.addEventListener('click', closeChartModal);
+    // Клик именно по затемнённому фону (не по самому окну с графиком внутри) — закрывает.
+    chartModalOverlay?.addEventListener('click', (e) => {
+      if (e.target === chartModalOverlay) closeChartModal();
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closeChartModal();
+    });
+
+    async function loadDetailChart(filterParams, label) {
+      const days = document.getElementById('analytics-days').value;
+      const qs = new URLSearchParams({ days, ...filterParams }).toString();
+      openChartModal();
+      try {
+        const data = await fetch(`/api/admin/analytics/views-by-day?${qs}`, { headers: analyticsHeaders() }).then(r => r.json());
+        const titleEl = document.getElementById('chapterChartTitle');
+        if (titleEl) titleEl.textContent = `Просмотры по дням — ${label}`;
+        makeChart('chartChapterDetail', {
+          type: 'line',
+          data: {
+            labels: data.map(r => r.day?.slice(5)),
+            datasets: [
+              { label: 'Просмотры', data: data.map(r => r.views), borderColor: CHART_COLORS.primaryBorder, backgroundColor: 'rgba(201,162,39,0.15)', tension: 0.35, fill: true },
+              { label: 'Уникальные', data: data.map(r => r.unique_readers), borderColor: CHART_COLORS.unique, backgroundColor: 'rgba(100,180,220,0.1)', tension: 0.35, fill: true },
+            ],
+          },
+          options: { ...CHART_DEFAULTS },
+        });
+      } catch (e) { console.error('detail chart', e); }
+    }
+
     async function loadAnalytics() {
       const days = document.getElementById('analytics-days').value;
       const headers = analyticsHeaders();
@@ -241,6 +333,16 @@
           },
           options: { ...CHART_DEFAULTS, indexAxis: 'y' },
         });
+
+        const bookBtnsEl = document.getElementById('bookChartButtons');
+        if (bookBtnsEl) {
+          bookBtnsEl.innerHTML = booksData.map(r =>
+            `<button class="book-chart-btn" style="padding:6px 14px;font-size:13px;border-radius:6px;" data-book-id="${r.book_id}" data-label="${escapeHtml(r.title)} (вся книга)">${escapeHtml(r.title)}</button>`
+          ).join('');
+          bookBtnsEl.querySelectorAll('.book-chart-btn').forEach(btn => {
+            btn.addEventListener('click', () => loadDetailChart({ book_id: btn.dataset.bookId }, btn.dataset.label));
+          });
+        }
       } catch (e) { console.error('books', e); }
 
       try {
@@ -269,15 +371,19 @@
           tableEl.innerHTML = '<p style="color:#9a8fae;font-size:13px;">Данных пока нет</p>';
         } else {
           tableEl.innerHTML = `<table class="analytics-table">
-            <thead><tr><th>Книга</th><th>Гл.</th><th>Название</th><th>Просмотры</th><th>Уникальные</th></tr></thead>
+            <thead><tr><th>Книга</th><th>Гл.</th><th>Название</th><th>Просмотры</th><th>Уникальные</th><th>График</th></tr></thead>
             <tbody>${chapData.map(r => `<tr>
               <td>${escapeHtml(r.book)}</td>
               <td>${r.chapter_number}</td>
               <td>${escapeHtml(r.chapter || '—')}</td>
               <td>${r.views}</td>
               <td>${r.unique_readers}</td>
+              <td><button class="chapter-chart-btn" style="padding:4px 10px;font-size:12px;border-radius:5px;" data-chapter-id="${r.chapter_id}" data-label="${escapeHtml(r.book)} — гл. ${r.chapter_number}${r.chapter ? ' «' + escapeHtml(r.chapter) + '»' : ''}">📈 график</button></td>
             </tr>`).join('')}</tbody>
           </table>`;
+          tableEl.querySelectorAll('.chapter-chart-btn').forEach(btn => {
+            btn.addEventListener('click', () => loadDetailChart({ chapter_id: btn.dataset.chapterId }, btn.dataset.label));
+          });
         }
       } catch (e) { console.error('chapters', e); }
 

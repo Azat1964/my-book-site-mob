@@ -1248,14 +1248,30 @@ app.get('/api/admin/analytics/summary', requireAdmin, async (req, res) => {
 // Просмотры по дням за последние N дней (для линейного графика)
 app.get('/api/admin/analytics/views-by-day', requireAdmin, async (req, res) => {
   const days = Math.min(parseInt(req.query.days || 30), 90);
+  // Необязательные фильтры: конкретная глава или книга целиком — используются
+  // детальным графиком на странице аналитики (кнопки в таблице "Топ глав" и
+  // кнопки по книгам). Без них поведение как раньше — сводка по всему сайту.
+  const chapterId = req.query.chapter_id ? parseInt(req.query.chapter_id, 10) : null;
+  const bookId = req.query.book_id ? parseInt(req.query.book_id, 10) : null;
   try {
+    const conditions = [`viewed_at >= NOW() - INTERVAL '${days} days'`];
+    const params = [];
+    if (chapterId) {
+      params.push(chapterId);
+      conditions.push(`chapter_id = $${params.length}`);
+    }
+    if (bookId) {
+      params.push(bookId);
+      conditions.push(`book_id = $${params.length}`);
+    }
     const result = await pool.query(
       `SELECT DATE(viewed_at) AS day, COUNT(*) AS views,
               COUNT(DISTINCT ip_hash) AS unique_readers
        FROM page_views
-       WHERE viewed_at >= NOW() - INTERVAL '${days} days'
+       WHERE ${conditions.join(' AND ')}
        GROUP BY DATE(viewed_at)
-       ORDER BY day`
+       ORDER BY day`,
+      params
     );
     res.json(result.rows);
   } catch (err) {
@@ -1321,12 +1337,12 @@ app.get('/api/admin/analytics/chapter-votes', requireAdmin, async (req, res) => 
 app.get('/api/admin/analytics/top-chapters', requireAdmin, async (req, res) => {
   try {
     const result = await pool.query(
-      `SELECT b.title AS book, c.chapter_number, c.title AS chapter,
+      `SELECT c.id AS chapter_id, b.title AS book, c.chapter_number, c.title AS chapter,
               COUNT(*) AS views, COUNT(DISTINCT pv.ip_hash) AS unique_readers
        FROM page_views pv
        JOIN chapters c ON c.id = pv.chapter_id
        JOIN books b ON b.id = pv.book_id
-       GROUP BY b.title, c.chapter_number, c.title
+       GROUP BY c.id, b.title, c.chapter_number, c.title
        ORDER BY views DESC
        LIMIT 20`
     );
@@ -1340,10 +1356,10 @@ app.get('/api/admin/analytics/top-chapters', requireAdmin, async (req, res) => {
 app.get('/api/admin/analytics/top-books', requireAdmin, async (req, res) => {
   try {
     const result = await pool.query(
-      `SELECT b.title, COUNT(*) AS views, COUNT(DISTINCT pv.ip_hash) AS unique_readers
+      `SELECT b.id AS book_id, b.title, COUNT(*) AS views, COUNT(DISTINCT pv.ip_hash) AS unique_readers
        FROM page_views pv
        JOIN books b ON b.id = pv.book_id
-       GROUP BY b.title
+       GROUP BY b.id, b.title
        ORDER BY views DESC`
     );
     res.json(result.rows);
