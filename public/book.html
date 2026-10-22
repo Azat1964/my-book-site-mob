@@ -57,7 +57,7 @@ _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
         // это как увод с заявленного адреса и помечал book.html как
         // "Ложная ошибка 404", хотя книга прекрасно читается и на book.html —
         // для ботов редирект просто не нужен, страница и так рабочая.
-        var isCrawlerBot = /bot|crawl|spider|slurp|mediapartners/i.test(navigator.userAgent);
+        var isCrawlerBot = /bot|crawl|spider|slurp|mediapartners|google|inspection|lighthouse|yandex|bing/i.test(navigator.userAgent);
         if (!isCrawlerBot && window.innerWidth <= 768) {
           window.location.replace('./book_mob.html' + window.location.search);
         }
