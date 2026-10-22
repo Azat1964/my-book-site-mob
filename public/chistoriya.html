@@ -507,6 +507,8 @@ _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
 
       function pad(n) { return String(n).padStart(2, '0'); }
 
+      let intervalId = null; // объявлен до tick(): после даты премьеры tick() вызывает clearInterval сразу
+
       function tick() {
         const diff = target - Date.now();
 
@@ -531,7 +533,7 @@ _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
       }
 
       tick();
-      const intervalId = setInterval(tick, 1000 * 30); // обновление раз в 30 сек — достаточно для минут
+      if (target > Date.now()) intervalId = setInterval(tick, 1000 * 30); // обновление раз в 30 сек — достаточно для минут
     })();
   </script>
 

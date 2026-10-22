@@ -92,6 +92,7 @@ const pool = new Pool({
 });
 
 const app = express();
+app.disable('x-powered-by'); // не сообщаем посторонним, что сайт на Express
 app.use(compression()); // Gzip/br-сжатие всех ответов — ставится максимально рано,
                           // до любых маршрутов, чтобы сжимать вообще всё: HTML, CSS,
                           // JS, JSON-ответы API. Обычно даёт 70-80% меньше трафика
@@ -1026,6 +1027,7 @@ ${content.slice(0, 6000)}
 // Список всех книг — для каталога на главной странице
 app.get('/api/books', async (req, res) => {
   try {
+    res.set('Cache-Control', 'public, max-age=60'); // список книг меняется редко
     const result = await pool.query(
       `SELECT id, slug, title, author, description, cover_image, genre, status
        FROM books ORDER BY created_at DESC`
@@ -1050,6 +1052,7 @@ app.get('/api/covers/:folder', (req, res) => {
     if (err) {
       return res.status(404).json({ error: 'Папка не найдена' });
     }
+    res.set('Cache-Control', 'public, max-age=300');
     const webpFiles = files.filter(f => f.toLowerCase().endsWith('.webp'));
     res.json(webpFiles);
   });

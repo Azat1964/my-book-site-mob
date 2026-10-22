@@ -413,9 +413,9 @@ _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
             <div class="book-card" data-index="${index}">
               <div class="book-cover">
                 ${coverUrl
-                  ? `<img class="cover-photo" src="${coverUrl}" alt="Обложка книги «${escapeHtml(book.title)}», автор ${escapeHtml(book.author)}">`
+                  ? `<img class="cover-photo" loading="lazy" decoding="async" src="${coverUrl}" alt="Обложка книги «${escapeHtml(book.title)}», автор ${escapeHtml(book.author)}">`
                   : book.cover_image
-                    ? `<img class="cover-photo" src="${book.cover_image}" alt="Обложка книги «${escapeHtml(book.title)}», автор ${escapeHtml(book.author)}">`
+                    ? `<img class="cover-photo" loading="lazy" decoding="async" src="${book.cover_image}" alt="Обложка книги «${escapeHtml(book.title)}», автор ${escapeHtml(book.author)}">`
                     : `<img class="cover-placeholder-icon" src="./img/svg/fugu1.svg" alt="" style="opacity:0.5">`}
               </div>
               <h3>${escapeHtml(book.title)}</h3>

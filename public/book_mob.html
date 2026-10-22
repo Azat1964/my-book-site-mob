@@ -1143,13 +1143,13 @@ _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
       const t = tokens[i];
       if (t.type === 'image') {
         flush();
-        html += `<img class="chapter-illustration" src="${escapeHtml(t.src)}" alt="">`;
+        html += `<img class="chapter-illustration" loading="lazy" decoding="async" src="${escapeHtml(t.src)}" alt="">`;
         currentPara = -1; // следующий текст всё равно начнёт новый абзац
         continue;
       }
       if (t.type === 'image-small') {
         flush();
-        html += `<img class="chapter-illustration-small" src="${escapeHtml(t.src)}" alt="">`;
+        html += `<img class="chapter-illustration-small" loading="lazy" decoding="async" src="${escapeHtml(t.src)}" alt="">`;
         currentPara = -1;
         continue;
       }
@@ -1192,13 +1192,13 @@ _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
         flush();
         // .poem-illustration — НЕ обтекание текстом (в отличие от обычной
         // .chapter-illustration в прозе): отдельный блок над строками стиха.
-        html += `<img class="poem-illustration" src="${escapeHtml(t.src)}" alt="">`;
+        html += `<img class="poem-illustration" loading="lazy" decoding="async" src="${escapeHtml(t.src)}" alt="">`;
         currentPara = -1;
         continue;
       }
       if (t.type === 'poem-image-small') {
         flush();
-        html += `<img class="poem-illustration-small" src="${escapeHtml(t.src)}" alt="">`;
+        html += `<img class="poem-illustration-small" loading="lazy" decoding="async" src="${escapeHtml(t.src)}" alt="">`;
         currentPara = -1;
         continue;
       }
