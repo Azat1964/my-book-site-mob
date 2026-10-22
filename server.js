@@ -1845,6 +1845,22 @@ app.get('/:code', async (req, res, next) => {
 
 // Запуск сервера на порту 3000
 const port = 3000;
+// Общий обработчик ошибок (должен стоять после всех маршрутов).
+// Сканеры шлют битые адреса вроде /%c0 и кривой JSON: это ошибки клиента (4xx), а не сервера,
+// поэтому отвечаем коротко и не засоряем журнал длинным следом. Настоящие ошибки (5xx) пишем в журнал.
+app.use((err, req, res, next) => {
+  if (res.headersSent) return next(err);
+  const status = err instanceof URIError ? 400 : (err.status || err.statusCode || 500);
+  if (status >= 400 && status < 500) {
+    const message = status === 413 ? 'Слишком большой запрос' : 'Некорректный запрос';
+    return req.path.startsWith('/api/')
+      ? res.status(status).json({ message })
+      : res.status(status).type('text/plain').send(message);
+  }
+  console.error('Необработанная ошибка:', req.method, req.originalUrl, err);
+  res.status(500).type('text/plain').send('Внутренняя ошибка сервера');
+});
+
 app.listen(port, () => {
   console.log(`Сервер запущен на порту ${port}`);
 });
