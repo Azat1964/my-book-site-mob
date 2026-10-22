@@ -47,6 +47,8 @@ const { Pool } = require('pg');
 const multer = require('multer');
 const mammoth = require('mammoth');
 const { splitByAutoHeadings, splitByToc } = require('./lib/chapterSplitter');
+const { createLoginLimiter } = require('./lib/loginLimit'); // не больше 10 неудачных входов за 10 минут с одного адреса
+const loginLimiter = createLoginLimiter({ max: 10, windowMs: 10 * 60 * 1000 });
 const { registerChat } = require('./lib/chat'); // ИИ-болталка для посетителей (см. папку chat/)
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 25 * 1024 * 1024 } });
@@ -678,11 +680,20 @@ app.post('/api/login', async (req, res) => {
     return res.status(400).json({ message: 'Все поля обязательны для заполнения' });
   }
 
+  // Защита от подбора паролей: после 10 неудачных попыток вход с этого адреса закрыт на 10 минут
+  const limitKey = loginLimiter.ip(req);
+  const waitSec = loginLimiter.wait(limitKey);
+  if (waitSec) {
+    res.set('Retry-After', String(waitSec));
+    return res.status(429).json({ message: `Слишком много неудачных попыток входа. Попробуйте через ${Math.ceil(waitSec / 60)} мин.` });
+  }
+
   try {
     // Поиск пользователя в базе данных по имени пользователя
     const userQuery = await pool.query('SELECT * FROM users WHERE nickname = $1', [username]);
 
     if (userQuery.rows.length === 0) {
+      loginLimiter.fail(limitKey);
       return res.status(401).json({ message: 'Неверное имя пользователя' });
     }
 
@@ -691,8 +702,10 @@ app.post('/api/login', async (req, res) => {
     // Проверка пароля
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
+      loginLimiter.fail(limitKey);
       return res.status(401).json({ message: 'Неверный  пароль' });
     }
+    loginLimiter.ok(limitKey); // успешный вход обнуляет счётчик
 
     // **✅  Сохраняем ID пользователя в сессию после успешного входа:**
     req.session.userId = user.id; // Сохраняем ID пользователя в сессии
