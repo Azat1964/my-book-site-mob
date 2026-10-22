@@ -47,6 +47,7 @@ const { Pool } = require('pg');
 const multer = require('multer');
 const mammoth = require('mammoth');
 const { splitByAutoHeadings, splitByToc } = require('./lib/chapterSplitter');
+const { registerChat } = require('./lib/chat'); // ИИ-болталка для посетителей (см. папку chat/)
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 25 * 1024 * 1024 } });
 
@@ -619,6 +620,10 @@ app.use(session({// Конфигурация сессий
     // sameSite: 'strict'     // Рекомендуется для дополнительной защиты от CSRF (опционально)
   }
 }));
+
+// ИИ-болталка: /api/chat, /api/chat/config, /api/admin/chat/reload.
+// Должна стоять ПОСЛЕ session(...), чтобы знать, вошёл ли читатель (закрытые главы — только вошедшим).
+registerChat(app, pool, { requireAdmin });
 
 // Обработка POST-запроса на регистрацию
 app.post('/api/register', async (req, res) => {
