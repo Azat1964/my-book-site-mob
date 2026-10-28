@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Болталка: статистика и тексты</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 20px 16px 60px; background: #14121c; color: #ece8f4; font: 15px/1.5 Georgia, serif; }
+  main { max-width: 920px; margin: 0 auto; }
+  h1 { margin: 0 0 4px; font-size: 24px; color: #d4a82e; }
+  .sub { color: #9a93ab; margin-bottom: 18px; }
+  .row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; align-items: center; }
+  input[type=text], input[type=password], select { background: #1f1c2b; color: inherit; border: 1px solid #3a3550; border-radius: 8px; padding: 8px 10px; font: inherit; }
+  input[type=text] { flex: 1 1 220px; min-width: 0; }
+  button { background: #d4a82e; color: #1a1500; border: 0; border-radius: 8px; padding: 8px 14px; font: inherit; font-weight: 700; cursor: pointer; }
+  button.ghost { background: #2a2639; color: #ece8f4; font-weight: 400; }
+  label { color: #b9b2c9; white-space: nowrap; }
+  .box { background: #1b1826; border: 1px solid #332e45; border-radius: 12px; padding: 14px; margin-bottom: 18px; }
+  .box h2 { margin: 0 0 10px; font-size: 16px; color: #ece8f4; }
+  .status { color: #9a93ab; margin: 8px 0 14px; }
+  .item { background: #1b1826; border: 1px solid #332e45; border-radius: 12px; padding: 12px 14px; margin-bottom: 10px; }
+  .item .head { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: baseline; margin-bottom: 6px; }
+  .item .title { font-weight: 700; }
+  .tag { font-size: 12px; padding: 1px 8px; border-radius: 99px; background: #2a2639; color: #b9b2c9; }
+  .tag.locked { background: #4a2430; color: #ffb4c2; }
+  .tag.score { background: #263a2a; color: #b4f0c0; }
+  .tag.low { background: #3a3220; color: #f0d890; }
+  .meta { color: #8b84a0; font-size: 13px; }
+  .meta a { color: #8ab4ff; }
+  .text { white-space: pre-wrap; word-wrap: break-word; max-height: 9em; overflow: hidden; margin: 6px 0 0; color: #d8d3e4; }
+  .item.open .text { max-height: none; }
+  .more { margin-top: 6px; }
+  .err { color: #ffb4c2; }
+  .hidden { display: none; }
+  .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; margin-bottom: 14px; }
+  .card { background: #211e2f; border: 1px solid #332e45; border-radius: 10px; padding: 10px 12px; }
+  .card b { display: block; font-size: 26px; color: #d4a82e; line-height: 1.1; }
+  .card span { color: #9a93ab; font-size: 13px; }
+  .bars { display: flex; align-items: flex-end; gap: 3px; height: 90px; margin-top: 6px; }
+  .bar { flex: 1; min-width: 4px; background: #d4a82e; border-radius: 3px 3px 0 0; position: relative; }
+  .bar.zero { background: #2f2a40; }
+  .axis { display: flex; justify-content: space-between; color: #8b84a0; font-size: 12px; margin-top: 4px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Болталка: статистика и тексты</h1>
+  <div class="sub">Всё, что Болталка может найти и использовать в ответах. Страница видна только администратору.</div>
+
+  <div id="login" class="box hidden">
+    <h2>Токен администратора</h2>
+    <div class="row">
+      <input id="token" type="password" placeholder="ADMIN_TOKEN из .env" autocomplete="off">
+      <button id="tokenBtn">Войти</button>
+    </div>
+  </div>
+
+  <div id="app" class="hidden">
+    <div class="box">
+      <h2>Сколько пользовались Болталкой</h2>
+      <div id="cards" class="cards"></div>
+      <div class="meta">Вопросов в день за 30 дней (наведите на столбик). Серый столбик — день без вопросов.</div>
+      <div id="bars" class="bars"></div>
+      <div id="axis" class="axis"></div>
+      <div id="statsNote" class="meta" style="margin-top:10px"></div>
+    </div>
+
+    <div class="box">
+      <h2>Что Болталка найдёт на вопрос</h2>
+      <div class="row">
+        <input id="ask" type="text" placeholder="Например: о чём «Тёмный Восход»?">
+        <select id="as"><option value="anon">как для посетителя</option><option value="reader">как для вошедшего читателя</option></select>
+        <button id="askBtn">Проверить</button>
+      </div>
+      <div class="meta">Показаны 10 лучших кусков с оценкой. Зелёная оценка проходит порог, жёлтая нет (Болталка тогда ничего не подмешивает и считает вопрос не про тексты сайта).</div>
+    </div>
+
+    <div class="box">
+      <h2>Поиск по всем текстам</h2>
+      <div class="row">
+        <input id="q" type="text" placeholder="Слово или фраза">
+        <select id="source"><option value="">всё</option><option value="notes">только заметки</option><option value="db">только тексты сайта</option></select>
+        <label><input id="locked" type="checkbox"> только закрытые регистрацией</label>
+        <button id="listBtn">Показать</button>
+        <button id="reloadBtn" class="ghost" title="Перечитать тексты из базы сейчас">Обновить из базы</button>
+      </div>
+    </div>
+
+    <div id="status" class="status"></div>
+    <div id="list"></div>
+    <button id="moreBtn" class="ghost hidden">Показать ещё</button>
+  </div>
+</main>
+
+<script>
+(function () {
+  const $ = (id) => document.getElementById(id);
+  let token = '';
+  try { token = sessionStorage.getItem('adminToken') || ''; } catch (e) {}
+  let offset = 0;
+  let lastMode = 'list';
+  const PAGE = 50;
+
+  function api(path, opts) {
+    return fetch(path, { ...(opts || {}), headers: { 'x-admin-token': token } }).then(async (r) => {
+      const data = await r.json().catch(() => ({}));
+      if (!r.ok) { const e = new Error(data.message || ('Ошибка ' + r.status)); e.status = r.status; throw e; }
+      return data;
+    });
+  }
+
+  function showError(e) {
+    if (e.status === 403) { $('app').classList.add('hidden'); $('login').classList.remove('hidden'); }
+    $('status').textContent = '';
+    const d = document.createElement('div'); d.className = 'err'; d.textContent = e.message;
+    $('status').appendChild(d);
+  }
+
+  function tag(text, cls) { const s = document.createElement('span'); s.className = 'tag' + (cls ? ' ' + cls : ''); s.textContent = text; return s; }
+
+  function render(items, minScore) {
+    for (const c of items) {
+      const el = document.createElement('div'); el.className = 'item';
+      const head = document.createElement('div'); head.className = 'head';
+      const t = document.createElement('span'); t.className = 'title';
+      t.textContent = c.heading && c.heading !== c.title ? c.title + ' / ' + c.heading : c.title;
+      head.appendChild(t);
+      head.appendChild(tag(c.source === 'notes' ? 'заметка' : 'сайт'));
+      if (c.locked) head.appendChild(tag('закрыто регистрацией', 'locked'));
+      if (c.score !== undefined) head.appendChild(tag('оценка ' + c.score, c.score >= minScore ? 'score' : 'low'));
+      el.appendChild(head);
+      const meta = document.createElement('div'); meta.className = 'meta';
+      meta.appendChild(document.createTextNode(c.chars + ' знаков'));
+      if (c.url && /^https?:\/\//.test(c.url)) {
+        meta.appendChild(document.createTextNode(' · '));
+        const a = document.createElement('a'); a.href = c.url; a.target = '_blank'; a.rel = 'noopener'; a.textContent = c.url;
+        meta.appendChild(a);
+      }
+      el.appendChild(meta);
+      const tx = document.createElement('div'); tx.className = 'text'; tx.textContent = c.text; el.appendChild(tx);
+      if (c.text.length > 400) {
+        const b = document.createElement('button'); b.className = 'ghost more'; b.textContent = 'Развернуть';
+        b.onclick = () => { el.classList.toggle('open'); b.textContent = el.classList.contains('open') ? 'Свернуть' : 'Развернуть'; };
+        el.appendChild(b);
+      }
+      $('list').appendChild(el);
+    }
+  }
+
+  async function list(reset) {
+    lastMode = 'list';
+    if (reset) { offset = 0; $('list').textContent = ''; }
+    const p = new URLSearchParams({ q: $('q').value, source: $('source').value, offset: String(offset), limit: String(PAGE) });
+    if ($('locked').checked) p.set('locked', '1');
+    try {
+      const d = await api('/api/admin/chat/chunks?' + p);
+      render(d.items);
+      offset += d.items.length;
+      $('status').textContent = 'Найдено ' + d.matched + ' из ' + d.total + ' (заметки ' + d.stats.notes + ', тексты сайта ' + d.stats.db + '). Показано ' + offset + '. ИИ: ' + (d.provider || 'не настроен') + '.';
+      $('moreBtn').classList.toggle('hidden', offset >= d.matched);
+    } catch (e) { showError(e); }
+  }
+
+  async function ask() {
+    const v = $('ask').value.trim(); if (!v) return;
+    lastMode = 'ask'; $('list').textContent = ''; $('moreBtn').classList.add('hidden');
+    try {
+      const d = await api('/api/admin/chat/chunks?' + new URLSearchParams({ ask: v, as: $('as').value }));
+      render(d.items, d.minScore);
+      const ok = d.items.length && d.items[0].score >= d.minScore;
+      $('status').textContent = ok
+        ? 'Порог ' + d.minScore + ': Болталка использует куски с оценкой не ниже 0,4 от лучшей.'
+        : 'Ничего не проходит порог ' + d.minScore + ': на такой вопрос Болталка не подмешает тексты сайта и ответит по общим правилам.';
+    } catch (e) { showError(e); }
+  }
+
+  function card(value, label) {
+    const c = document.createElement('div'); c.className = 'card';
+    const b = document.createElement('b'); b.textContent = String(value);
+    const sp = document.createElement('span'); sp.textContent = label;
+    c.appendChild(b); c.appendChild(sp); $('cards').appendChild(c);
+  }
+
+  async function stats() {
+    try {
+      const d = await api('/api/admin/chat/stats');
+      $('cards').textContent = ''; $('bars').textContent = ''; $('axis').textContent = '';
+      card(d.visitors, 'человек всего');
+      card(d.visitorsToday, 'человек сегодня');
+      card(d.visitors7d, 'человек за 7 дней');
+      card(d.visitors30d, 'человек за 30 дней');
+      card(d.returning, 'возвращались в другой день');
+      card(d.readers, 'вошедших читателей');
+      card(d.questions, 'вопросов всего');
+      card(d.questionsToday, 'вопросов сегодня');
+      card(d.errors, 'сбоев ИИ');
+      const max = Math.max(1, ...d.days.map((x) => x.questions));
+      for (const x of d.days) {
+        const b = document.createElement('div');
+        b.className = 'bar' + (x.questions ? '' : ' zero');
+        b.style.height = Math.max(3, Math.round((x.questions / max) * 100)) + '%';
+        b.title = x.day + ': вопросов ' + x.questions + ', человек ' + x.visitors;
+        $('bars').appendChild(b);
+      }
+      const a = $('axis'); const f = d.days[0], l = d.days[d.days.length - 1];
+      if (f) { const s1 = document.createElement('span'); s1.textContent = f.day; const s2 = document.createElement('span'); s2.textContent = l.day; a.appendChild(s1); a.appendChild(s2); }
+      $('statsNote').textContent = (d.since ? 'Счёт идёт с ' + new Date(d.since).toLocaleDateString('ru-RU') + '. ' : 'Пока никто не писал. ')
+        + '«Человек» — это уникальный IP-адрес: один человек с двух устройств считается дважды, а несколько человек из одной сети (офис, общий Wi-Fi) один раз. '
+        + 'Тексты вопросов не сохраняются, адрес хранится только в виде необратимого хеша.';
+    } catch (e) { showError(e); }
+  }
+
+  function start() {
+    $('login').classList.add('hidden'); $('app').classList.remove('hidden'); stats(); list(true);
+  }
+
+  $('tokenBtn').onclick = () => { token = $('token').value.trim(); try { sessionStorage.setItem('adminToken', token); } catch (e) {} start(); };
+  $('listBtn').onclick = () => list(true);
+  $('moreBtn').onclick = () => list(false);
+  $('askBtn').onclick = ask;
+  $('ask').addEventListener('keydown', (e) => { if (e.key === 'Enter') ask(); });
+  $('q').addEventListener('keydown', (e) => { if (e.key === 'Enter') list(true); });
+  $('reloadBtn').onclick = async () => {
+    try { const d = await api('/api/admin/chat/reload', { method: 'POST' }); $('status').textContent = 'Обновлено: заметки ' + d.notes + ', тексты сайта ' + d.db + '.'; }
+    catch (e) { showError(e); }
+  };
+
+  if (token) start(); else $('login').classList.remove('hidden');
+})();
+</script>
+</body>
+</html>

@@ -77,6 +77,18 @@ CREATE TABLE IF NOT EXISTS page_views (
   viewed_at TIMESTAMP DEFAULT NOW()
 );
 
+-- Использование ИИ-болталки (создаётся и автоматически при запуске сервера; тексты вопросов не хранятся)
+CREATE TABLE IF NOT EXISTS chat_usage (
+  id SERIAL PRIMARY KEY,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  visitor_hash VARCHAR(64) NOT NULL,   -- хеш IP с солью: считать уникальных, но не хранить адрес
+  user_id INTEGER,                     -- NULL = посетитель не входил
+  ok BOOLEAN NOT NULL DEFAULT TRUE,    -- FALSE = ИИ не ответил
+  provider VARCHAR(20)
+);
+CREATE INDEX IF NOT EXISTS idx_chat_usage_created ON chat_usage(created_at);
+CREATE INDEX IF NOT EXISTS idx_chat_usage_visitor ON chat_usage(visitor_hash);
+
 CREATE INDEX IF NOT EXISTS idx_page_views_book_chapter ON page_views(book_id, chapter_id);
 CREATE INDEX IF NOT EXISTS idx_page_views_viewed_at ON page_views(viewed_at);
 
