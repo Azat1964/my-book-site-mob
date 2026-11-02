@@ -1131,6 +1131,8 @@ app.get('/api/books/:slug/chapters/:num', async (req, res) => {
     // Логируем просмотр асинхронно (после отправки ответа — не блокируем читателя)
     setImmediate(async () => {
       try {
+        // Администратор отключил учёт своих просмотров (кнопка на analytics.html)
+        if (/(?:^|;\s*)no_track=1(?:;|$)/.test(req.headers.cookie || '')) return;
         const crypto = require('crypto');
         const rawIp = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.socket.remoteAddress || '';
         const ipHash = crypto.createHash('sha256').update(rawIp).digest('hex');
@@ -1247,6 +1249,20 @@ app.post('/api/books/:slug/chapters/:num/vote', async (req, res) => {
 // =====================================================================
 
 // Сводная статистика: итоговые цифры для карточек в шапке раздела
+// Включить/выключить учёт собственных просмотров администратора в этом браузере.
+// Работает через cookie no_track=1: пока она есть, просмотры глав не пишутся в page_views.
+app.get('/api/admin/no-track', requireAdmin, (req, res) => {
+  res.json({ enabled: /(?:^|;\s*)no_track=1(?:;|$)/.test(req.headers.cookie || '') });
+});
+app.post('/api/admin/no-track', requireAdmin, (req, res) => {
+  res.cookie('no_track', '1', { maxAge: 2 * 365 * 24 * 3600 * 1000, httpOnly: true, sameSite: 'lax', path: '/' });
+  res.json({ enabled: true });
+});
+app.delete('/api/admin/no-track', requireAdmin, (req, res) => {
+  res.clearCookie('no_track', { path: '/' });
+  res.json({ enabled: false });
+});
+
 app.get('/api/admin/analytics/summary', requireAdmin, async (req, res) => {
   try {
     const [views, users, tgClicks, bookmarks] = await Promise.all([
