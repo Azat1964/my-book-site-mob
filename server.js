@@ -543,7 +543,46 @@ app.get('/blog.html', async (req, res, next) => {
 // остальным. Клиентский JS в index.html при наличии data-hero-preset
 // ничего не переделывает — просто использует то, что уже подставил сервер.
 // ---------------------------------------------------------------------------
-app.get(['/', '/index.html'], (req, res, next) => {
+// Данные каталога для главной (список книг + случайные обложки) вшиваются в HTML,
+// чтобы браузеру не нужно было делать цепочку /api/books -> /api/covers/... -> картинки.
+// Список книг кэшируется в памяти на 60 секунд — так же, как раньше в /api/books.
+let booksCache = { rows: null, at: 0 };
+async function getBooksCached() {
+  if (booksCache.rows && Date.now() - booksCache.at < 60_000) return booksCache.rows;
+  const r = await pool.query(
+    `SELECT id, slug, title, author, description, cover_image, genre, status
+     FROM books ORDER BY created_at DESC`
+  );
+  booksCache = { rows: r.rows, at: Date.now() };
+  return r.rows;
+}
+const dirFilesCache = new Map();
+function listWebpCached(folder) {
+  const c = dirFilesCache.get(folder);
+  if (c && Date.now() - c.at < 60_000) return c.files;
+  let files = [];
+  try {
+    files = fs.readdirSync(path.join(__dirname, 'public', 'img', 'covers', folder))
+      .filter(f => f.toLowerCase().endsWith('.webp'));
+  } catch (e) {}
+  dirFilesCache.set(folder, { files, at: Date.now() });
+  return files;
+}
+// Для каких книг (по названию) на главной подбирается случайная обложка из папки.
+// Должно совпадать с photoCoverConfig в public/index.html.
+const PHOTO_COVER_FOLDERS = { 'Тёмный Восход': 'Tyumny_voshod_card', 'Чистория': 'Chistoriya_card' };
+// JSON внутри <script>: экранируем "<", чтобы текст из базы не мог закрыть тег
+const safeJson = (o) => JSON.stringify(o).replace(/</g, '\\u003c').replace(/[\u2028\u2029]/g, '');
+
+// ---------------------------------------------------------------------------
+// Главная страница — hero-картинка, обложки и список книг подставляются НА СЕРВЕРЕ.
+// Hero — это <img> (а не CSS-фон) с srcset (640/1024/оригинал), AVIF+WebP,
+// fetchpriority="high" и <link rel="preload"> — так браузер находит LCP-картинку
+// сразу при разборе HTML. Облегчённые версии лежат в
+// public/img/covers/Tyumny_voshod/r/ (делаются scripts/make-hero-variants.py);
+// если их нет — используется только оригинал.
+// ---------------------------------------------------------------------------
+app.get(['/', '/index.html'], async (req, res, next) => {
   try {
     const file = path.join(__dirname, 'public', 'index.html');
     let html = readTemplateCached(file);
@@ -553,39 +592,65 @@ app.get(['/', '/index.html'], (req, res, next) => {
 
     if (files.length) {
       const random = files[Math.floor(Math.random() * files.length)];
+      const baseName = random.replace(/\.[^/.]+$/, '');
       const imgUrl = `/img/covers/Tyumny_voshod/${random}`;
-
-      // Та же логика подбора класса оформления текста, что раньше была
-      // только в клиентском JS (см. setRandomHeroBackground в index.html) —
-      // теперь она продублирована здесь же, на сервере.
       const heroTextStyles = {
-        'blue-drops': 'style-white-text',
-        'book': 'style-white-text',
-        'drops': 'style-white-text',
-        'neon-drops': 'style-white-text',
-        'girl': 'style-white-text',
-        'face': 'style-white-text',
+        'blue-drops': 'style-white-text', 'book': 'style-white-text', 'drops': 'style-white-text',
+        'neon-drops': 'style-white-text', 'girl': 'style-white-text', 'face': 'style-white-text',
         'hang': 'style-floating',
       };
-      const baseName = random.replace(/\.[^/.]+$/, '');
       const styleClass = heroTextStyles[baseName] || '';
 
-      html = html.replace(
-        '<div class="hero-main" role="link" tabindex="0" aria-label="Перейти к каталогу книг">',
-        `<div class="hero-main${styleClass ? ' ' + styleClass : ''}" role="link" tabindex="0" aria-label="Перейти к каталогу книг" data-hero-preset="1" style="background-image:url('${imgUrl}')">`
-      );
-      html = html.replace(
-        '</head>',
-        `  <link rel="preload" as="image" href="${escAttr(imgUrl)}">\n</head>`
-      );
+      const rDir = path.join(heroDir, 'r');
+      const has = (n) => fs.existsSync(path.join(rDir, n));
+      const set = (ext) => [640, 1024]
+        .filter(w => has(`${baseName}-${w}.${ext}`))
+        .map(w => `/img/covers/Tyumny_voshod/r/${baseName}-${w}.${ext} ${w}w`);
+      const avif = set('avif');
+      const webp = set('webp');
+      const sizes = '(max-width: 760px) 100vw, 66vw';
+      const imgTag =
+        `<picture class="hero-bg-pic">` +
+        (avif.length ? `<source type="image/avif" srcset="${escAttr(avif.join(', '))}" sizes="${sizes}">` : '') +
+        `<img class="hero-bg" src="${escAttr(imgUrl)}"` +
+        (webp.length ? ` srcset="${escAttr(webp.concat(`${imgUrl} 1600w`).join(', '))}" sizes="${sizes}"` : '') +
+        ` alt="" fetchpriority="high" decoding="async"></picture>`;
+
+      // Регулярка вместо точного совпадения строки: не ломается, если поменяют aria-label
+      html = html.replace(/<div class="hero-main"([^>]*)>/, (m, attrs) =>
+        `<div class="hero-main${styleClass ? ' ' + styleClass : ''}"${attrs} data-hero-preset="1">${imgTag}`);
+
+      const preload = avif.length
+        ? `<link rel="preload" as="image" type="image/avif" imagesrcset="${escAttr(avif.join(', '))}" imagesizes="${sizes}" fetchpriority="high">`
+        : `<link rel="preload" as="image" href="${escAttr(imgUrl)}" fetchpriority="high">`;
+      html = html.replace('</head>', `  ${preload}\n</head>`);
     }
 
+    // Каталог: список книг + случайные обложки сразу в HTML
+    try {
+      const books = await getBooksCached();
+      const covers = {};
+      for (const [title, folder] of Object.entries(PHOTO_COVER_FOLDERS)) {
+        const f = listWebpCached(folder);
+        if (f.length) covers[title] = f[Math.floor(Math.random() * f.length)];
+      }
+      html = html.replace('</head>', `  <script>window.__BOOKLO__=${safeJson({ books, covers })};</script>\n</head>`);
+    } catch (e) {
+      console.error('Не удалось подготовить каталог для главной (клиент загрузит сам):', e.message);
+    }
+
+    res.set('Cache-Control', 'no-cache'); // HTML случайный и персональный — всегда сверяемся с сервером
     res.type('html').send(html);
   } catch (err) {
     console.error('Ошибка серверного рендера index.html:', err);
-    return next(); // при ошибке — отдаём как обычный статический файл, JS сам подставит картинку
+    return next();
   }
 });
+
+// Шрифты: имя файла не меняется никогда — кэшируем на год без перепроверок
+app.use('/fonts', express.static(path.join(__dirname, 'public', 'fonts'), {
+  maxAge: '365d', immutable: true,
+}));
 
 // Картинки (обложки, иллюстрации, svg-иконки) меняются гораздо реже, чем код,
 // поэтому кешируем их отдельно и намного дольше (30 дней вместо суток) — это
@@ -1877,7 +1942,7 @@ app.use((err, req, res, next) => {
   res.status(500).type('text/plain').send('Внутренняя ошибка сервера');
 });
 
-app.listen(port, () => {
+app.listen(port, '127.0.0.1', () => {
   console.log(`Сервер запущен на порту ${port}`);
 });
 
