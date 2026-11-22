@@ -1,39 +1,48 @@
 <!DOCTYPE html>
 <html lang="en" >
     <head>
-  <!-- Google tag (gtag.js) -->
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-29GR2L5LFK"></script>
+  <!-- Счётчики (GA4, Яндекс.Метрика, Top.Mail.Ru) грузятся ОТЛОЖЕННО: после load + паузы
+       либо при первом действии посетителя. Очереди ym / gtag / _tmr создаются сразу —
+       цели и события, отправленные до загрузки счётчиков, не теряются. -->
   <script>
     window.dataLayer = window.dataLayer || [];
     function gtag(){dataLayer.push(arguments);}
     gtag('js', new Date());
     gtag('config', 'G-29GR2L5LFK');
+
+    window.ym = window.ym || function(){(window.ym.a = window.ym.a || []).push(arguments)};
+    window.ym.l = 1 * new Date();
+    ym(110915454, 'init', {ssr:true, webvisor:true, clickmap:true, ecommerce:"dataLayer", referrer: document.referrer, url: location.href, accurateTrackBounce:true, trackLinks:true});
+
+    var _tmr = window._tmr || (window._tmr = []);
+    _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
+
+    (function () {
+      var started = false;
+      var evs = ['scroll','pointerdown','keydown','touchstart','mousemove'];
+      function add(src, id) {
+        var s = document.createElement('script');
+        s.async = true; s.src = src;
+        if (id) s.id = id;
+        document.head.appendChild(s);
+      }
+      function start() {
+        if (started) return;
+        started = true;
+        evs.forEach(function (ev) { window.removeEventListener(ev, start, true); });
+        add('https://www.googletagmanager.com/gtag/js?id=G-29GR2L5LFK');
+        add('https://mc.yandex.ru/metrika/tag.js?id=110915454');
+        add('https://top-fwz1.mail.ru/js/code.js', 'tmr-code');
+      }
+      evs.forEach(function (ev) { window.addEventListener(ev, start, {capture: true, passive: true, once: true}); });
+      window.addEventListener('load', function () { setTimeout(start, 2500); });
+    })();
   </script>
 <!-- Yandex.Metrika counter -->
-<script type="text/javascript">
-    (function(m,e,t,r,i,k,a){
-        m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};
-        m[i].l=1*new Date();
-        for (var j = 0; j < document.scripts.length; j++) {if (document.scripts[j].src === r) { return; }}
-        k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)
-    })(window, document,'script','https://mc.yandex.ru/metrika/tag.js?id=110915454', 'ym');
-    ym(110915454, 'init', {ssr:true, webvisor:true, clickmap:true, ecommerce:"dataLayer", referrer: document.referrer, url: location.href, accurateTrackBounce:true, trackLinks:true});
-</script>
 <noscript><div><img src="https://mc.yandex.ru/watch/110915454" style="position:absolute; left:-9999px;" alt="" /></div></noscript>
 <!-- /Yandex.Metrika counter -->
 
 <!-- Top.Mail.Ru counter -->
-<script type="text/javascript">
-var _tmr = window._tmr || (window._tmr = []);
-_tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
-(function (d, w, id) {
-  if (d.getElementById(id)) return;
-  var ts = d.createElement("script"); ts.type = "text/javascript"; ts.async = true; ts.id = id;
-  ts.src = "https://top-fwz1.mail.ru/js/code.js";
-  var f = function () {var s = d.getElementsByTagName("script")[0]; s.parentNode.insertBefore(ts, s);};
-  if (w.opera == "[object Opera]") { d.addEventListener("DOMContentLoaded", f, false); } else { f(); }
-})(document, window, "tmr-code");
-</script>
 <noscript><div><img src="https://top-fwz1.mail.ru/counter?id=3780557;js=na" style="position:absolute;left:-9999px;" alt="Top.Mail.Ru" /></div></noscript>
 <!-- /Top.Mail.Ru counter -->
 
@@ -76,18 +85,24 @@ _tmr.push({id: "3780557", type: "pageView", start: (new Date()).getTime()});
           })());
         }
       </script>
-      <link rel="preconnect" href="https://fonts.googleapis.com">
-      <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
       <!-- Заранее устанавливаем соединение со сторонними доменами (аналитика,
            CDN) — их скрипты встречаются ниже по странице, но DNS/TLS
            можно начать параллельно с разбором остального HTML, не дожидаясь
            момента, когда браузер дойдёт до самого тега script. -->
-      <link rel="preconnect" href="https://www.googletagmanager.com">
-      <link rel="preconnect" href="https://mc.yandex.ru">
-      <link rel="preconnect" href="https://top-fwz1.mail.ru">
       <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
-      <link rel="preload" href='https://fonts.googleapis.com/css?family=Gabriela&display=swap' as="style" onload="this.onload=null;this.rel='stylesheet'">
-      <noscript><link href='https://fonts.googleapis.com/css?family=Gabriela&display=swap' rel='stylesheet' type='text/css'></noscript>
+<link rel="preload" href="/fonts/gabriela-cyrillic-400-normal.woff2" as="font" type="font/woff2" crossorigin>
+<style>
+  /* Шрифты свои (public/fonts), не с Google */
+  @font-face { font-family:'Gabriela'; font-style:normal; font-weight:400; font-display:swap;
+    src:url(/fonts/gabriela-cyrillic-400-normal.woff2) format('woff2');
+    unicode-range:U+0301,U+0400-045F,U+0490-0491,U+04B0-04B1,U+2116; }
+  @font-face { font-family:'Gabriela'; font-style:normal; font-weight:400; font-display:swap;
+    src:url(/fonts/gabriela-latin-400-normal.woff2) format('woff2');
+    unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD; }
+  @font-face { font-family:'Archivo Black'; font-style:normal; font-weight:400; font-display:swap;
+    src:url(/fonts/archivo-black-latin-400-normal.woff2) format('woff2');
+    unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD; }
+</style>
       <link rel="stylesheet" href="./css/fish_no_sound_style.css">
       <link rel="stylesheet" href="./css/fish_no_sound.css">
       <script src="https://cdnjs.cloudflare.com/ajax/libs/prefixfree/1.0.7/prefixfree.min.js"></script>
